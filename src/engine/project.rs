@@ -4,6 +4,7 @@ use crate::engine::scene::{BaseScene, Scene2D};
 use std::fs;
 use std::collections::HashMap;
 use std::path::Path;
+use std::io::{self, Write};
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Default)]
@@ -76,6 +77,11 @@ impl Project {
         let mut exporter = crate::render::export::Exporter::new(self.width, self.height);
         let dt = std::time::Duration::from_secs_f32(1.0 / self.fps as f32);
         let mut frame_count = 0;
+        let mut rendered_count = 0;
+        let mut skipped_count = 0;
+
+        let total_duration = self.scene.timeline.duration();
+        let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
 
         // Export until all animations are finished
         loop {
@@ -84,11 +90,29 @@ impl Project {
 
             // Check cache: skip if hash matches AND file exists
             if self.use_cache && manifest.frames.get(&frame_count) == Some(&hash) && frame_path.exists() {
-                // Skip rendering
+                skipped_count += 1;
             } else {
                 exporter.export_frame(&self.scene, &frame_path);
                 manifest.frames.insert(frame_count, hash);
+                rendered_count += 1;
             }
+
+            // Progress Bar
+            let progress = if total_frames > 0 {
+                (frame_count as f32 / total_frames as f32).min(1.0)
+            } else {
+                1.0
+            };
+            let bar_len = 20;
+            let filled = (progress * bar_len as f32) as usize;
+            let bar: String = std::iter::repeat('=').take(filled)
+                .chain(std::iter::once('>'))
+                .chain(std::iter::repeat(' ').take(bar_len - filled))
+                .collect();
+
+            print!("\r[Exporting] Frame {}/{} [{}] {:.0}% (Skipped {})", 
+                frame_count + 1, total_frames, bar, progress * 100.0, skipped_count);
+            io::stdout().flush()?;
 
             if self.scene.timeline.finished() {
                 break;
@@ -103,7 +127,7 @@ impl Project {
             fs::write(cache_file, json)?;
         }
 
-        println!("Export finished: {} frames rendered/skipped.", frame_count + 1);
+        println!("\nExport finished: {} frames rendered, {} skipped.", rendered_count, skipped_count);
         Ok(())
     }
 

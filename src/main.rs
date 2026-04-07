@@ -11,7 +11,7 @@ fn main() -> anyhow::Result<()> {
     // 1. Initialize Project
     let mut project = Project::new(800, 600)
         .with_fps(60)
-        .with_cache(false)
+        // .with_cache(false)
         .with_title("Path Follow Demo");
 
     // 2. Create a Path

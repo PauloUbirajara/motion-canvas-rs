@@ -2,8 +2,8 @@ use std::time::Duration;
 use vello::Scene;
 
 pub trait Animation: Send + Sync + 'static {
-    /// Update animation. Return true if finished.
     fn update(&mut self, dt: Duration) -> bool;
+    fn duration(&self) -> Duration;
 }
 
 pub trait Node: Send + Sync + 'static {

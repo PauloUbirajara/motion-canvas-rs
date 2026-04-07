@@ -106,7 +106,12 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         
         self.elapsed >= self.duration
     }
+
+    fn duration(&self) -> Duration {
+        self.duration
+    }
 }
+
 
 pub struct FollowPath<T> {
     data: Arc<Mutex<SignalData<T>>>,
@@ -140,7 +145,12 @@ impl<T: Tweenable + From<Vec2>> Animation for FollowPath<T> {
         
         self.elapsed >= self.duration
     }
+
+    fn duration(&self) -> Duration {
+        self.duration
+    }
 }
+
 
 impl<T: Tweenable> From<SignalTween<T>> for Box<dyn Animation> {
     fn from(tween: SignalTween<T>) -> Self {

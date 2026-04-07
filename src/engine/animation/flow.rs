@@ -22,7 +22,12 @@ impl Animation for All {
         }
         all_finished
     }
+
+    fn duration(&self) -> Duration {
+        self.animations.iter().map(|a| a.duration()).max().unwrap_or(Duration::ZERO)
+    }
 }
+
 
 // --- Any (Race) ---
 pub struct Any {
@@ -45,7 +50,12 @@ impl Animation for Any {
         }
         any_finished
     }
+
+    fn duration(&self) -> Duration {
+        self.animations.iter().map(|a| a.duration()).min().unwrap_or(Duration::ZERO)
+    }
 }
+
 
 // --- Chain (Sequential) ---
 pub struct Chain {
@@ -71,7 +81,12 @@ impl Animation for Chain {
 
         self.index >= self.animations.len()
     }
+
+    fn duration(&self) -> Duration {
+        self.animations.iter().map(|a| a.duration()).fold(Duration::ZERO, |acc, d| acc + d)
+    }
 }
+
 
 // --- Delay ---
 pub struct Delay {
@@ -99,7 +114,12 @@ impl Animation for Delay {
             self.inner.update(dt)
         }
     }
+
+    fn duration(&self) -> Duration {
+        self.duration + self.inner.duration()
+    }
 }
+
 
 // --- Sequence (Staggered Parallel) ---
 pub struct Sequence {
@@ -133,7 +153,12 @@ impl Animation for Sequence {
         }
         all_finished
     }
+
+    fn duration(&self) -> Duration {
+        self.items.iter().map(|(start, anim)| *start + anim.duration()).max().unwrap_or(Duration::ZERO)
+    }
 }
+
 
 // --- Loop ---
 pub struct LoopAnim {
@@ -171,7 +196,15 @@ impl Animation for LoopAnim {
         }
         false
     }
+
+    fn duration(&self) -> Duration {
+        match self.repeat_count {
+            Some(count) => self.current.duration() * count as u32,
+            None => Duration::from_secs(3600), // Cap infinite at 1 hour for progress bar
+        }
+    }
 }
+
 
 // --- Factory Functions ---
 pub fn all(animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
@@ -204,7 +237,12 @@ impl Animation for Wait {
         self.elapsed += dt;
         self.elapsed >= self.duration
     }
+
+    fn duration(&self) -> Duration {
+        self.duration
+    }
 }
+
 
 pub fn wait(duration: Duration) -> Box<dyn Animation> {
     Box::new(Wait {
@@ -239,6 +277,10 @@ mod tests {
         fn update(&mut self, _dt: Duration) -> bool {
             self.finished = true;
             true
+        }
+
+        fn duration(&self) -> Duration {
+            Duration::ZERO
         }
     }
 

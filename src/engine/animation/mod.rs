@@ -28,7 +28,12 @@ impl Timeline {
     pub fn finished(&self) -> bool {
         self.animations.is_empty()
     }
+
+    pub fn duration(&self) -> std::time::Duration {
+        self.animations.iter().map(|a| a.duration()).max().unwrap_or(std::time::Duration::ZERO)
+    }
 }
+
 
 
 /// Run animations in parallel.
