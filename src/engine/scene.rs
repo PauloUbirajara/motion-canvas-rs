@@ -1,0 +1,35 @@
+use vello::Scene;
+use crate::engine::node::Node;
+
+pub trait Scene2D {
+    fn render(&self, scene: &mut Scene);
+    fn update(&mut self, dt: std::time::Duration);
+}
+
+pub struct BaseScene {
+    pub nodes: Vec<Box<dyn Node>>,
+}
+
+impl BaseScene {
+    pub fn new() -> Self {
+        Self { nodes: Vec::new() }
+    }
+
+    pub fn add(&mut self, node: Box<dyn Node>) {
+        self.nodes.push(node);
+    }
+}
+
+impl Scene2D for BaseScene {
+    fn render(&self, scene: &mut Scene) {
+        for node in &self.nodes {
+            node.render(scene);
+        }
+    }
+
+    fn update(&mut self, dt: std::time::Duration) {
+        for node in &mut self.nodes {
+            node.update(dt);
+        }
+    }
+}

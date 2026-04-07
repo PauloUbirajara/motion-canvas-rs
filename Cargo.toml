@@ -1,0 +1,15 @@
+[package]
+name = "motion-canvas-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+vello = "0.2.1"
+winit = "0.29"
+glam = "0.25"
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["sync", "time", "rt", "macros"] }
+anyhow = "1.0"
+pollster = "0.3"
+instant = { version = "0.1", features = ["wasm-bindgen"] }
+# Use vello re-exports for peniko and wgpu to avoid version conflicts
