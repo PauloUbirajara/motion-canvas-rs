@@ -194,6 +194,25 @@ pub fn sequence(stagger: Duration, animations: Vec<Box<dyn Animation>>) -> Box<d
     Box::new(Sequence::new(stagger, animations))
 }
 
+pub struct Wait {
+    duration: Duration,
+    elapsed: Duration,
+}
+
+impl Animation for Wait {
+    fn update(&mut self, dt: Duration) -> bool {
+        self.elapsed += dt;
+        self.elapsed >= self.duration
+    }
+}
+
+pub fn wait(duration: Duration) -> Box<dyn Animation> {
+    Box::new(Wait {
+        duration,
+        elapsed: Duration::ZERO,
+    })
+}
+
 pub fn loop_anim<F>(factory: F, count: Option<usize>) -> Box<dyn Animation>
 where
     F: Fn() -> Box<dyn Animation> + Send + Sync + 'static,

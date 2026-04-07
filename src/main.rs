@@ -1,4 +1,5 @@
 use std::time::Duration;
+use vello::kurbo::BezPath;
 use vello::peniko::Color;
 
 mod engine;
@@ -7,63 +8,49 @@ mod render;
 use crate::engine::*;
 
 fn main() -> anyhow::Result<()> {
-    // 1. Initialize Project with dimensions
-    let mut project = Project::new(800, 600).with_fps(60);
+    // 1. Initialize Project
+    let mut project = Project::new(800, 600)
+        .with_fps(60)
+        .with_cache(false)
+        .with_title("Path Follow Demo");
 
-    // 2. Create nodes (wrapping in Arc/Mutex is handled by Signal)
+    // 2. Create a Path
+    let mut path = BezPath::new();
+    path.move_to((100.0, 300.0));
+    path.curve_to((250.0, 100.0), (550.0, 500.0), (700.0, 300.0));
+
+    let path_node = PathNode::new(path, Color::rgb8(100, 100, 100), 2.0);
+
+    // 3. Create a Follower
     let circle = Circle {
-        position: Signal::new(glam::vec2(100.0, 100.0)),
-        radius: Signal::new(50.0),
-        fill: Color::rgb8(32, 178, 170),
+        position: Signal::new(glam::vec2(100.0, 300.0)),
+        radius: Signal::new(20.0),
+        fill: Color::rgb8(255, 165, 0),
     };
 
-    let rect = Rect {
-        position: Signal::new(glam::vec2(600.0, 100.0)),
-        size: Signal::new(glam::vec2(100.0, 100.0)),
-        fill: Color::rgb8(255, 100, 100),
-        radius: 10.0,
-    };
-
-    // Clone signals for use in animation factory (for loops)
-    let c_pos = circle.position.clone();
-    let c_rad = circle.radius.clone();
-
-    // 3. Define animations using the new advanced flow system
-    
-    // Example: Chain multiple animations one after another
+    // 4. Define Animation
+    // Make the circle follow the path, then come back!
     project.scene.timeline.add(chain![
-        // First - expand and move right
-        all![
-            circle.radius.to(100.0, Duration::from_secs(1)).ease(easings::elastic_out),
-            circle.position.to(glam::vec2(400.0, 100.0), Duration::from_secs(1))
-        ],
-        // Then - move down with a delay
-        circle.position.to(glam::vec2(400.0, 300.0), Duration::from_secs(1))
+        circle
+            .position
+            .follow(&path_node, Duration::from_secs(3))
+            .ease(easings::cubic_in_out),
+        wait(Duration::from_millis(500)),
+        circle
+            .radius
+            .to(40.0, Duration::from_millis(500))
+            .ease(easings::elastic_out),
+        circle
+            .radius
+            .to(20.0, Duration::from_millis(500))
+            .ease(easings::quad_in)
     ]);
 
-    // Example: Sequence (Staggered starts)
-    project.scene.timeline.add(sequence![
-        Duration::from_millis(500), // delay between elements
-        rect.position.to(glam::vec2(200.0, 400.0), Duration::from_secs(2)).ease(easings::cubic_in_out),
-        rect.size.to(glam::vec2(200.0, 150.0), Duration::from_secs(1))
-    ]);
-
-    // Example: Loop an animation 3 times
-    project.scene.timeline.add(loop_anim(
-        move || {
-            // This factory function is called each time the loop restarts
-            chain![
-                c_rad.to(120.0, Duration::from_millis(500)).ease(easings::quad_out),
-                c_rad.to(100.0, Duration::from_millis(500)).ease(easings::quad_in)
-            ].into()
-        },
-        Some(3) // Loop 3 times
-    ));
-
-    // 4. Add nodes to scene (move them now)
+    // 5. Add nodes to scene
+    project.scene.add(Box::new(path_node));
     project.scene.add(Box::new(circle));
-    project.scene.add(Box::new(rect));
 
-    // 5. Run preview
-    project.show()
+    // 6. Run
+    // project.show();
+    project.export()
 }

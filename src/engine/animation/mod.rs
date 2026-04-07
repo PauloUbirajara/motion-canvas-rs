@@ -24,7 +24,12 @@ impl Timeline {
     pub fn update(&mut self, dt: std::time::Duration) {
         self.animations.retain_mut(|anim| !anim.update(dt));
     }
+
+    pub fn finished(&self) -> bool {
+        self.animations.is_empty()
+    }
 }
+
 
 /// Run animations in parallel.
 #[macro_export]

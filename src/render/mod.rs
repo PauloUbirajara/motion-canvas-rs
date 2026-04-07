@@ -2,9 +2,16 @@ use vello::{
     util::{RenderContext, RenderSurface},
     Renderer, RendererOptions, Scene,
 };
-use winit::window::Window;
+use winit::{
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
+use std::time::{Duration, Instant};
+use crate::engine::scene::Scene2D;
 
 pub mod export;
+
 pub struct VelloRenderer<'a> {
     context: RenderContext,
     surface: Option<RenderSurface<'a>>,
@@ -22,7 +29,7 @@ impl<'a> VelloRenderer<'a> {
         }
     }
 
-    pub async fn resume(&mut self, window: &'a Window) {
+    pub async fn resume(&mut self, window: &'a winit::window::Window) {
         let size = window.inner_size();
         let surface = self
             .context
@@ -46,13 +53,16 @@ impl<'a> VelloRenderer<'a> {
         self.renderer = Some(renderer);
     }
 
-    pub fn render(&mut self, scene_2d: &dyn crate::engine::scene::Scene2D, width: u32, height: u32) {
+    pub fn render(&mut self, scene_2d: &dyn Scene2D, width: u32, height: u32) {
         if let (Some(surface), Some(renderer)) = (&self.surface, &mut self.renderer) {
             self.scene.reset();
             scene_2d.render(&mut self.scene);
 
             let device_handle = &self.context.devices[surface.dev_id];
-            let surface_texture = surface.surface.get_current_texture().unwrap();
+            let surface_texture = match surface.surface.get_current_texture() {
+                Ok(t) => t,
+                Err(_) => return, // Surface lost or outdated
+            };
             
             renderer
                 .render_to_surface(
@@ -71,5 +81,58 @@ impl<'a> VelloRenderer<'a> {
             
             surface_texture.present();
         }
+    }
+}
+
+pub struct AnimationWindow {
+    project: crate::engine::Project,
+}
+
+impl AnimationWindow {
+    pub fn new(project: crate::engine::Project) -> anyhow::Result<Self> {
+        Ok(Self { project })
+    }
+
+    pub fn run(mut self) -> anyhow::Result<()> {
+        let event_loop = EventLoop::new()?;
+        let window = WindowBuilder::new()
+            .with_title(&self.project.title)
+            .with_inner_size(winit::dpi::LogicalSize::new(self.project.width, self.project.height))
+            .build(&event_loop)?;
+
+        // Wrap renderer in an Option so we can create it inside 'resumed' if needed,
+        // or just keep it outside and manage lifetimes carefully.
+        // For simplicity in event_loop.run, we can use a wrapper or just pollster::block_on.
+        let mut renderer = VelloRenderer::new();
+        let mut last_update = Instant::now();
+        let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
+
+        // Capture window as a reference to avoid lifetime issues with Move
+        let window_ref = unsafe { std::mem::transmute::<&winit::window::Window, &'static winit::window::Window>(&window) };
+
+        event_loop.run(move |event, elwt| {
+            elwt.set_control_flow(ControlFlow::Poll);
+
+            match event {
+                Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => elwt.exit(),
+                Event::WindowEvent { event: WindowEvent::RedrawRequested, .. } => {
+                    renderer.render(&self.project.scene, self.project.width, self.project.height);
+                }
+                Event::AboutToWait => {
+                    let now = Instant::now();
+                    if now.duration_since(last_update) >= dt {
+                        self.project.scene.update(dt);
+                        last_update = now;
+                        window_ref.request_redraw();
+                    }
+                }
+                Event::Resumed => {
+                    pollster::block_on(renderer.resume(window_ref));
+                }
+                _ => (),
+            }
+        })?;
+
+        Ok(())
     }
 }
