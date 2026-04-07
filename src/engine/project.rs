@@ -8,6 +8,8 @@ use winit::{
 };
 use std::time::{Duration, Instant};
 use std::path::PathBuf;
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
 
 pub struct Project {
     pub scene: BaseScene,
@@ -62,19 +64,46 @@ impl Project {
         let dt = Duration::from_secs_f32(1.0 / self.fps as f32);
 
         std::fs::create_dir_all(&self.output_path)?;
+        
+        // Move manifest to a hidden file in the project directory instead of the output folder
+        let manifest_path = std::path::Path::new(".motion_canvas_cache");
+        let mut manifest: HashMap<String, u64> = if manifest_path.exists() {
+            let content = std::fs::read_to_string(&manifest_path)?;
+            serde_json::from_str(&content).unwrap_or_default()
+        } else {
+            HashMap::new()
+        };
+
+        let mut rendered_count = 0;
+        let mut skipped_count = 0;
 
         for i in 0..total_frames {
             let filename = self.frame_template.replace("{:04}", &format!("{:04}", i));
-            let path = self.output_path.join(filename);
+            let path = self.output_path.join(&filename);
             
-            exporter.export_frame(&self.scene, &path);
+            let current_hash = Scene2D::state_hash(&self.scene);
+            let cached_hash = manifest.get(&filename);
+
+            if path.exists() && cached_hash == Some(&current_hash) {
+                skipped_count += 1;
+            } else {
+                exporter.export_frame(&self.scene, &path);
+                manifest.insert(filename, current_hash);
+                rendered_count += 1;
+            }
+
             Scene2D::update(&mut self.scene, dt);
             
-            if i % 10 == 0 {
-                println!("Progress: {}/{}", i, total_frames);
+            if i % (total_frames / 10).max(1) == 0 {
+                println!("Progress: {}/{} (Rendered: {}, Skipped: {})", i, total_frames, rendered_count, skipped_count);
             }
         }
-        println!("Export finished! Check the {:?} directory.", self.output_path);
+
+        // Save manifest
+        let manifest_json = serde_json::to_string_pretty(&manifest)?;
+        std::fs::write(&manifest_path, manifest_json)?;
+
+        println!("Export finished! Rendered: {}, Skipped: {}. Check the {:?} directory.", rendered_count, skipped_count, self.output_path);
         Ok(())
     }
 

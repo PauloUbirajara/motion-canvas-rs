@@ -1,10 +1,7 @@
-use vello::{
-    util::RenderContext,
-    Renderer, RendererOptions, Scene,
-};
-use vello::wgpu;
-use std::path::Path;
 use image::{ImageBuffer, Rgba};
+use std::path::Path;
+use vello::wgpu;
+use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
 
 pub struct Exporter {
     width: u32,
@@ -20,7 +17,7 @@ impl Exporter {
         let mut context = RenderContext::new();
         let device_id = pollster::block_on(context.device(None)).unwrap();
         let device_handle = &context.devices[device_id];
-        
+
         let renderer = Renderer::new(
             &device_handle.device,
             RendererOptions {
@@ -68,7 +65,7 @@ impl Exporter {
         // 2. Render the scene
         self.scene.reset();
         scene_2d.render(&mut self.scene);
-        
+
         self.renderer
             .render_to_texture(
                 device,
@@ -127,7 +124,7 @@ impl Exporter {
         rx.recv().unwrap().unwrap();
 
         let data = buffer_slice.get_mapped_range();
-        
+
         // Remove padding when creating the ImageBuffer
         let mut png_data = Vec::with_capacity((self.width * self.height * 4) as usize);
         for row in 0..self.height {

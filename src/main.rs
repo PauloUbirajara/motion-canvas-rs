@@ -8,10 +8,7 @@ use crate::engine::*;
 
 fn main() -> anyhow::Result<()> {
     // 1. Initialize Project with dimensions and extra settings
-    let mut project = Project::new(800, 600)
-        .with_title("Dedicated API Demo")
-        .with_output_path("renders/seq")
-        .with_fps(60);
+    let mut project = Project::new(800, 600).with_fps(60);
 
     // 2. Create nodes
     let circle = Box::new(Circle {
@@ -50,6 +47,6 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(rect);
 
     // 5. Choose your mode: project.show() for preview, project.export() for PNGs
-    // project.export()
-    project.show()
+    project.export()
+    // project.show()
 }

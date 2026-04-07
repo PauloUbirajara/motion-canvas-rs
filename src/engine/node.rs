@@ -87,9 +87,10 @@ impl<T: Tweenable> Animation for SignalTween<T> {
     }
 }
 
-pub trait Node: Send + Sync {
+pub trait Node: Send + Sync + 'static {
     fn render(&self, scene: &mut Scene);
     fn update(&mut self, dt: Duration);
+    fn state_hash(&self) -> u64;
 }
 
 pub struct Circle {
@@ -114,6 +115,20 @@ impl Node for Circle {
     }
 
     fn update(&mut self, _dt: Duration) {}
+
+    fn state_hash(&self) -> u64 {
+        let pos = self.position.data.lock().unwrap().value;
+        let radius = self.radius.data.lock().unwrap().value;
+        let mut hash = 0u64;
+        hash ^= pos.x.to_bits() as u64;
+        hash ^= pos.y.to_bits() as u64;
+        hash ^= radius.to_bits() as u64;
+        hash ^= self.fill.r as u64;
+        hash ^= (self.fill.g as u64) << 8;
+        hash ^= (self.fill.b as u64) << 16;
+        hash ^= (self.fill.a as u64) << 24;
+        hash
+    }
 }
 
 pub struct Rect {
@@ -139,6 +154,22 @@ impl Node for Rect {
     }
 
     fn update(&mut self, _dt: Duration) {}
+
+    fn state_hash(&self) -> u64 {
+        let pos = self.position.data.lock().unwrap().value;
+        let size = self.size.data.lock().unwrap().value;
+        let mut hash = 0u64;
+        hash ^= pos.x.to_bits() as u64;
+        hash ^= pos.y.to_bits() as u64;
+        hash ^= size.x.to_bits() as u64;
+        hash ^= size.y.to_bits() as u64;
+        hash ^= self.radius.to_bits() as u64;
+        hash ^= self.fill.r as u64;
+        hash ^= (self.fill.g as u64) << 8;
+        hash ^= (self.fill.b as u64) << 16;
+        hash ^= (self.fill.a as u64) << 24;
+        hash
+    }
 }
 
 pub struct Line {
@@ -164,4 +195,20 @@ impl Node for Line {
     }
 
     fn update(&mut self, _dt: Duration) {}
+
+    fn state_hash(&self) -> u64 {
+        let start = self.start.data.lock().unwrap().value;
+        let end = self.end.data.lock().unwrap().value;
+        let mut hash = 0u64;
+        hash ^= start.x.to_bits() as u64;
+        hash ^= start.y.to_bits() as u64;
+        hash ^= end.x.to_bits() as u64;
+        hash ^= end.y.to_bits() as u64;
+        hash ^= self.thickness.to_bits() as u64;
+        hash ^= self.stroke.r as u64;
+        hash ^= (self.stroke.g as u64) << 8;
+        hash ^= (self.stroke.b as u64) << 16;
+        hash ^= (self.stroke.a as u64) << 24;
+        hash
+    }
 }

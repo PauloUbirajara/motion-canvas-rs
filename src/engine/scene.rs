@@ -4,6 +4,7 @@ use crate::engine::node::Node;
 pub trait Scene2D {
     fn render(&self, scene: &mut Scene);
     fn update(&mut self, dt: std::time::Duration);
+    fn state_hash(&self) -> u64;
 }
 
 pub struct BaseScene {
@@ -36,5 +37,13 @@ impl Scene2D for BaseScene {
         for node in &mut self.nodes {
             node.update(dt);
         }
+    }
+
+    fn state_hash(&self) -> u64 {
+        let mut hash = 0u64;
+        for node in &self.nodes {
+            hash ^= node.state_hash();
+        }
+        hash
     }
 }
