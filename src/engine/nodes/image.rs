@@ -46,6 +46,7 @@ impl ImageManager {
     }
 }
 
+#[derive(Clone)]
 pub struct ImageNode {
     pub position: Signal<Vec2>,
     pub size: Signal<Vec2>,

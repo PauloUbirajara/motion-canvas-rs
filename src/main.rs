@@ -1,14 +1,6 @@
-use std::time::Duration;
+use motion_canvas_rs::prelude::*;
 use vello::kurbo::BezPath;
-use vello::peniko::Color;
-
-mod engine;
-mod render;
-
-use crate::engine::animation::wait;
-use crate::engine::nodes::{Circle, CodeNode, ImageNode, Line, MathNode, PathNode, Rect, TextNode};
-use crate::engine::project::Project;
-use crate::engine::{easings, Vec2};
+use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
     // 1. Initialize Project with full API coverage

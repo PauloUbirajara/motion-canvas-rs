@@ -8,6 +8,7 @@ use std::time::Duration;
 use skrifa::MetadataProvider;
 use skrifa::instance::{Size, LocationRef};
 
+#[derive(Clone)]
 pub struct TextNode {
     pub position: Signal<Vec2>,
     pub text: Signal<String>,

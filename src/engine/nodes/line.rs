@@ -5,6 +5,7 @@ use glam::Vec2;
 use vello::kurbo::{Affine, Stroke, Line as KurboLine};
 use std::time::Duration;
 
+#[derive(Clone)]
 pub struct Line {
     pub start: Signal<Vec2>,
     pub end: Signal<Vec2>,

@@ -1,0 +1,26 @@
+use motion_canvas_rs::prelude::*;
+use std::time::Duration;
+
+fn main() -> anyhow::Result<()> {
+    // 1. Initialize the Project
+    let mut project = Project::new(800, 600)
+        .with_fps(60)
+        .with_cache(true);
+
+    // 2. Define Nodes
+    let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::RED);
+    let text = TextNode::new(Vec2::new(400.0, 450.0), "Hello Rust", 40.0, Color::WHITE);
+
+    // 3. Add Nodes to the Scene
+    project.scene.add(Box::new(circle.clone()));
+    project.scene.add(Box::new(text.clone()));
+
+    // 4. Add Animations to the Timeline
+    project.scene.timeline.add(all![
+        circle.radius.to(100.0, Duration::from_secs(1)),
+        text.position.to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
+    ]);
+
+    // 5. Show
+    project.show()
+}

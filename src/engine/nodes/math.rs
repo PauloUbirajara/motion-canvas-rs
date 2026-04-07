@@ -7,6 +7,7 @@ use std::time::Duration;
 use skrifa::MetadataProvider;
 use skrifa::instance::{Size};
 
+#[derive(Clone)]
 pub struct MathNode {
     pub position: Signal<Vec2>,
     pub equation: Signal<String>,

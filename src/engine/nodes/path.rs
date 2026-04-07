@@ -56,6 +56,7 @@ impl PathData {
     }
 }
 
+#[derive(Clone)]
 pub struct PathNode {
     pub data: Arc<PathData>,
     pub stroke: Color,

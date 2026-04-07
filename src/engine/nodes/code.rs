@@ -11,6 +11,7 @@ use syntect::parsing::SyntaxSet;
 use syntect::highlighting::{ThemeSet};
 use syntect::easy::HighlightLines;
 
+#[derive(Clone)]
 pub struct CodeNode {
     pub position: Signal<Vec2>,
     pub code: Signal<String>,

@@ -5,6 +5,7 @@ use glam::Vec2;
 use vello::kurbo::{Affine, RoundedRect as KurboRoundedRect};
 use std::time::Duration;
 
+#[derive(Clone)]
 pub struct Rect {
     pub position: Signal<Vec2>,
     pub size: Signal<Vec2>,

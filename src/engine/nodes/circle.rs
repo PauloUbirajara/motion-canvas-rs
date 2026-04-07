@@ -5,6 +5,7 @@ use glam::Vec2;
 use vello::kurbo::{Affine, Circle as KurboCircle};
 use std::time::Duration;
 
+#[derive(Clone)]
 pub struct Circle {
     pub position: Signal<Vec2>,
     pub radius: Signal<f32>,
