@@ -57,3 +57,24 @@ pub fn elastic_out(t: f32) -> f32 {
         2.0f32.powf(-10.0 * t) * ((t - 0.1) * 5.0 * PI).sin() + 1.0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_easings_boundaries() {
+        let easings: Vec<fn(f32) -> f32> = vec![
+            linear,
+            quad_in, quad_out, quad_in_out,
+            cubic_in, cubic_out, cubic_in_out,
+            elastic_in, elastic_out,
+        ];
+
+        for easing in easings {
+            assert!((easing(0.0) - 0.0).abs() < 1e-6, "Easing failed at 0.0");
+            assert!((easing(1.0) - 1.0).abs() < 1e-6, "Easing failed at 1.0");
+        }
+    }
+}
+
