@@ -1,5 +1,5 @@
 pub mod animation;
-pub mod node;
+pub mod nodes;
 pub mod project;
 pub mod scene;
 pub mod easings;
@@ -9,7 +9,7 @@ pub mod typst_support;
 #[allow(unused_imports)]
 pub use animation::*;
 #[allow(unused_imports)]
-pub use node::*;
+pub use nodes::*;
 pub use project::*;
 #[allow(unused_imports)]
 pub use scene::*;

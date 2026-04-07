@@ -6,14 +6,14 @@ mod engine;
 mod render;
 
 use crate::engine::animation::wait;
-use crate::engine::node::{Circle, CodeNode, Line, MathNode, PathNode, Rect, TextNode};
+use crate::engine::nodes::{Circle, CodeNode, ImageNode, Line, MathNode, PathNode, Rect, TextNode};
 use crate::engine::project::Project;
 use crate::engine::{easings, Vec2};
 
 fn main() -> anyhow::Result<()> {
     // 1. Initialize Project with full API coverage
     let mut project = Project::new(800, 600)
-        .with_fps(120)
+        .with_fps(30)
         .with_cache(true)
         .with_ffmpeg(true)
         .with_output_path("output")
@@ -61,6 +61,12 @@ fn main() -> anyhow::Result<()> {
         30.0,
         Color::rgb8(255, 255, 100),
     );
+
+    let logo = ImageNode::new(
+        Vec2::new(600.0, 50.0),
+        "./examples/images/motion-canvas-logo.png",
+    )
+    .with_size(Vec2::new(150.0, 150.0));
 
     // Clone signals for use in closures to avoid partial moves
     let bg_size = background_rect.size.clone();
@@ -118,6 +124,9 @@ fn main() -> anyhow::Result<()> {
                 text_pos
                     .to(Vec2::new(100.0, 50.0), Duration::from_secs(1))
                     .ease(easings::cubic_out),
+                logo.position
+                    .to(Vec2::new(600.0, 80.0), Duration::from_secs(1))
+                    .ease(easings::elastic_out),
             ]
         ]
     ]);
@@ -130,8 +139,9 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(Box::new(title_text));
     project.scene.add(Box::new(code_block));
     project.scene.add(Box::new(math_eq));
+    project.scene.add(Box::new(logo));
 
     // 5. Run (Choose show() for interactive or export() for PNGs)
-    // project.show()
-    project.export()
+    project.show()
+    // project.export()
 }

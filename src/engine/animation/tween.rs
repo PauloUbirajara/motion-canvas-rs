@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use glam::Vec2;
 use vello::peniko::Color;
 use crate::engine::animation::base::Animation;
-use crate::engine::node::{PathData, PathNode};
+use crate::engine::nodes::{PathData, PathNode};
 
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
