@@ -1,10 +1,10 @@
-use std::time::{Duration, Instant};
-use vello::peniko::Color;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
+use std::time::{Duration, Instant};
+use vello::peniko::Color;
 
 mod engine;
 mod render;
@@ -19,21 +19,25 @@ fn main() -> anyhow::Result<()> {
         .with_inner_size(winit::dpi::LogicalSize::new(800, 600))
         .build(&event_loop)?;
 
-    // Shared static reference to satisfy 'static bound
     let window: &'static winit::window::Window = Box::leak(Box::new(window));
 
     let mut renderer = VelloRenderer::new();
     pollster::block_on(renderer.resume(window));
 
     let mut scene = BaseScene::new();
-
-    let mut circle = Box::new(Circle {
-        position: Signal::new(glam::vec2(400.0, 300.0)),
+    
+    let circle = Box::new(Circle {
+        position: Signal::new(glam::vec2(100.0, 100.0)),
         radius: Signal::new(50.0),
         fill: Color::rgb8(32, 178, 170),
     });
 
-    circle.radius.to(150.0, Duration::from_secs(2));
+    // Use all() to run animations in parallel
+    scene.timeline.add(animation::all(vec![
+        circle.radius.to(150.0, Duration::from_secs(2)),
+        circle.position.to(glam::vec2(400.0, 300.0), Duration::from_secs(2)),
+    ]));
+
     scene.add(circle);
 
     let mut last_update = Instant::now();
