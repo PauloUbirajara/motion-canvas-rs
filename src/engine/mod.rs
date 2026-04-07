@@ -1,11 +1,11 @@
-pub mod node;
-pub mod scene;
 pub mod animation;
-pub mod easings;
+pub mod node;
 pub mod project;
+pub mod scene;
+pub mod easings;
 
+pub use animation::*;
 pub use node::*;
+pub use project::*;
 pub use scene::*;
-pub use animation::{Animation, all, any};
-pub use easings as easing;
-pub use project::Project;
+pub use easings::*;

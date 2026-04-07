@@ -1,5 +1,5 @@
 use vello::Scene;
-use crate::engine::node::Node;
+use crate::engine::animation::Node;
 
 pub trait Scene2D {
     fn render(&self, scene: &mut Scene);
