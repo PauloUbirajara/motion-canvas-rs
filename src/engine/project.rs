@@ -7,12 +7,17 @@ use winit::{
     window::WindowBuilder,
 };
 use std::time::{Duration, Instant};
+use std::path::PathBuf;
 
 pub struct Project {
     pub scene: BaseScene,
     pub width: u32,
     pub height: u32,
     pub fps: u32,
+    pub window_title: String,
+    pub output_path: PathBuf,
+    pub frame_template: String,
+    pub export_enabled: bool,
 }
 
 impl Project {
@@ -22,14 +27,43 @@ impl Project {
             width,
             height,
             fps: 60,
+            window_title: "Motion Canvas RS".to_string(),
+            output_path: PathBuf::from("output"),
+            frame_template: "frame_{:04}.png".to_string(),
+            export_enabled: false,
         }
+    }
+
+    pub fn with_title(mut self, title: &str) -> Self {
+        self.window_title = title.to_string();
+        self
+    }
+
+    pub fn with_output_path(mut self, path: &str) -> Self {
+        self.output_path = PathBuf::from(path);
+        self
+    }
+
+    pub fn with_fps(mut self, fps: u32) -> Self {
+        self.fps = fps;
+        self
+    }
+
+    pub fn with_frame_template(mut self, template: &str) -> Self {
+        self.frame_template = template.to_string();
+        self
+    }
+
+    pub fn with_export(mut self, enabled: bool) -> Self {
+        self.export_enabled = enabled;
+        self
     }
 
     pub fn run(mut self) -> anyhow::Result<()> {
         let args: Vec<String> = std::env::args().collect();
-        let export_mode = args.contains(&"--export".to_string());
+        let cli_export = args.contains(&"--export".to_string());
 
-        if export_mode {
+        if self.export_enabled || cli_export {
             self.export()
         } else {
             self.show()
@@ -37,35 +71,39 @@ impl Project {
     }
 
     fn export(&mut self) -> anyhow::Result<()> {
-        println!("Exporting PNG sequence ({}x{} @ {}fps)...", self.width, self.height, self.fps);
+        println!("Exporting sequence ({}x{} @ {}fps) to {:?}...", 
+            self.width, self.height, self.fps, self.output_path);
+        
         let mut exporter = Exporter::new(self.width, self.height);
         let duration_secs = 2; // TODO: Calculate from timeline
         let total_frames = self.fps * duration_secs;
         let dt = Duration::from_secs_f32(1.0 / self.fps as f32);
 
-        std::fs::create_dir_all("output")?;
+        std::fs::create_dir_all(&self.output_path)?;
 
         for i in 0..total_frames {
-            let path = format!("output/frame_{:04}.png", i);
-            exporter.export_frame(&self.scene, std::path::Path::new(&path));
+            // Very basic template replacement - just replaces {} with index
+            let filename = self.frame_template.replace("{:04}", &format!("{:04}", i));
+            let path = self.output_path.join(filename);
+            
+            exporter.export_frame(&self.scene, &path);
             Scene2D::update(&mut self.scene, dt);
+            
             if i % 10 == 0 {
                 println!("Progress: {}/{}", i, total_frames);
             }
         }
-        println!("Export finished! Check the 'output' directory.");
+        println!("Export finished! Check the {:?} directory.", self.output_path);
         Ok(())
     }
 
     fn show(mut self) -> anyhow::Result<()> {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
-            .with_title("Motion Canvas RS")
+            .with_title(&self.window_title)
             .with_inner_size(winit::dpi::LogicalSize::new(self.width as f64, self.height as f64))
             .build(&event_loop)?;
 
-        // Safety: We leak the window to keep it alive for the duration of the app.
-        // This is a common pattern in winit 0.29 for 'static lifetime requirements.
         let window: &'static winit::window::Window = Box::leak(Box::new(window));
         let mut renderer = VelloRenderer::new();
         pollster::block_on(renderer.resume(window));
