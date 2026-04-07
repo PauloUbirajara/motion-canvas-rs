@@ -57,6 +57,7 @@ The project includes several formal examples covering different features. You ca
 | **Math & Code** | `cargo run --example math_code` | Typst LaTeX and Syntax Highlighting. |
 | **Images** | `cargo run --example images` | Bitmap image support and transformations. |
 | **Advanced Flow** | `cargo run --example advanced_flow` | Complex staggered and sequential animations. |
+| **Export** | `cargo run --example export` | Video export with color and font-size animations. |
 
 ## Requirements
 
