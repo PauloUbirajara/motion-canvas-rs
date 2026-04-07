@@ -1,5 +1,4 @@
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
 
 pub trait Animation: Send + Sync {
     /// Update animation. Return true if finished.
@@ -56,7 +55,9 @@ pub struct Timeline {
 
 impl Timeline {
     pub fn new() -> Self {
-        Self { animations: Vec::new() }
+        Self {
+            animations: Vec::new(),
+        }
     }
 
     pub fn add(&mut self, anim: Box<dyn Animation>) {

@@ -4,6 +4,7 @@ use vello::{
 };
 use winit::window::Window;
 
+pub mod export;
 pub struct VelloRenderer<'a> {
     context: RenderContext,
     surface: Option<RenderSurface<'a>>,
