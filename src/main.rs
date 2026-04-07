@@ -9,13 +9,11 @@ use crate::engine::*;
 fn main() -> anyhow::Result<()> {
     // 1. Initialize Project with dimensions and extra settings
     let mut project = Project::new(800, 600)
-        .with_title("Dynamic Export Demo")
-        .with_output_path("renders/final")
-        .with_fps(30) // Lower FPS for faster demo export
-        .with_frame_template("img_{:04}.png") // Custom naming
-        .with_export(true); // Enable export via code
+        .with_title("Dedicated API Demo")
+        .with_output_path("renders/seq")
+        .with_fps(60);
 
-    // 2. Create nodes (like Motion Canvas)
+    // 2. Create nodes
     let circle = Box::new(Circle {
         position: Signal::new(glam::vec2(100.0, 100.0)),
         radius: Signal::new(50.0),
@@ -51,6 +49,7 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(circle);
     project.scene.add(rect);
 
-    // 5. Run (automatic detection of --export OR code-enabled export)
-    project.run()
+    // 5. Choose your mode: project.show() for preview, project.export() for PNGs
+    // project.export()
+    project.show()
 }

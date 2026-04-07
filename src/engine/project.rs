@@ -17,7 +17,6 @@ pub struct Project {
     pub window_title: String,
     pub output_path: PathBuf,
     pub frame_template: String,
-    pub export_enabled: bool,
 }
 
 impl Project {
@@ -30,7 +29,6 @@ impl Project {
             window_title: "Motion Canvas RS".to_string(),
             output_path: PathBuf::from("output"),
             frame_template: "frame_{:04}.png".to_string(),
-            export_enabled: false,
         }
     }
 
@@ -54,23 +52,7 @@ impl Project {
         self
     }
 
-    pub fn with_export(mut self, enabled: bool) -> Self {
-        self.export_enabled = enabled;
-        self
-    }
-
-    pub fn run(mut self) -> anyhow::Result<()> {
-        let args: Vec<String> = std::env::args().collect();
-        let cli_export = args.contains(&"--export".to_string());
-
-        if self.export_enabled || cli_export {
-            self.export()
-        } else {
-            self.show()
-        }
-    }
-
-    fn export(&mut self) -> anyhow::Result<()> {
+    pub fn export(&mut self) -> anyhow::Result<()> {
         println!("Exporting sequence ({}x{} @ {}fps) to {:?}...", 
             self.width, self.height, self.fps, self.output_path);
         
@@ -82,7 +64,6 @@ impl Project {
         std::fs::create_dir_all(&self.output_path)?;
 
         for i in 0..total_frames {
-            // Very basic template replacement - just replaces {} with index
             let filename = self.frame_template.replace("{:04}", &format!("{:04}", i));
             let path = self.output_path.join(filename);
             
@@ -97,7 +78,7 @@ impl Project {
         Ok(())
     }
 
-    fn show(mut self) -> anyhow::Result<()> {
+    pub fn show(mut self) -> anyhow::Result<()> {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
             .with_title(&self.window_title)

@@ -6,6 +6,6 @@ pub mod project;
 
 pub use node::*;
 pub use scene::*;
-pub use animation::{Animation, All, Any, Timeline, all, any, lerp};
+pub use animation::{Animation, all, any};
 pub use easings as easing;
 pub use project::Project;
