@@ -13,6 +13,7 @@ pub struct FontData {
 
 lazy_static! {
     static ref FONT_CACHE: Mutex<HashMap<String, Arc<FontData>>> = Mutex::new(HashMap::new());
+    static ref FONT_WARNINGS: Mutex<HashMap<String, bool>> = Mutex::new(HashMap::new());
 }
 
 pub struct FontManager;
@@ -27,9 +28,8 @@ impl FontManager {
 
         // Search system fonts
         let source = SystemSource::new();
-        if let Ok(handle) =
-            source.select_best_match(&[FamilyName::Title(family.to_string())], &Properties::new())
-        {
+        let family_names = [FamilyName::Title(family.to_string())];
+        if let Ok(handle) = source.select_best_match(&family_names, &Properties::new()) {
             if let Ok(font) = handle.load() {
                 if let Some(data) = font.copy_font_data() {
                     let font_data = Arc::new(FontData {
@@ -42,6 +42,51 @@ impl FontManager {
             }
         }
 
+        None
+    }
+
+    pub fn get_font_with_fallback(families: &[&str]) -> Option<Arc<FontData>> {
+        let primary = families.first().map(|f| f.to_string()).unwrap_or_else(|| "Unknown".to_string());
+        
+        for &family in families {
+            if let Some(font) = Self::get_font(family) {
+                if family != primary {
+                    let mut warnings = FONT_WARNINGS.lock().unwrap();
+                    if !warnings.contains_key(&primary) {
+                        eprintln!("Warning: Font '{}' not found. Falling back to '{}'.", primary, family);
+                        warnings.insert(primary.clone(), true);
+                    }
+                }
+                return Some(font);
+            }
+        }
+        
+        // Final attempt at generic sans-serif
+        let source = SystemSource::new();
+        let generic_fallbacks = [
+            (FamilyName::SansSerif, "Sans-Serif"),
+            (FamilyName::Monospace, "Monospace"),
+            (FamilyName::Serif, "Serif"),
+        ];
+        
+        for (generic, name) in generic_fallbacks {
+            if let Ok(handle) = source.select_best_match(&[generic], &Properties::new()) {
+                 if let Ok(font) = handle.load() {
+                    if let Some(data) = font.copy_font_data() {
+                        let mut warnings = FONT_WARNINGS.lock().unwrap();
+                        if !warnings.contains_key(&primary) {
+                            eprintln!("Warning: Font '{}' not found. Falling back to system '{}'.", primary, name);
+                            warnings.insert(primary.clone(), true);
+                        }
+                        return Some(Arc::new(FontData {
+                            name: name.to_string(),
+                            data: (*data).clone(),
+                        }));
+                    }
+                }
+            }
+        }
+        
         None
     }
 

@@ -10,7 +10,7 @@ use syntect::parsing::SyntaxSet;
 use syntect::highlighting::{ThemeSet};
 use syntect::easy::HighlightLines;
 use skrifa::MetadataProvider;
-use skrifa::instance::Size;
+use skrifa::instance::{Size, LocationRef};
 
 pub struct Circle {
     pub position: Signal<Vec2>,
@@ -264,7 +264,7 @@ impl Node for TextNode {
         let text = self.text.data.lock().unwrap().value.clone();
         let size = self.font_size.data.lock().unwrap().value;
         let color = self.color.data.lock().unwrap().value;
-        if let Some(font_data) = FontManager::get_font(&self.font_family) {
+        if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Inter", "Arial", "sans-serif"]) {
             let font_ref = FontManager::get_font_ref(&font_data);
             let charmap = font_ref.charmap();
             let outlines = font_ref.outline_glyphs();
@@ -273,13 +273,22 @@ impl Node for TextNode {
             for c in text.chars() {
                 let glyph_id = charmap.map(c).unwrap_or_default();
                 let mut pb = BezPath::new();
+                let mut advance = (size * 0.6) as f64; // Fallback
+                
                 if let Some(glyph) = outlines.get(glyph_id) {
                     let mut sink = PathSink(&mut pb);
-                    let _ = glyph.draw(Size::new(size), &mut sink);
+                    let font_size = Size::new(size);
+                    let _ = glyph.draw(font_size, &mut sink);
+                    
+                    if let Some(metrics) = font_ref.glyph_metrics(font_size, LocationRef::default()).advance_width(glyph_id) {
+                        advance = metrics as f64;
+                    }
                 }
-                let transform = Affine::translate((pos.x as f64 + x_offset, pos.y as f64 + size as f64));
+                
+                let transform = Affine::translate((pos.x as f64 + x_offset, pos.y as f64 + size as f64))
+                    * Affine::scale_non_uniform(1.0, -1.0);
                 scene.fill(Fill::NonZero, transform, &brush, None, &pb);
-                x_offset += (size * 0.6) as f64;
+                x_offset += advance;
             }
         }
     }
@@ -322,7 +331,7 @@ impl Node for CodeNode {
         let syntax = ss.find_syntax_by_extension(&self.language).unwrap_or_else(|| ss.find_syntax_plain_text());
         let mut h = HighlightLines::new(syntax, &ts.themes[&self.theme]);
         let mut y_offset = 0.0;
-        if let Some(font_data) = FontManager::get_font(&self.font_family) {
+        if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Fira Code", "Courier New", "monospace"]) {
             let font_ref = FontManager::get_font_ref(&font_data);
             let charmap = font_ref.charmap();
             let outlines = font_ref.outline_glyphs();
@@ -335,13 +344,22 @@ impl Node for CodeNode {
                     for c in text.chars() {
                         let glyph_id = charmap.map(c).unwrap_or_default();
                         let mut pb = BezPath::new();
+                        let mut advance = (size * 0.6) as f64;
+                        
                         if let Some(glyph) = outlines.get(glyph_id) {
                             let mut sink = PathSink(&mut pb);
-                            let _ = glyph.draw(Size::new(size), &mut sink);
+                            let font_size = Size::new(size);
+                            let _ = glyph.draw(font_size, &mut sink);
+                            
+                            if let Some(metrics) = font_ref.glyph_metrics(font_size, LocationRef::default()).advance_width(glyph_id) {
+                                advance = metrics as f64;
+                            }
                         }
-                        let transform = Affine::translate((pos.x as f64 + x_offset, pos.y as f64 + y_offset + size as f64));
+                        
+                        let transform = Affine::translate((pos.x as f64 + x_offset, pos.y as f64 + y_offset + size as f64))
+                            * Affine::scale_non_uniform(1.0, -1.0);
                         scene.fill(Fill::NonZero, transform, &brush, None, &pb);
-                        x_offset += (size * 0.6) as f64;
+                        x_offset += advance;
                     }
                 }
                 y_offset += (size * 1.2) as f64;
@@ -396,8 +414,8 @@ impl Node for MathNode {
                                 }
                                 let transform = Affine::translate((
                                     pos.x as f64 + p.x.to_pt() + glyph.x_offset.at(text.size).to_pt(), 
-                                    pos.y as f64 + p.y.to_pt() + glyph.y_offset.at(text.size).to_pt()
-                                ));
+                                    pos.y as f64 + p.y.to_pt() + glyph.y_offset.at(text.size).to_pt() + text.size.to_pt() // Adjust for flip
+                                )) * Affine::scale_non_uniform(1.0, -1.0);
                                 scene.fill(Fill::NonZero, transform, &brush, None, &pb);
                             }
                         }
