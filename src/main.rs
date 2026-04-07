@@ -15,6 +15,7 @@ fn main() -> anyhow::Result<()> {
     let mut project = Project::new(800, 600)
         .with_fps(30)
         .with_cache(true)
+        .with_ffmpeg(true)
         .with_output_path("output")
         .with_frame_template("frame_{:04}.png")
         .with_title("Motion Canvas Rust - Demo");

@@ -3,7 +3,6 @@ use std::path::Path;
 use vello::wgpu;
 use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
 
-#[allow(dead_code)]
 pub struct Exporter {
     width: u32,
     height: u32,
@@ -11,6 +10,12 @@ pub struct Exporter {
     device_id: usize,
     renderer: Renderer,
     scene: Scene,
+    // Cached resources for export
+    texture: wgpu::Texture,
+    texture_view: wgpu::TextureView,
+    output_buffer: wgpu::Buffer,
+    bytes_per_row: u32,
+    unaligned_bytes_per_row: u32,
 }
 
 impl Exporter {
@@ -18,9 +23,10 @@ impl Exporter {
         let mut context = RenderContext::new();
         let device_id = pollster::block_on(context.device(None)).unwrap();
         let device_handle = &context.devices[device_id];
+        let device = &device_handle.device;
 
         let renderer = Renderer::new(
-            &device_handle.device,
+            device,
             RendererOptions {
                 surface_format: None,
                 use_cpu: false,
@@ -30,27 +36,12 @@ impl Exporter {
         )
         .unwrap();
 
-        Self {
-            width,
-            height,
-            context,
-            device_id,
-            renderer,
-            scene: Scene::new(),
-        }
-    }
-
-    pub fn export_frame(&mut self, scene_2d: &dyn crate::engine::scene::Scene2D, path: &Path) {
-        let device_handle = &self.context.devices[self.device_id];
-        let device = &device_handle.device;
-        let queue = &device_handle.queue;
-
-        // 1. Create a texture to render into
+        // Pre-allocate texture
         let texture_desc = wgpu::TextureDescriptor {
             label: Some("Export Texture"),
             size: wgpu::Extent3d {
-                width: self.width,
-                height: self.height,
+                width,
+                height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -63,7 +54,43 @@ impl Exporter {
         let texture = device.create_texture(&texture_desc);
         let texture_view = texture.create_view(&Default::default());
 
-        // 2. Render the scene
+        // Pre-calculate alignment
+        let u32_size = std::mem::size_of::<u32>() as u32;
+        let unaligned_bytes_per_row = width * u32_size;
+        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let padding = (align - unaligned_bytes_per_row % align) % align;
+        let bytes_per_row = unaligned_bytes_per_row + padding;
+
+        let output_buffer_desc = wgpu::BufferDescriptor {
+            size: (bytes_per_row * height) as wgpu::BufferAddress,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            label: Some("Export Buffer"),
+            mapped_at_creation: false,
+        };
+        let output_buffer = device.create_buffer(&output_buffer_desc);
+
+        Self {
+            width,
+            height,
+            context,
+            device_id,
+            renderer,
+            scene: Scene::new(),
+            texture,
+            texture_view,
+            output_buffer,
+            bytes_per_row,
+            unaligned_bytes_per_row,
+        }
+    }
+
+    /// Renders a frame and returns the raw RGBA pixels.
+    pub fn export_frame(&mut self, scene_2d: &dyn crate::engine::scene::Scene2D) -> Vec<u8> {
+        let device_handle = &self.context.devices[self.device_id];
+        let device = &device_handle.device;
+        let queue = &device_handle.queue;
+
+        // 1. Render the scene
         self.scene.reset();
         scene_2d.render(&mut self.scene);
 
@@ -72,7 +99,7 @@ impl Exporter {
                 device,
                 queue,
                 &self.scene,
-                &texture_view,
+                &self.texture_view,
                 &vello::RenderParams {
                     base_color: vello::peniko::Color::BLACK,
                     width: self.width,
@@ -82,63 +109,50 @@ impl Exporter {
             )
             .unwrap();
 
-        // 3. Copy texture to buffer (with alignment)
-        let u32_size = std::mem::size_of::<u32>() as u32;
-        let unaligned_bytes_per_row = self.width * u32_size;
-        let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        let padding = (align - unaligned_bytes_per_row % align) % align;
-        let bytes_per_row = unaligned_bytes_per_row + padding;
-
-        let output_buffer_desc = wgpu::BufferDescriptor {
-            size: (bytes_per_row * self.height) as wgpu::BufferAddress,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            label: Some("Export Buffer"),
-            mapped_at_creation: false,
-        };
-        let output_buffer = device.create_buffer(&output_buffer_desc);
-
+        // 2. Copy texture to buffer
         let mut encoder = device.create_command_encoder(&Default::default());
         encoder.copy_texture_to_buffer(
             wgpu::ImageCopyTexture {
                 aspect: wgpu::TextureAspect::All,
-                texture: &texture,
+                texture: &self.texture,
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
             },
             wgpu::ImageCopyBuffer {
-                buffer: &output_buffer,
+                buffer: &self.output_buffer,
                 layout: wgpu::ImageDataLayout {
                     offset: 0,
-                    bytes_per_row: Some(bytes_per_row),
+                    bytes_per_row: Some(self.bytes_per_row),
                     rows_per_image: Some(self.height),
                 },
             },
-            texture_desc.size,
+            wgpu::Extent3d {
+                width: self.width,
+                height: self.height,
+                depth_or_array_layers: 1,
+            },
         );
         queue.submit(Some(encoder.finish()));
 
-        // 4. Map buffer and save image
-        let buffer_slice = output_buffer.slice(..);
+        // 3. Map buffer and extract pixels
+        let buffer_slice = self.output_buffer.slice(..);
         let (tx, rx) = std::sync::mpsc::channel();
         buffer_slice.map_async(wgpu::MapMode::Read, move |res| tx.send(res).unwrap());
         device.poll(wgpu::Maintain::Wait);
         rx.recv().unwrap().unwrap();
 
         let data = buffer_slice.get_mapped_range();
-
-        // Remove padding when creating the ImageBuffer
-        let mut png_data = Vec::with_capacity((self.width * self.height * 4) as usize);
+        
+        let mut pixels = Vec::with_capacity((self.width * self.height * 4) as usize);
         for row in 0..self.height {
-            let start = (row * bytes_per_row) as usize;
-            let end = start + unaligned_bytes_per_row as usize;
-            png_data.extend_from_slice(&data[start..end]);
+            let start = (row * self.bytes_per_row) as usize;
+            let end = start + self.unaligned_bytes_per_row as usize;
+            pixels.extend_from_slice(&data[start..end]);
         }
 
-        let buffer: ImageBuffer<Rgba<u8>, _> =
-            ImageBuffer::from_raw(self.width, self.height, png_data).unwrap();
-        buffer.save(path).unwrap();
-
         drop(data);
-        output_buffer.unmap();
+        self.output_buffer.unmap();
+        
+        pixels
     }
 }

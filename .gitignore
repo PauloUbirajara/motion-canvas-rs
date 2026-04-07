@@ -1,3 +1,6 @@
 /target
 output/
 .motion_canvas_cache
+output/
+*.mp4
+*.mkv
