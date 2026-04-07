@@ -4,19 +4,29 @@ use crate::engine::animation::base::Animation;
 // --- All (Parallel) ---
 pub struct All {
     animations: Vec<Box<dyn Animation>>,
+    finished: Vec<bool>,
 }
 
 impl All {
     pub fn new(animations: Vec<Box<dyn Animation>>) -> Self {
-        Self { animations }
+        let len = animations.len();
+        Self { 
+            animations,
+            finished: vec![false; len],
+        }
     }
 }
 
 impl Animation for All {
     fn update(&mut self, dt: Duration) -> bool {
         let mut all_finished = true;
-        for anim in &mut self.animations {
-            if !anim.update(dt) {
+        for i in 0..self.animations.len() {
+            if self.finished[i] {
+                continue;
+            }
+            if self.animations[i].update(dt) {
+                self.finished[i] = true;
+            } else {
                 all_finished = false;
             }
         }
@@ -124,17 +134,23 @@ impl Animation for Delay {
 // --- Sequence (Staggered Parallel) ---
 pub struct Sequence {
     items: Vec<(Duration, Box<dyn Animation>)>,
+    finished: Vec<bool>,
     elapsed: Duration,
 }
 
 impl Sequence {
     pub fn new(stagger: Duration, animations: Vec<Box<dyn Animation>>) -> Self {
+        let len = animations.len();
         let items = animations
             .into_iter()
             .enumerate()
             .map(|(i, anim)| (stagger * i as u32, anim))
             .collect();
-        Self { items, elapsed: Duration::ZERO }
+        Self { 
+            items,
+            finished: vec![false; len],
+            elapsed: Duration::ZERO 
+        }
     }
 }
 
@@ -142,9 +158,15 @@ impl Animation for Sequence {
     fn update(&mut self, dt: Duration) -> bool {
         self.elapsed += dt;
         let mut all_finished = true;
-        for (start_time, anim) in &mut self.items {
+        for i in 0..self.items.len() {
+            if self.finished[i] {
+                continue;
+            }
+            let (start_time, anim) = &mut self.items[i];
             if self.elapsed >= *start_time {
-                if !anim.update(dt) {
+                if anim.update(dt) {
+                    self.finished[i] = true;
+                } else {
                     all_finished = false;
                 }
             } else {

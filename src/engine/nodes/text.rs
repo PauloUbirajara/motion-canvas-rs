@@ -7,14 +7,24 @@ use vello::kurbo::{Affine, BezPath};
 use std::time::Duration;
 use skrifa::MetadataProvider;
 use skrifa::instance::{Size, LocationRef};
+use std::sync::Mutex;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
+struct TextCache {
+    text: String,
+    font_size: f32,
+    font_family: String,
+    color: Color,
+    paths: Vec<(Affine, Color, BezPath)>,
+}
+
 pub struct TextNode {
     pub position: Signal<Vec2>,
     pub text: Signal<String>,
     pub font_size: Signal<f32>,
     pub color: Signal<Color>,
     pub font_family: String,
+    cache: Mutex<Option<TextCache>>,
 }
 
 impl TextNode {
@@ -25,12 +35,26 @@ impl TextNode {
             font_size: Signal::new(size),
             color: Signal::new(color),
             font_family: "Inter".to_string(),
+            cache: Mutex::new(None),
         }
     }
 
     pub fn with_font(mut self, family: &str) -> Self {
         self.font_family = family.to_string();
         self
+    }
+}
+
+impl Clone for TextNode {
+    fn clone(&self) -> Self {
+        Self {
+            position: self.position.clone(),
+            text: self.text.clone(),
+            font_size: self.font_size.clone(),
+            color: self.color.clone(),
+            font_family: self.font_family.clone(),
+            cache: Mutex::new(None),
+        }
     }
 }
 
@@ -51,31 +75,52 @@ impl Node for TextNode {
         let color = self.color.data.lock().unwrap().value;
         let pos = self.position.data.lock().unwrap().value;
 
-        if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Inter", "Arial", "sans-serif"]) {
-            let font_ref = FontManager::get_font_ref(&font_data);
-            let charmap = font_ref.charmap();
-            let outlines = font_ref.outline_glyphs();
-            let brush = Brush::Solid(color);
-            let mut x_offset = 0.0;
-            for c in text.chars() {
-                let glyph_id = charmap.map(c).unwrap_or_default();
-                let mut pb = BezPath::new();
-                let mut advance = (size * 0.6) as f64; // Fallback
+        let mut cache = self.cache.lock().unwrap();
+        let needs_rebuild = cache.as_ref().map_or(true, |c| {
+            c.text != text || c.font_size != size || c.font_family != self.font_family || c.color != color
+        });
+
+        if needs_rebuild {
+            let mut paths = Vec::new();
+            if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Inter", "Arial", "sans-serif"]) {
+                let font_ref = FontManager::get_font_ref(&font_data);
+                let charmap = font_ref.charmap();
+                let outlines = font_ref.outline_glyphs();
+                let mut x_offset = 0.0;
                 
-                if let Some(glyph) = outlines.get(glyph_id) {
-                    let mut sink = PathSink(&mut pb);
-                    let font_size = Size::new(size);
-                    let _ = glyph.draw(font_size, &mut sink);
+                for c in text.chars() {
+                    let glyph_id = charmap.map(c).unwrap_or_default();
+                    let mut pb = BezPath::new();
+                    let mut advance = (size * 0.6) as f64;
                     
-                    if let Some(metrics) = font_ref.glyph_metrics(font_size, LocationRef::default()).advance_width(glyph_id) {
-                        advance = metrics as f64;
+                    if let Some(glyph) = outlines.get(glyph_id) {
+                        let mut sink = PathSink(&mut pb);
+                        let font_size = Size::new(size);
+                        let _ = glyph.draw(font_size, &mut sink);
+                        
+                        if let Some(metrics) = font_ref.glyph_metrics(font_size, LocationRef::default()).advance_width(glyph_id) {
+                            advance = metrics as f64;
+                        }
                     }
+                    
+                    let base_transform = Affine::translate((x_offset, size as f64)) * Affine::scale_non_uniform(1.0, -1.0);
+                    paths.push((base_transform, color, pb));
+                    x_offset += advance;
                 }
-                
-                let transform = Affine::translate((pos.x as f64 + x_offset, pos.y as f64 + size as f64))
-                    * Affine::scale_non_uniform(1.0, -1.0);
-                scene.fill(Fill::NonZero, transform, &brush, None, &pb);
-                x_offset += advance;
+            }
+            *cache = Some(TextCache {
+                text: text.clone(),
+                font_size: size,
+                font_family: self.font_family.clone(),
+                color,
+                paths,
+            });
+        }
+
+        if let Some(c) = cache.as_ref() {
+            let root_transform = Affine::translate((pos.x as f64, pos.y as f64));
+            for (local_transform, path_color, pb) in &c.paths {
+                scene.fill(Fill::NonZero, root_transform * *local_transform, &Brush::Solid(*path_color), None, pb);
             }
         }
     }
