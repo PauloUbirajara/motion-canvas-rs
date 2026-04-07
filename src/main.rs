@@ -6,14 +6,14 @@ mod engine;
 mod render;
 
 use crate::engine::animation::wait;
-use crate::engine::node::{Circle, Line, PathNode, Rect};
+use crate::engine::node::{Circle, CodeNode, Line, MathNode, PathNode, Rect, TextNode};
 use crate::engine::project::Project;
 use crate::engine::{easings, Vec2};
 
 fn main() -> anyhow::Result<()> {
     // 1. Initialize Project with full API coverage
     let mut project = Project::new(800, 600)
-        .with_fps(30)
+        .with_fps(120)
         .with_cache(true)
         .with_ffmpeg(true)
         .with_output_path("output")
@@ -41,10 +41,31 @@ fn main() -> anyhow::Result<()> {
         Color::rgb8(80, 80, 80),
         1.0,
     );
+    let title_text = TextNode::new(
+        Vec2::new(50.0, 50.0),
+        "Motion Canvas in Rust",
+        40.0,
+        Color::rgb8(200, 200, 255),
+    )
+    .with_font("Inter");
+
+    let code_block = CodeNode::new(
+        Vec2::new(50.0, 400.0),
+        "fn main() {\n    let mut engine = MotionCanvas::new();\n    engine.render();\n}",
+        "rust",
+    );
+
+    let math_eq = MathNode::new(
+        Vec2::new(50.0, 200.0),
+        "e^{i\\pi} + 1 = 0",
+        30.0,
+        Color::rgb8(255, 255, 100),
+    );
 
     // Clone signals for use in closures to avoid partial moves
     let bg_size = background_rect.size.clone();
     let bg_pos = background_rect.position.clone();
+    let text_pos = title_text.position.clone();
 
     // 3. Define the Animation "Super Sequence"
     project.scene.timeline.add(all![
@@ -94,6 +115,9 @@ fn main() -> anyhow::Result<()> {
                         .to(Vec2::new(400.0, 280.0), Duration::from_secs(1))
                         .ease(easings::elastic_in)
                 ],
+                text_pos
+                    .to(Vec2::new(100.0, 50.0), Duration::from_secs(1))
+                    .ease(easings::cubic_out),
             ]
         ]
     ]);
@@ -103,6 +127,9 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(Box::new(divider_line));
     project.scene.add(Box::new(path_node));
     project.scene.add(Box::new(follower));
+    project.scene.add(Box::new(title_text));
+    project.scene.add(Box::new(code_block));
+    project.scene.add(Box::new(math_eq));
 
     // 5. Run (Choose show() for interactive or export() for PNGs)
     // project.show()

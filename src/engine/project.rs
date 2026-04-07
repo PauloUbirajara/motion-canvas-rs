@@ -1,11 +1,11 @@
-use std::path::PathBuf;
-use crate::render::AnimationWindow;
 use crate::engine::scene::{BaseScene, Scene2D};
-use std::fs;
+use crate::render::AnimationWindow;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::Path;
+use std::fs;
 use std::io::{self, Write};
-use serde::{Serialize, Deserialize};
+use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct CacheManifest {
@@ -101,20 +101,25 @@ impl Project {
             let child = Command::new("ffmpeg")
                 .args([
                     "-y",
-                    "-f", "rawvideo",
-                    "-pixel_format", "rgba",
-                    "-video_size", &format!("{}x{}", width, height),
-                    "-i", "-",
-                    "-c:v", "libx264rgb",
-                    "-crf", "0",
-                    "-preset", "ultrafast",
+                    "-f",
+                    "rawvideo",
+                    "-pixel_format",
+                    "rgba",
+                    "-video_size",
+                    &format!("{}x{}", width, height),
+                    "-framerate",
+                    &self.fps.to_string(),
+                    "-i",
+                    "-",
+                    "-c:v",
+                    "libx264rgb",
                     "out.mkv",
                 ])
                 .stdin(Stdio::piped())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn();
-            
+
             match child {
                 Ok(mut c) => Some(c.stdin.take().unwrap()),
                 Err(e) => {
@@ -135,7 +140,7 @@ impl Project {
                 if frames.len() >= 10 {
                     let batch: Vec<_> = frames.drain(..).collect();
                     batch.into_par_iter().for_each(|(pixels, path)| {
-                        let buffer: image::ImageBuffer<image::Rgba<u8>, _> = 
+                        let buffer: image::ImageBuffer<image::Rgba<u8>, _> =
                             image::ImageBuffer::from_raw(width, height, pixels).unwrap();
                         buffer.save(path).unwrap();
                     });
@@ -143,7 +148,7 @@ impl Project {
             }
             // Final flush
             frames.into_par_iter().for_each(|(pixels, path)| {
-                let buffer: image::ImageBuffer<image::Rgba<u8>, _> = 
+                let buffer: image::ImageBuffer<image::Rgba<u8>, _> =
                     image::ImageBuffer::from_raw(width, height, pixels).unwrap();
                 buffer.save(path).unwrap();
             });
@@ -152,10 +157,15 @@ impl Project {
         // Export until all animations are finished
         loop {
             let hash = self.scene.state_hash();
-            let frame_path = self.output_path.join(format!("frame_{:04}.png", frame_count));
+            let frame_path = self
+                .output_path
+                .join(format!("frame_{:04}.png", frame_count));
 
             // Check cache
-            if self.use_cache && manifest.frames.get(&frame_count) == Some(&hash) && frame_path.exists() {
+            if self.use_cache
+                && manifest.frames.get(&frame_count) == Some(&hash)
+                && frame_path.exists()
+            {
                 skipped_count += 1;
                 // If we are skipping, we still need to feed FFmpeg the frame if it's open
                 if let Some(ref mut stdin) = ffmpeg_process {
@@ -164,18 +174,18 @@ impl Project {
                 }
             } else {
                 let pixels = exporter.export_frame(&self.scene);
-                
+
                 // Write to FFmpeg if active
                 if let Some(ref mut stdin) = ffmpeg_process {
                     stdin.write_all(&pixels)?;
                 }
-                
+
                 // Send to background PNG saver
                 tx.send((pixels, frame_path)).unwrap();
                 manifest.frames.insert(frame_count, hash);
                 rendered_count += 1;
             }
-            
+
             // Progress Bar
             let progress = if total_frames > 0 {
                 (frame_count as f32 / total_frames as f32).min(1.0)
@@ -184,13 +194,20 @@ impl Project {
             };
             let bar_len = 20;
             let filled = (progress * bar_len as f32) as usize;
-            let bar: String = std::iter::repeat('=').take(filled)
+            let bar: String = std::iter::repeat('=')
+                .take(filled)
                 .chain(std::iter::once('>'))
                 .chain(std::iter::repeat(' ').take(bar_len - filled))
                 .collect();
 
-            print!("\r[Exporting] Frame {}/{} [{}] {:.0}% (Skipped {})", 
-                frame_count + 1, total_frames, bar, progress * 100.0, skipped_count);
+            print!(
+                "\r[Exporting] Frame {}/{} [{}] {:.0}% (Skipped {})",
+                frame_count + 1,
+                total_frames,
+                bar,
+                progress * 100.0,
+                skipped_count
+            );
             io::stdout().flush()?;
 
             if self.scene.timeline.finished() {
@@ -213,7 +230,10 @@ impl Project {
             fs::write(cache_file, json)?;
         }
 
-        println!("\nExport finished: {} frames rendered, {} skipped.", rendered_count, skipped_count);
+        println!(
+            "\nExport finished: {} frames rendered, {} skipped.",
+            rendered_count, skipped_count
+        );
         Ok(())
     }
 

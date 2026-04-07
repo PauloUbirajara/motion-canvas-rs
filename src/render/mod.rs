@@ -1,3 +1,5 @@
+use crate::engine::scene::Scene2D;
+use std::time::{Duration, Instant};
 use vello::{
     util::{RenderContext, RenderSurface},
     Renderer, RendererOptions, Scene,
@@ -7,8 +9,6 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
-use std::time::{Duration, Instant};
-use crate::engine::scene::Scene2D;
 
 pub mod export;
 
@@ -33,10 +33,15 @@ impl<'a> VelloRenderer<'a> {
         let size = window.inner_size();
         let surface = self
             .context
-            .create_surface(window, size.width, size.height, vello::wgpu::PresentMode::Fifo)
+            .create_surface(
+                window,
+                size.width,
+                size.height,
+                vello::wgpu::PresentMode::Fifo,
+            )
             .await
             .unwrap();
-        
+
         let device_handle = &self.context.devices[surface.dev_id];
         let renderer = Renderer::new(
             &device_handle.device,
@@ -63,7 +68,7 @@ impl<'a> VelloRenderer<'a> {
                 Ok(t) => t,
                 Err(_) => return, // Surface lost or outdated
             };
-            
+
             renderer
                 .render_to_surface(
                     &device_handle.device,
@@ -78,7 +83,7 @@ impl<'a> VelloRenderer<'a> {
                     },
                 )
                 .unwrap();
-            
+
             surface_texture.present();
         }
     }
@@ -97,7 +102,10 @@ impl AnimationWindow {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
             .with_title(&self.project.title)
-            .with_inner_size(winit::dpi::LogicalSize::new(self.project.width, self.project.height))
+            .with_inner_size(winit::dpi::LogicalSize::new(
+                self.project.width,
+                self.project.height,
+            ))
             .build(&event_loop)?;
 
         // Wrap renderer in an Option so we can create it inside 'resumed' if needed,
@@ -108,14 +116,22 @@ impl AnimationWindow {
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
 
         // Capture window as a reference to avoid lifetime issues with Move
-        let window_ref = unsafe { std::mem::transmute::<&winit::window::Window, &'static winit::window::Window>(&window) };
+        let window_ref = unsafe {
+            std::mem::transmute::<&winit::window::Window, &'static winit::window::Window>(&window)
+        };
 
         event_loop.run(move |event, elwt| {
             elwt.set_control_flow(ControlFlow::Poll);
 
             match event {
-                Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => elwt.exit(),
-                Event::WindowEvent { event: WindowEvent::RedrawRequested, .. } => {
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => elwt.exit(),
+                Event::WindowEvent {
+                    event: WindowEvent::RedrawRequested,
+                    ..
+                } => {
                     renderer.render(&self.project.scene, self.project.width, self.project.height);
                 }
                 Event::AboutToWait => {

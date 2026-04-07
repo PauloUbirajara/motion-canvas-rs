@@ -1,6 +1,7 @@
 use std::time::Duration;
 use std::sync::{Arc, Mutex};
 use glam::Vec2;
+use vello::peniko::Color;
 use crate::engine::animation::base::Animation;
 use crate::engine::node::{PathData, PathNode};
 
@@ -8,19 +9,31 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
 
-pub trait Tweenable: Copy + Send + Sync + 'static {
-    fn interpolate(a: Self, b: Self, t: f32) -> Self;
+pub trait Tweenable: Clone + Send + Sync + 'static {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self;
 }
 
 impl Tweenable for f32 {
-    fn interpolate(a: Self, b: Self, t: f32) -> Self {
-        lerp(a, b, t)
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        lerp(*a, *b, t)
     }
 }
 
 impl Tweenable for Vec2 {
-    fn interpolate(a: Self, b: Self, t: f32) -> Self {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         Vec2::new(lerp(a.x, b.x, t), lerp(a.y, b.y, t))
+    }
+}
+
+impl Tweenable for String {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        if t >= 1.0 { b.clone() } else { a.clone() }
+    }
+}
+
+impl Tweenable for Color {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        if t >= 1.0 { *b } else { *a }
     }
 }
 
@@ -87,12 +100,12 @@ impl<T: Tweenable> Animation for SignalTween<T> {
     fn update(&mut self, dt: Duration) -> bool {
         // Capture start value on first update
         if self.start_value.is_none() {
-            self.start_value = Some(self.data.lock().unwrap().value);
+            self.start_value = Some(self.data.lock().unwrap().value.clone());
         }
 
         if self.duration == Duration::ZERO {
             let mut data = self.data.lock().unwrap();
-            data.value = self.target_value;
+            data.value = self.target_value.clone();
             return true;
         }
 
@@ -100,9 +113,9 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         let t_linear = (self.elapsed.as_secs_f32() / self.duration.as_secs_f32()).min(1.0);
         let t_eased = (self.easing)(t_linear);
         
-        let start = self.start_value.unwrap();
+        let start = self.start_value.as_ref().unwrap();
         let mut data = self.data.lock().unwrap();
-        data.value = T::interpolate(start, self.target_value, t_eased);
+        data.value = T::interpolate(start, &self.target_value, t_eased);
         
         self.elapsed >= self.duration
     }

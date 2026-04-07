@@ -1,5 +1,3 @@
-use image::{ImageBuffer, Rgba};
-use std::path::Path;
 use vello::wgpu;
 use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
 

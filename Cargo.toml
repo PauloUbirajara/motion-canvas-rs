@@ -7,13 +7,15 @@ edition = "2021"
 vello = "0.2.1"
 winit = "0.29"
 glam = "0.25"
-async-trait = "0.1"
-tokio = { version = "1.0", features = ["sync", "time", "rt", "macros"] }
 anyhow = "1.0"
 pollster = "0.3"
-instant = { version = "0.1", features = ["wasm-bindgen"] }
 image = "0.24"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 rayon = "1.11.0"
+font-kit = "0.14.3"
+skrifa = "0.42.0"
+syntect = "5.3.0"
+typst = "0.14.2"
+lazy_static = "1.5.0"
 # Use vello re-exports for peniko and wgpu to avoid version conflicts
