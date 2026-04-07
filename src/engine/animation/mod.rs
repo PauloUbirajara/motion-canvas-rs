@@ -39,7 +39,7 @@ impl Timeline {
 /// Run animations in parallel.
 #[macro_export]
 macro_rules! all {
-    ($($x:expr),*) => {
+    ($($x:expr),* $(,)?) => {
         $crate::engine::animation::flow::all(vec![$(Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($x)),*])
     };
 }
@@ -47,7 +47,7 @@ macro_rules! all {
 /// Run animations in race.
 #[macro_export]
 macro_rules! any {
-    ($($x:expr),*) => {
+    ($($x:expr),* $(,)?) => {
         $crate::engine::animation::flow::any(vec![$(Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($x)),*])
     };
 }
@@ -55,7 +55,7 @@ macro_rules! any {
 /// Run animations sequentially.
 #[macro_export]
 macro_rules! chain {
-    ($($x:expr),*) => {
+    ($($x:expr),* $(,)?) => {
         $crate::engine::animation::flow::chain(vec![$(Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($x)),*])
     };
 }
@@ -63,8 +63,27 @@ macro_rules! chain {
 /// Create a sequence with staggered start times.
 #[macro_export]
 macro_rules! sequence {
-    ($stagger:expr, $($x:expr),*) => {
+    ($stagger:expr, $($x:expr),* $(,)?) => {
         $crate::engine::animation::flow::sequence($stagger, vec![$(Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($x)),*])
+    };
+}
+
+/// Delay an animation.
+#[macro_export]
+macro_rules! delay {
+    ($duration:expr, $inner:expr $(,)?) => {
+        $crate::engine::animation::flow::delay($duration, Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($inner))
+    };
+}
+
+/// Loop an animation factory.
+#[macro_export]
+macro_rules! loop_anim {
+    ($anim:expr, $count:expr $(,)?) => {
+        $crate::engine::animation::flow::loop_anim(
+            Box::new(move || Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($anim)),
+            $count
+        )
     };
 }
 

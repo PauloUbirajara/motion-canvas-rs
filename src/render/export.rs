@@ -3,6 +3,7 @@ use std::path::Path;
 use vello::wgpu;
 use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
 
+#[allow(dead_code)]
 pub struct Exporter {
     width: u32,
     height: u32,

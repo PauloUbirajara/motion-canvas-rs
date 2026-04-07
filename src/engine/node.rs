@@ -1,6 +1,6 @@
 use glam::Vec2;
 use vello::peniko::{Brush, Color, Fill};
-use vello::kurbo::{BezPath, PathEl, Shape, Stroke, Affine, Line as KurboLine, Circle as KurboCircle, RoundedRect as KurboRoundedRect};
+use vello::kurbo::{BezPath, PathEl, Stroke, Affine, Line as KurboLine, Circle as KurboCircle, RoundedRect as KurboRoundedRect};
 use std::sync::Arc;
 use vello::Scene;
 use std::time::Duration;
@@ -10,6 +10,16 @@ pub struct Circle {
     pub position: Signal<Vec2>,
     pub radius: Signal<f32>,
     pub fill: Color,
+}
+
+impl Circle {
+    pub fn new(position: Vec2, radius: f32, fill: Color) -> Self {
+        Self {
+            position: Signal::new(position),
+            radius: Signal::new(radius),
+            fill,
+        }
+    }
 }
 
 impl Node for Circle {
@@ -51,6 +61,22 @@ pub struct Rect {
     pub radius: f32, // border radius
 }
 
+impl Rect {
+    pub fn new(position: Vec2, size: Vec2, fill: Color) -> Self {
+        Self {
+            position: Signal::new(position),
+            size: Signal::new(size),
+            fill,
+            radius: 0.0,
+        }
+    }
+
+    pub fn with_radius(mut self, radius: f32) -> Self {
+        self.radius = radius;
+        self
+    }
+}
+
 impl Node for Rect {
     fn render(&self, scene: &mut Scene) {
         let brush = Brush::Solid(self.fill);
@@ -90,6 +116,17 @@ pub struct Line {
     pub end: Signal<Vec2>,
     pub stroke: Color,
     pub thickness: f32,
+}
+
+impl Line {
+    pub fn new(start: Vec2, end: Vec2, stroke: Color, thickness: f32) -> Self {
+        Self {
+            start: Signal::new(start),
+            end: Signal::new(end),
+            stroke,
+            thickness,
+        }
+    }
 }
 
 impl Node for Line {
