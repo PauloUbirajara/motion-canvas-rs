@@ -1,8 +1,9 @@
 pub mod node;
 pub mod scene;
 pub mod animation;
+pub mod easings;
 
 pub use node::*;
 pub use scene::*;
-pub use animation::lerp;
-pub use animation::ease_in_out;
+pub use animation::{Animation, All, Any, Timeline, all, any, lerp};
+pub use easings as easing;

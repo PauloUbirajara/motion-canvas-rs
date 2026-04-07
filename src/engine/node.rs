@@ -26,6 +26,7 @@ pub struct SignalData<T> {
     pub target: T,
     pub duration: Duration,
     pub elapsed: Duration,
+    pub easing: fn(f32) -> f32,
 }
 
 #[derive(Clone)]
@@ -41,16 +42,22 @@ impl<T: Tweenable> Signal<T> {
                 target: value,
                 duration: Duration::ZERO,
                 elapsed: Duration::ZERO,
+                easing: crate::engine::easings::linear,
             })),
         }
     }
 
     pub fn to(&self, target: T, duration: Duration) -> Box<dyn Animation> {
+        self.to_with_easing(target, duration, crate::engine::easings::linear)
+    }
+
+    pub fn to_with_easing(&self, target: T, duration: Duration, easing: fn(f32) -> f32) -> Box<dyn Animation> {
         {
             let mut data = self.data.lock().unwrap();
             data.target = target;
             data.duration = duration;
             data.elapsed = Duration::ZERO;
+            data.easing = easing;
         }
         
         Box::new(SignalTween {
@@ -72,8 +79,9 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         }
 
         data.elapsed += dt;
-        let t = (data.elapsed.as_secs_f32() / data.duration.as_secs_f32()).min(1.0);
-        data.value = T::interpolate(data.value, data.target, t);
+        let t_linear = (data.elapsed.as_secs_f32() / data.duration.as_secs_f32()).min(1.0);
+        let t_eased = (data.easing)(t_linear);
+        data.value = T::interpolate(data.value, data.target, t_eased);
         
         data.elapsed >= data.duration
     }
@@ -102,6 +110,56 @@ impl Node for Circle {
             &brush,
             None,
             &vello::kurbo::Circle::new((0.0, 0.0), radius as f64),
+        );
+    }
+
+    fn update(&mut self, _dt: Duration) {}
+}
+
+pub struct Rect {
+    pub position: Signal<Vec2>,
+    pub size: Signal<Vec2>,
+    pub fill: Color,
+    pub radius: f32, // border radius
+}
+
+impl Node for Rect {
+    fn render(&self, scene: &mut Scene) {
+        let brush = Brush::Solid(self.fill);
+        let pos = self.position.data.lock().unwrap().value;
+        let size = self.size.data.lock().unwrap().value;
+        
+        scene.fill(
+            Fill::NonZero,
+            vello::kurbo::Affine::translate((pos.x as f64, pos.y as f64)),
+            &brush,
+            None,
+            &vello::kurbo::RoundedRect::new(0.0, 0.0, size.x as f64, size.y as f64, self.radius as f64),
+        );
+    }
+
+    fn update(&mut self, _dt: Duration) {}
+}
+
+pub struct Line {
+    pub start: Signal<Vec2>,
+    pub end: Signal<Vec2>,
+    pub stroke: Color,
+    pub thickness: f32,
+}
+
+impl Node for Line {
+    fn render(&self, scene: &mut Scene) {
+        let brush = Brush::Solid(self.stroke);
+        let start = self.start.data.lock().unwrap().value;
+        let end = self.end.data.lock().unwrap().value;
+        
+        scene.stroke(
+            &vello::kurbo::Stroke::new(self.thickness as f64),
+            vello::kurbo::Affine::IDENTITY,
+            &brush,
+            None,
+            &vello::kurbo::Line::new((start.x as f64, start.y as f64), (end.x as f64, end.y as f64)),
         );
     }
 

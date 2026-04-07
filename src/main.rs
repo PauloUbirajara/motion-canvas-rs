@@ -32,13 +32,26 @@ fn main() -> anyhow::Result<()> {
         fill: Color::rgb8(32, 178, 170),
     });
 
-    // Use all() to run animations in parallel
-    scene.timeline.add(animation::all(vec![
-        circle.radius.to(150.0, Duration::from_secs(2)),
-        circle.position.to(glam::vec2(400.0, 300.0), Duration::from_secs(2)),
+    let rect = Box::new(Rect {
+        position: Signal::new(glam::vec2(600.0, 100.0)),
+        size: Signal::new(glam::vec2(100.0, 100.0)),
+        fill: Color::rgb8(255, 100, 100),
+        radius: 10.0,
+    });
+
+    // Animate circle with spring-like effect
+    scene.timeline.add(all(vec![
+        circle.radius.to_with_easing(150.0, Duration::from_secs(2), easing::elastic_out),
+        circle.position.to_with_easing(glam::vec2(400.0, 300.0), Duration::from_secs(2), easing::quad_in_out),
     ]));
 
+    // Animate rect
+    scene.timeline.add(
+        rect.position.to_with_easing(glam::vec2(200.0, 400.0), Duration::from_secs(2), easing::cubic_in_out)
+    );
+
     scene.add(circle);
+    scene.add(rect);
 
     let mut last_update = Instant::now();
 
