@@ -4,10 +4,11 @@ use vello::peniko::Color;
 mod engine;
 mod render;
 
+// Note: We use all! from engine::animation re-export
 use crate::engine::*;
 
 fn main() -> anyhow::Result<()> {
-    // 1. Initialize Project with dimensions and extra settings
+    // 1. Initialize Project with dimensions
     let mut project = Project::new(800, 600).with_fps(60);
 
     // 2. Create nodes
@@ -24,29 +25,30 @@ fn main() -> anyhow::Result<()> {
         radius: 10.0,
     });
 
-    // 3. Define animations
-    project.scene.timeline.add(all(vec![
+    // 3. Define animations using the new all! macro (no .into() needed here!)
+    project.scene.timeline.add(all![
         circle
             .radius
-            .to_with_easing(150.0, Duration::from_secs(2), easing::elastic_out),
-        circle.position.to_with_easing(
-            glam::vec2(400.0, 300.0),
-            Duration::from_secs(2),
-            easing::quad_in_out,
-        ),
-    ]));
+            .to(150.0, Duration::from_secs(2))
+            .ease(easing::elastic_out),
+            
+        circle
+            .position
+            .to(glam::vec2(400.0, 300.0), Duration::from_secs(2))
+            .ease(easing::quad_in_out)
+    ]);
 
-    project.scene.timeline.add(rect.position.to_with_easing(
-        glam::vec2(200.0, 400.0),
-        Duration::from_secs(2),
-        easing::cubic_in_out,
-    ));
+    // Single animation - generic add handles conversion automatically!
+    project.scene.timeline.add(
+        rect.position
+            .to(glam::vec2(200.0, 400.0), Duration::from_secs(2))
+            .ease(easing::cubic_in_out)
+    );
 
     // 4. Add nodes to scene
     project.scene.add(circle);
     project.scene.add(rect);
 
-    // 5. Choose your mode: project.show() for preview, project.export() for PNGs
-    project.export()
-    // project.show()
+    // 5. Run preview
+    project.show()
 }

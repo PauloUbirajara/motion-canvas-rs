@@ -5,6 +5,24 @@ pub trait Animation: Send + Sync {
     fn update(&mut self, dt: Duration) -> bool;
 }
 
+/// Helper macro to create a parallel animation group.
+/// Boxes elements automatically so you don't have to call .into()!
+#[macro_export]
+macro_rules! all {
+    ($($x:expr),*) => {
+        $crate::engine::animation::all(vec![$(Box::new($x) as Box<dyn $crate::engine::animation::Animation>),*])
+    };
+}
+
+/// Helper macro to create a race animation group.
+#[macro_export]
+macro_rules! any {
+    ($($x:expr),*) => {
+        $crate::engine::animation::any(vec![$(Box::new($x) as Box<dyn $crate::engine::animation::Animation>),*])
+    };
+}
+
+
 pub struct All {
     animations: Vec<Box<dyn Animation>>,
 }
@@ -60,8 +78,8 @@ impl Timeline {
         }
     }
 
-    pub fn add(&mut self, anim: Box<dyn Animation>) {
-        self.animations.push(anim);
+    pub fn add<A: Into<Box<dyn Animation>>>(&mut self, anim: A) {
+        self.animations.push(anim.into());
     }
 
     pub fn update(&mut self, dt: Duration) {

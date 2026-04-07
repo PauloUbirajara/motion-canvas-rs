@@ -5,7 +5,7 @@ use std::time::Duration;
 use std::sync::{Arc, Mutex};
 use crate::engine::animation::{Animation, lerp};
 
-pub trait Tweenable: Copy + Send + 'static {
+pub trait Tweenable: Copy + Send + Sync + 'static {
     fn interpolate(a: Self, b: Self, t: f32) -> Self;
 }
 
@@ -47,32 +47,44 @@ impl<T: Tweenable> Signal<T> {
         }
     }
 
-    pub fn to(&self, target: T, duration: Duration) -> Box<dyn Animation> {
-        self.to_with_easing(target, duration, crate::engine::easings::linear)
-    }
-
-    pub fn to_with_easing(&self, target: T, duration: Duration, easing: fn(f32) -> f32) -> Box<dyn Animation> {
-        {
-            let mut data = self.data.lock().unwrap();
-            data.target = target;
-            data.duration = duration;
-            data.elapsed = Duration::ZERO;
-            data.easing = easing;
-        }
-        
-        Box::new(SignalTween {
+    /// Creates a tween that moves this signal to a target value.
+    /// Can be chained with `.ease(easing_fn)` to customize the animation curve.
+    pub fn to(&self, target: T, duration: Duration) -> SignalTween<T> {
+        SignalTween {
             data: self.data.clone(),
-        })
+            target,
+            duration,
+            easing: crate::engine::easings::linear,
+        }
     }
 }
 
 pub struct SignalTween<T> {
     data: Arc<Mutex<SignalData<T>>>,
+    target: T,
+    duration: Duration,
+    easing: fn(f32) -> f32,
+}
+
+impl<T: Tweenable> SignalTween<T> {
+    /// Applies a custom easing function to the tween.
+    pub fn ease(mut self, easing: fn(f32) -> f32) -> Self {
+        self.easing = easing;
+        self
+    }
 }
 
 impl<T: Tweenable> Animation for SignalTween<T> {
     fn update(&mut self, dt: Duration) -> bool {
         let mut data = self.data.lock().unwrap();
+        
+        // If this is the first update, initialize the tween state
+        if data.elapsed == Duration::ZERO {
+            data.target = self.target;
+            data.duration = self.duration;
+            data.easing = self.easing;
+        }
+
         if data.duration == Duration::ZERO {
             data.value = data.target;
             return true;
@@ -84,6 +96,13 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         data.value = T::interpolate(data.value, data.target, t_eased);
         
         data.elapsed >= data.duration
+    }
+}
+
+// Allow one-way conversion into Box<dyn Animation> for composition
+impl<T: Tweenable> From<SignalTween<T>> for Box<dyn Animation> {
+    fn from(tween: SignalTween<T>) -> Self {
+        Box::new(tween)
     }
 }
 
