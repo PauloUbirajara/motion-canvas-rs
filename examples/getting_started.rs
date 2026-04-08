@@ -21,8 +21,8 @@ fn main() {
     // 4. Add Animations to the Timeline
     project.scene.timeline.add(flows::all![
         circle.radius.to(100.0, Duration::from_secs(1)),
-        text.position
-            .to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
+        text.transform
+            .to(Affine::translate((400.0, 500.0)), Duration::from_secs(1)),
     ]);
 
     // 5. Show

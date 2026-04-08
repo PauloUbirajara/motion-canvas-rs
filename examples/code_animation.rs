@@ -80,9 +80,9 @@ fn main() {
                 100.0,
                 Duration::from_secs(1)
             ),
-        text.position
+        text.transform
             .to(
-                Vec2::new(400.0, 500.0),
+                Affine::translate((400.0, 500.0)),
                 Duration::from_secs(1)
             ),
     ]);

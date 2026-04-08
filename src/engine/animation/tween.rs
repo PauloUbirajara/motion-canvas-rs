@@ -77,6 +77,20 @@ pub struct Signal<T> {
     pub data: Arc<Mutex<SignalData<T>>>,
 }
 
+pub trait FromVec2: Send + Sync + 'static {
+    fn from_vec2(v: Vec2) -> Self;
+}
+
+impl FromVec2 for Vec2 {
+    fn from_vec2(v: Vec2) -> Self { v }
+}
+
+impl FromVec2 for Affine {
+    fn from_vec2(v: Vec2) -> Self {
+        Affine::translate((v.x as f64, v.y as f64))
+    }
+}
+
 impl<T: Tweenable + PartialEq> Signal<T> {
     pub fn new(value: T) -> Self {
         Self {
@@ -108,7 +122,7 @@ impl<T: Tweenable + PartialEq> Signal<T> {
 
     pub fn follow(&self, path: &PathNode, duration: Duration) -> FollowPath<T>
     where
-        T: From<Vec2>,
+        T: FromVec2,
     {
         FollowPath {
             data: self.data.clone(),
@@ -186,11 +200,11 @@ impl<T: Send + Sync + 'static> FollowPath<T> {
     }
 }
 
-impl<T: Tweenable + From<Vec2>> Animation for FollowPath<T> {
+impl<T: Tweenable + FromVec2> Animation for FollowPath<T> {
     fn update(&mut self, dt: Duration) -> bool {
         if self.duration == Duration::ZERO {
             let mut data = self.data.lock().unwrap();
-            data.value = T::from(self.path_data.sample(1.0));
+            data.value = T::from_vec2(self.path_data.sample(1.0));
             return true;
         }
 
@@ -199,7 +213,7 @@ impl<T: Tweenable + From<Vec2>> Animation for FollowPath<T> {
         let t_eased = (self.easing)(t_linear);
 
         let mut data = self.data.lock().unwrap();
-        data.value = T::from(self.path_data.sample(t_eased));
+        data.value = T::from_vec2(self.path_data.sample(t_eased));
 
         self.elapsed >= self.duration
     }
@@ -219,7 +233,7 @@ impl<T: Tweenable> From<SignalTween<T>> for Box<dyn Animation> {
     }
 }
 
-impl<T: Tweenable + From<Vec2>> From<FollowPath<T>> for Box<dyn Animation> {
+impl<T: Tweenable + FromVec2> From<FollowPath<T>> for Box<dyn Animation> {
     fn from(anim: FollowPath<T>) -> Self {
         Box::new(anim)
     }

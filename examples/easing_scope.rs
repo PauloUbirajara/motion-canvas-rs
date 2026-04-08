@@ -61,13 +61,13 @@ fn main() {
         // 1. Move to right using individual scoped easings
         let right_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
             let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
-            flows::with_easing(*easing, vec![balls[i].position.to(end_pos, ANIM_DURATION_GO).into()])
+            flows::with_easing(*easing, vec![balls[i].transform.to(Affine::translate((end_pos.x as f64, end_pos.y as f64)), ANIM_DURATION_GO).into()])
         }).collect());
 
         // 2. Move back to left using the SAME scoped easings
         let left_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
             let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
-            flows::with_easing(*easing, vec![balls[i].position.to(start_pos, ANIM_DURATION_RETURN).into()])
+            flows::with_easing(*easing, vec![balls[i].transform.to(Affine::translate((start_pos.x as f64, start_pos.y as f64)), ANIM_DURATION_RETURN).into()])
         }).collect());
 
         flows::chain(vec![
