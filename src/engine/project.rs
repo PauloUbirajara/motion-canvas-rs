@@ -45,7 +45,7 @@ impl Project {
             use_cache: true, // Cache is now enabled by default
             use_ffmpeg: false,
             use_gpu: true,
-            background_color: Color::BLACK,
+            background_color: Color::rgb8(0x1a, 0x1a, 0x1a),
         }
     }
 

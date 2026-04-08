@@ -8,8 +8,8 @@ fn main() -> anyhow::Result<()> {
         .with_cache(true);
 
     // 2. Define Nodes
-    let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::RED);
-    let text = TextNode::new(Vec2::new(400.0, 450.0), "Hello Rust", 40.0, Color::WHITE);
+    let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::rgb8(0xe1, 0x32, 0x38)); // Red
+    let text = TextNode::new(Vec2::new(400.0, 450.0), "Hello Rust", 40.0, Color::rgb8(0xf2, 0xf2, 0xf2)); // White-ish
 
     // 3. Add Nodes to the Scene
     project.scene.add(Box::new(circle.clone()));

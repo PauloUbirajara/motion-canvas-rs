@@ -76,7 +76,7 @@ impl<T: Tweenable> Signal<T> {
             target_value: target,
             duration,
             elapsed: Duration::ZERO,
-            easing: crate::engine::easings::linear,
+            easing: crate::engine::easings::cubic_in_out,
         }
     }
 
@@ -88,7 +88,7 @@ impl<T: Tweenable> Signal<T> {
             path_data: path.data.clone(),
             duration,
             elapsed: Duration::ZERO,
-            easing: crate::engine::easings::linear,
+            easing: crate::engine::easings::cubic_in_out,
         }
     }
 }

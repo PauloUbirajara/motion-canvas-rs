@@ -6,14 +6,14 @@ fn main() -> anyhow::Result<()> {
     let mut project = Project::new(800, 600)
         .with_fps(60)
         .with_title("Typst Math Animation")
-        .with_background(Color::rgb8(40, 44, 52)); // Atom Dark-like background
+        .with_title("Typst Math Animation");
 
     // 2. Create MathNode (Typst syntax)
     let tex = MathNode::new(
         Vec2::new(100.0, 300.0),
         "y = a x^2",
         48.0,
-        Color::WHITE,
+        Color::rgb8(0xf2, 0xf2, 0xf2),
     );
     project.scene.add(Box::new(tex.clone()));
 

@@ -17,28 +17,27 @@ fn main() -> anyhow::Result<()> {
     let mut path = BezPath::new();
     path.move_to((100.0, 300.0));
     path.curve_to((250.0, 100.0), (550.0, 500.0), (700.0, 300.0));
-    let path_node = PathNode::new(Vec2::ZERO, path, Color::rgb8(60, 60, 60), 2.0);
-
-    let follower = Circle::new(Vec2::new(100.0, 300.0), 20.0, Color::rgb8(255, 100, 100));
+    let path_node = PathNode::new(Vec2::ZERO, path, Color::rgb8(0x44, 0x44, 0x44), 2.0); // Subtle path
+    let follower = Circle::new(Vec2::new(100.0, 300.0), 20.0, Color::rgb8(0xe1, 0x32, 0x38)); // Red
 
     // Showcase: Rect and Line
     let background_rect = Rect::new(
         Vec2::new(400.0, 300.0),
         Vec2::new(760.0, 560.0),
-        Color::rgba8(40, 40, 40, 150),
+        Color::rgba8(0x33, 0x33, 0x33, 150),
     )
     .with_radius(20.0);
     let divider_line = Line::new(
         Vec2::new(0.0, 300.0),
         Vec2::new(0.0, 300.0),
-        Color::rgb8(80, 80, 80),
+        Color::rgb8(0x44, 0x44, 0x44),
         1.0,
     );
     let title_text = TextNode::new(
         Vec2::new(50.0, 50.0),
         "Motion Canvas in Rust",
         40.0,
-        Color::rgb8(200, 200, 255),
+        Color::rgb8(0x68, 0xab, 0xdf), // Blue
     )
     .with_font("Inter");
 
@@ -52,7 +51,7 @@ fn main() -> anyhow::Result<()> {
         Vec2::new(50.0, 200.0),
         "e^{i\\pi} + 1 = 0",
         30.0,
-        Color::rgb8(255, 255, 100),
+        Color::rgb8(0xe6, 0xa7, 0x00), // Yellow
     );
 
     let logo = ImageNode::new(

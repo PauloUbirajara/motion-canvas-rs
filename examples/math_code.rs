@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
         Vec2::new(50.0, 200.0), 
         "e^{i\\pi} + 1 = 0", 
         60.0, 
-        Color::WHITE
+        Color::rgb8(0xe6, 0xa7, 0x00) // Yellow
     );
 
     project.scene.add(Box::new(code));
