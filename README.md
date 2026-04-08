@@ -54,16 +54,89 @@ fn main() -> anyhow::Result<()> {
 
 ## Running Examples
 
-The project includes several formal examples covering different features. You can run them using `cargo run --example <name>`:
+The project includes several formal examples covering different features. You can run them using `cargo run --example <name>`.
 
-| Example | Command | Description |
-| :--- | :--- | :--- |
-| **Getting Started** | `cargo run --example getting_started` | Basic node creation and animation. |
-| **Shapes** | `cargo run --example shapes` | Circle, Rect, and Line primitives. |
-| **Math & Code** | `cargo run --example math_code` | Typst LaTeX and Syntax Highlighting. |
-| **Images** | `cargo run --example images` | Bitmap image support and transformations. |
-| **Advanced Flow** | `cargo run --example advanced_flow` | Complex staggered and sequential animations. |
-| **Export** | `cargo run --example export` | Video export with color and font-size animations. |
+<details>
+<summary><b>Getting Started</b> - Basic node creation and animation.</summary>
+
+```bash
+cargo run --example getting_started
+```
+https://github.com/user-attachments/assets/7590c3da-8917-4ac4-8832-425211fab67b
+
+</details>
+
+<details>
+<summary><b>Shapes</b> - Circle, Rect, and Line primitives.</summary>
+
+```bash
+cargo run --example shapes
+```
+<img width="400" height="200" alt="shapes" src="https://github.com/user-attachments/assets/24d3c9a4-6330-4d03-a0b0-6d0fed318ab7" />
+</details>
+
+<details>
+<summary><b>Math & Code</b> - Typst LaTeX and Syntax Highlighting.</summary>
+
+```bash
+cargo run --example math_code
+```
+https://github.com/user-attachments/assets/97050ee4-0a67-4c4c-ba5d-737d7d0c101d
+</details>
+
+<details>
+<summary><b>Images</b> - Bitmap image support and transformations.</summary>
+
+```bash
+cargo run --example images
+```
+https://github.com/user-attachments/assets/25248e66-ccc7-4422-9f2f-7b9ef361d8d9
+</details>
+
+<details>
+<summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
+
+```bash
+cargo run --example advanced_flow
+```
+https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
+</details>
+
+<details>
+<summary><b>Easing Scope</b> - 100% parity easing library visualizer.</summary>
+
+```bash
+cargo run --example easing_scope
+```
+https://github.com/user-attachments/assets/097e5b01-cdf4-4c9d-90a5-4cc4fc12e3ea
+</details>
+
+<details>
+<summary><b>Math Animation</b> - Advanced mathematical transitions.</summary>
+
+```bash
+cargo run --example math_animation
+```
+https://github.com/user-attachments/assets/f3d8e774-31f4-4e96-b7b7-9e6bda0ec16f
+</details>
+
+<details>
+<summary><b>Color Interpolation</b> - Smooth transitions between color spaces.</summary>
+
+```bash
+cargo run --example color_interpolation
+```
+https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
+</details>
+
+<details>
+<summary><b>Export</b> - Video export with color and font-size animations.</summary>
+
+```bash
+cargo run --example export
+```
+https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
+</details>
 
 ## Requirements
 
