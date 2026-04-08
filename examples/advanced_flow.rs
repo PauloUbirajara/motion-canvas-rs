@@ -6,6 +6,7 @@ fn main() -> anyhow::Result<()> {
     // 1. Initialize Project with full API coverage
     let mut project = Project::new(800, 600)
         .with_fps(120)
+        .with_gpu(true)
         .with_cache(true)
         .with_ffmpeg(true)
         .with_output_path("output")

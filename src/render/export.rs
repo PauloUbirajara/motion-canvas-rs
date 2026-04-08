@@ -17,7 +17,7 @@ pub struct Exporter {
 }
 
 impl Exporter {
-    pub fn new(width: u32, height: u32) -> Self {
+    pub fn new(width: u32, height: u32, use_gpu: bool) -> Self {
         let mut context = RenderContext::new();
         let device_id = pollster::block_on(context.device(None)).unwrap();
         let device_handle = &context.devices[device_id];
@@ -27,7 +27,7 @@ impl Exporter {
             device,
             RendererOptions {
                 surface_format: None,
-                use_cpu: false,
+                use_cpu: !use_gpu,
                 antialiasing_support: vello::AaSupport::all(),
                 num_init_threads: None,
             },
@@ -142,10 +142,14 @@ impl Exporter {
         let data = buffer_slice.get_mapped_range();
         
         let mut pixels = Vec::with_capacity((self.width * self.height * 4) as usize);
-        for row in 0..self.height {
-            let start = (row * self.bytes_per_row) as usize;
-            let end = start + self.unaligned_bytes_per_row as usize;
-            pixels.extend_from_slice(&data[start..end]);
+        if self.bytes_per_row == self.unaligned_bytes_per_row {
+            pixels.extend_from_slice(&data[..(self.width * self.height * 4) as usize]);
+        } else {
+            for row in 0..self.height {
+                let start = (row * self.bytes_per_row) as usize;
+                let end = start + self.unaligned_bytes_per_row as usize;
+                pixels.extend_from_slice(&data[start..end]);
+            }
         }
 
         drop(data);

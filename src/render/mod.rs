@@ -17,15 +17,17 @@ pub struct VelloRenderer<'a> {
     surface: Option<RenderSurface<'a>>,
     renderer: Option<Renderer>,
     scene: Scene,
+    use_gpu: bool,
 }
 
 impl<'a> VelloRenderer<'a> {
-    pub fn new() -> Self {
+    pub fn new(use_gpu: bool) -> Self {
         Self {
             context: RenderContext::new(),
             surface: None,
             renderer: None,
             scene: Scene::new(),
+            use_gpu,
         }
     }
 
@@ -47,7 +49,7 @@ impl<'a> VelloRenderer<'a> {
             &device_handle.device,
             RendererOptions {
                 surface_format: Some(surface.format),
-                use_cpu: false,
+                use_cpu: !self.use_gpu,
                 antialiasing_support: vello::AaSupport::all(),
                 num_init_threads: None,
             },
@@ -111,8 +113,10 @@ impl AnimationWindow {
         // Wrap renderer in an Option so we can create it inside 'resumed' if needed,
         // or just keep it outside and manage lifetimes carefully.
         // For simplicity in event_loop.run, we can use a wrapper or just pollster::block_on.
-        let mut renderer = VelloRenderer::new();
+        let mut renderer = VelloRenderer::new(self.project.use_gpu);
         let mut last_update = Instant::now();
+        let mut last_hash = 0u64;
+        let mut finished = false;
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
 
         // Capture window as a reference to avoid lifetime issues with Move
@@ -121,8 +125,6 @@ impl AnimationWindow {
         };
 
         event_loop.run(move |event, elwt| {
-            elwt.set_control_flow(ControlFlow::Poll);
-
             match event {
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
@@ -135,11 +137,33 @@ impl AnimationWindow {
                     renderer.render(&self.project.scene, self.project.width, self.project.height);
                 }
                 Event::AboutToWait => {
+                    if finished {
+                        elwt.set_control_flow(ControlFlow::Wait);
+                        return;
+                    }
+
                     let now = Instant::now();
-                    if now.duration_since(last_update) >= dt {
+                    let elapsed = now.duration_since(last_update);
+                    
+                    if elapsed >= dt {
                         self.project.scene.update(dt);
                         last_update = now;
-                        window_ref.request_redraw();
+                        
+                        let current_hash = self.project.scene.state_hash();
+                        if current_hash != last_hash {
+                            window_ref.request_redraw();
+                            last_hash = current_hash;
+                        }
+
+                        if self.project.scene.timeline.finished() {
+                            println!("Animation finished.");
+                            finished = true;
+                            elwt.set_control_flow(ControlFlow::Wait);
+                        } else {
+                            elwt.set_control_flow(ControlFlow::WaitUntil(now + dt));
+                        }
+                    } else {
+                        elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
                     }
                 }
                 Event::Resumed => {

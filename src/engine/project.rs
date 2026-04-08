@@ -27,6 +27,7 @@ pub struct Project {
     pub frame_template: String,
     pub use_cache: bool,
     pub use_ffmpeg: bool,
+    pub use_gpu: bool,
 }
 
 impl Project {
@@ -41,6 +42,7 @@ impl Project {
             frame_template: "frame_{:04}.png".to_string(),
             use_cache: true, // Cache is now enabled by default
             use_ffmpeg: false,
+            use_gpu: true,
         }
     }
 
@@ -74,6 +76,11 @@ impl Project {
         self
     }
 
+    pub fn with_gpu(mut self, use_gpu: bool) -> Self {
+        self.use_gpu = use_gpu;
+        self
+    }
+
     pub fn export(&mut self) -> anyhow::Result<()> {
         #[cfg(feature = "export")]
         {
@@ -88,7 +95,7 @@ impl Project {
                 CacheManifest::default()
             };
 
-            let mut exporter = crate::render::export::Exporter::new(self.width, self.height);
+            let mut exporter = crate::render::export::Exporter::new(self.width, self.height, self.use_gpu);
             let dt = std::time::Duration::from_secs_f32(1.0 / self.fps as f32);
             let mut frame_count = 0;
             let mut rendered_count = 0;
