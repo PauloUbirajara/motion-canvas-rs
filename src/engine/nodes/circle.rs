@@ -5,6 +5,10 @@ use glam::Vec2;
 use vello::kurbo::{Affine, Circle as KurboCircle};
 use std::time::Duration;
 
+const DEFAULT_RADIUS: f32 = 50.0;
+const DEFAULT_COLOR: Color = Color::RED;
+const DEFAULT_OPACITY: f32 = 1.0;
+
 #[derive(Clone)]
 pub struct Circle {
     pub transform: Signal<Affine>,
@@ -17,9 +21,9 @@ impl Default for Circle {
     fn default() -> Self {
         Self {
             transform: Signal::new(Affine::IDENTITY),
-            radius: Signal::new(50.0),
-            color: Signal::new(Color::RED),
-            opacity: Signal::new(1.0),
+            radius: Signal::new(DEFAULT_RADIUS),
+            color: Signal::new(DEFAULT_COLOR),
+            opacity: Signal::new(DEFAULT_OPACITY),
         }
     }
 }

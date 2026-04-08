@@ -13,6 +13,10 @@ lazy_static::lazy_static! {
 
 
 
+const DEFAULT_FONT_SIZE: f32 = 32.0;
+const DEFAULT_COLOR: Color = Color::WHITE;
+const DEFAULT_OPACITY: f32 = 1.0;
+
 #[derive(Hash, Eq, PartialEq)]
 struct MathCacheKey {
     equation: String,
@@ -35,9 +39,9 @@ impl Default for MathNode {
         Self {
             transform: Signal::new(Affine::IDENTITY),
             equation: Signal::new("".to_string()),
-            font_size: Signal::new(32.0),
-            color: Signal::new(Color::RED),
-            opacity: Signal::new(1.0),
+            font_size: Signal::new(DEFAULT_FONT_SIZE),
+            color: Signal::new(DEFAULT_COLOR),
+            opacity: Signal::new(DEFAULT_OPACITY),
             transition_progress: Signal::new(1.0),
             cache: Arc::new(Mutex::new(None)),
             prev_cache: Arc::new(Mutex::new(None)),

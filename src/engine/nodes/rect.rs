@@ -5,6 +5,11 @@ use glam::Vec2;
 use vello::kurbo::{Affine, RoundedRect as KurboRoundedRect};
 use std::time::Duration;
 
+const DEFAULT_SIZE: Vec2 = Vec2::new(100.0, 100.0);
+const DEFAULT_COLOR: Color = Color::RED;
+const DEFAULT_RADIUS: f32 = 0.0;
+const DEFAULT_OPACITY: f32 = 1.0;
+
 #[derive(Clone)]
 pub struct Rect {
     pub transform: Signal<Affine>,
@@ -18,10 +23,10 @@ impl Default for Rect {
     fn default() -> Self {
         Self {
             transform: Signal::new(Affine::IDENTITY),
-            size: Signal::new(Vec2::new(100.0, 100.0)),
-            color: Signal::new(Color::RED),
-            radius: Signal::new(0.0),
-            opacity: Signal::new(1.0),
+            size: Signal::new(DEFAULT_SIZE),
+            color: Signal::new(DEFAULT_COLOR),
+            radius: Signal::new(DEFAULT_RADIUS),
+            opacity: Signal::new(DEFAULT_OPACITY),
         }
     }
 }

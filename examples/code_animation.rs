@@ -4,7 +4,10 @@ use std::time::Duration;
 fn main() {
     let mut project = Project::new(800, 800);
 
-    let code = CodeNode::new(Vec2::new(50.0, 50.0), r#""#, "rust")
+    let code = CodeNode::default()
+        .with_position(Vec2::new(50.0, 50.0))
+        .with_code("")
+        .with_language("rust")
         .with_theme("Solarized (dark)")
         .with_font("JetBrains Mono");
 

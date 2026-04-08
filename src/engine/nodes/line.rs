@@ -5,6 +5,12 @@ use vello::kurbo::{Affine, Line as KurboLine, Stroke};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
 
+const DEFAULT_START: Vec2 = Vec2::ZERO;
+const DEFAULT_END: Vec2 = Vec2::new(100.0, 0.0);
+const DEFAULT_COLOR: Color = Color::RED;
+const DEFAULT_WIDTH: f32 = 2.0;
+const DEFAULT_OPACITY: f32 = 1.0;
+
 #[derive(Clone)]
 pub struct Line {
     pub transform: Signal<Affine>,
@@ -19,11 +25,11 @@ impl Default for Line {
     fn default() -> Self {
         Self {
             transform: Signal::new(Affine::IDENTITY),
-            start: Signal::new(Vec2::ZERO),
-            end: Signal::new(Vec2::new(100.0, 0.0)),
-            color: Signal::new(Color::RED),
-            width: Signal::new(2.0),
-            opacity: Signal::new(1.0),
+            start: Signal::new(DEFAULT_START),
+            end: Signal::new(DEFAULT_END),
+            color: Signal::new(DEFAULT_COLOR),
+            width: Signal::new(DEFAULT_WIDTH),
+            opacity: Signal::new(DEFAULT_OPACITY),
         }
     }
 }

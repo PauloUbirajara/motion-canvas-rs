@@ -16,51 +16,49 @@ fn main() {
     let mut path = BezPath::new();
     path.move_to((100.0, 300.0));
     path.curve_to((250.0, 100.0), (550.0, 500.0), (700.0, 300.0));
-    let path_node = PathNode::new(Vec2::ZERO, path, Color::rgb8(0x44, 0x44, 0x44), 2.0); // Subtle path
-    let follower = Circle::new(Vec2::new(100.0, 300.0), 20.0, Color::rgb8(0xe1, 0x32, 0x38)); // Red
+    let path_node = PathNode::new(Vec2::ZERO, path, Color::rgb8(0x44, 0x44, 0x44), 2.0); // PathNode doesn't have builder yet but let's keep it
+    let follower = Circle::default()
+        .with_position(Vec2::new(100.0, 300.0))
+        .with_radius(20.0)
+        .with_color(Color::rgb8(0xe1, 0x32, 0x38)); // Red
 
     // Showcase: Rect and Line
-    let background_rect = Rect::new(
-        Vec2::new(400.0, 300.0),
-        Vec2::new(760.0, 560.0),
-        Color::rgba8(0x33, 0x33, 0x33, 150),
-    )
-    .with_radius(20.0);
-    let divider_line = Line::new(
-        Vec2::new(0.0, 300.0),
-        Vec2::new(0.0, 300.0),
-        Color::rgb8(0x44, 0x44, 0x44),
-        1.0,
-    );
-    let title_text = TextNode::new(
-        Vec2::new(50.0, 50.0),
-        "Motion Canvas in Rust",
-        40.0,
-        Color::rgb8(0x68, 0xab, 0xdf), // Blue
-    )
-    .with_font("Inter");
+    let background_rect = Rect::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_size(Vec2::new(760.0, 560.0))
+        .with_color(Color::rgba8(0x33, 0x33, 0x33, 150))
+        .with_radius(20.0);
 
-    let code_block = CodeNode::new(
-        Vec2::new(50.0, 400.0),
-        r#"fn main() {
+    let divider_line = Line::default()
+        .with_start(Vec2::new(0.0, 300.0))
+        .with_end(Vec2::new(0.0, 300.0))
+        .with_color(Color::rgb8(0x44, 0x44, 0x44))
+        .with_width(1.0);
+    let title_text = TextNode::default()
+        .with_position(Vec2::new(50.0, 50.0))
+        .with_text("Motion Canvas in Rust")
+        .with_font_size(40.0)
+        .with_color(Color::rgb8(0x68, 0xab, 0xdf)) // Blue
+        .with_font("Inter");
+
+    let code_block = CodeNode::default()
+        .with_position(Vec2::new(50.0, 400.0))
+        .with_code(r#"fn main() {
     let mut engine = MotionCanvas::new();
     engine.render();
-}"#,
-        "rust",
-    );
+}"#)
+        .with_language("rust");
 
-    let math_eq = MathNode::new(
-        Vec2::new(50.0, 200.0),
-        "e^(i pi) + 1 = 0",
-        30.0,
-        Color::rgb8(0xe6, 0xa7, 0x00), // Yellow
-    );
+    let math_eq = MathNode::default()
+        .with_position(Vec2::new(50.0, 200.0))
+        .with_equation("e^(i pi) + 1 = 0")
+        .with_font_size(30.0)
+        .with_color(Color::rgb8(0xe6, 0xa7, 0x00)); // Yellow
 
-    let logo = ImageNode::new(
-        Vec2::new(600.0, 50.0),
-        "./examples/images/motion-canvas-logo.png",
-    )
-    .with_size(Vec2::new(150.0, 150.0));
+    let logo = ImageNode::default()
+        .with_position(Vec2::new(600.0, 50.0))
+        .with_path("./examples/images/motion-canvas-logo.png")
+        .with_size(Vec2::new(150.0, 150.0));
 
     // Clone signals for use in closures to avoid partial moves
     let bg_size = background_rect.size.clone();

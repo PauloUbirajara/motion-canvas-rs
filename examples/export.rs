@@ -9,19 +9,22 @@ fn main() {
         .with_output_path("output");
 
     // 2. Setup Nodes
-    let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::rgb8(0x68, 0xab, 0xdf)); // Blue
-    let text = TextNode::new(
-        Vec2::new(200.0, 450.0),
-        "Export Demo",
-        40.0,
-        Color::rgb8(0xf2, 0xf2, 0xf2),
-    ); // White
-    let math = MathNode::new(
-        Vec2::new(400.0, 200.0),
-        "E = m c^2",
-        40.0,
-        Color::rgb8(0xe6, 0xa7, 0x00),
-    ); // Yellow
+    let circle = Circle::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_radius(50.0)
+        .with_color(Color::rgb8(0x68, 0xab, 0xdf)); // Blue
+
+    let text = TextNode::default()
+        .with_position(Vec2::new(200.0, 450.0))
+        .with_text("Export Demo")
+        .with_font_size(40.0)
+        .with_color(Color::rgb8(0xf2, 0xf2, 0xf2)); // White
+
+    let math = MathNode::default()
+        .with_position(Vec2::new(400.0, 200.0))
+        .with_equation("E = m c^2")
+        .with_font_size(40.0)
+        .with_color(Color::rgb8(0xe6, 0xa7, 0x00)); // Yellow
 
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(text.clone()));

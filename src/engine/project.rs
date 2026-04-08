@@ -14,9 +14,11 @@ use std::path::PathBuf;
 use vello::peniko::Color;
 
 const DEFAULT_FPS: u32 = 60;
-const DEFAULT_TITLE: &str = "Motion Canvas Rust";
+const DEFAULT_WIDTH: u32 = 800;
+const DEFAULT_HEIGHT: u32 = 600;
+const DEFAULT_TITLE: &str = "motion-canvas-rs";
 const DEFAULT_OUTPUT_PATH: &str = "output";
-const DEFAULT_FRAME_TEMPLATE: &str = "frame_{:04}.png";
+const DEFAULT_FRAME_TEMPLATE: &str = "{:04}.png";
 const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
@@ -57,9 +59,23 @@ impl Project {
             background_color: DEFAULT_BACKGROUND_COLOR,
         }
     }
+}
 
+impl Default for Project {
+    fn default() -> Self {
+        Self::new(DEFAULT_WIDTH, DEFAULT_HEIGHT)
+    }
+}
+
+impl Project {
     pub fn with_fps(mut self, fps: u32) -> Self {
         self.fps = fps;
+        self
+    }
+
+    pub fn with_dimensions(mut self, width: u32, height: u32) -> Self {
+        self.width = width;
+        self.height = height;
         self
     }
 
@@ -246,7 +262,7 @@ impl Project {
 
             // Clean up
             drop(tx);
-            
+
             // Wait for all frames to be saved while updating the progress bar
             while saved_count.load(Ordering::SeqCst) < frame_count + 1 {
                 let current_saved = saved_count.load(Ordering::SeqCst);

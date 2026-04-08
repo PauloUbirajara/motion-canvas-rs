@@ -41,8 +41,15 @@ fn main() {
 
     for (i, (name, _)) in easing_configs.iter().enumerate() {
         let y = START_Y + (i as f32 * SPACING_Y);
-        let ball = Circle::new(Vec2::new(START_X, y), 20.0, colors[i % colors.len()]);
-        let label = TextNode::new(Vec2::new(START_X - 130.0, y), name, 18.0, Color::rgb8(0xcc, 0xcc, 0xcc));
+        let ball = Circle::default()
+            .with_position(Vec2::new(START_X, y))
+            .with_radius(20.0)
+            .with_color(colors[i % colors.len()]);
+        let label = TextNode::default()
+            .with_position(Vec2::new(START_X - 130.0, y))
+            .with_text(name)
+            .with_font_size(18.0)
+            .with_color(Color::rgb8(0xcc, 0xcc, 0xcc));
         
         project.scene.add(Box::new(ball.clone()));
         project.scene.add(Box::new(label.clone()));

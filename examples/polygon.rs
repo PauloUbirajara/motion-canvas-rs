@@ -13,16 +13,15 @@ fn main() {
     );
 
     // Create a custom triangle
-    let triangle = Polygon::new(
-        Vec2::new(500.0, 300.0),
-        vec![
+    let triangle = Polygon::default()
+        .with_position(Vec2::new(500.0, 300.0))
+        .with_points(vec![
             Vec2::new(0.0, -100.0),
             Vec2::new(100.0, 100.0),
             Vec2::new(-100.0, 100.0),
-        ],
-        Color::rgb8(0x68, 0xab, 0xdf), // Blue
-    )
-    .with_stroke(Color::WHITE, 4.0);
+        ])
+        .with_fill(Color::rgb8(0x68, 0xab, 0xdf)) // Blue
+        .with_stroke(Color::WHITE, 4.0);
 
     project.scene.add(Box::new(pentagon.clone()));
     project.scene.add(Box::new(triangle.clone()));

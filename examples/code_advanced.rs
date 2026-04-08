@@ -4,15 +4,14 @@ use std::time::Duration;
 fn main() {
     let mut project = Project::new(800, 600).with_title("Advanced Code Node Demo");
 
-    let code = CodeNode::new(
-        Vec2::new(50.0, 50.0),
-        r#"fn main() {
+    let code = CodeNode::default()
+        .with_position(Vec2::new(50.0, 50.0))
+        .with_code(r#"fn main() {
     println!("Hello");
-}"#,
-        "rust",
-    )
-    .with_font_size(32.0)
-    .with_dim_opacity(0.1);
+}"#)
+        .with_language("rust")
+        .with_font_size(32.0)
+        .with_dim_opacity(0.1);
 
     project.scene.add(Box::new(code.clone()));
 

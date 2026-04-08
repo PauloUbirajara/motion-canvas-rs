@@ -5,6 +5,11 @@ use glam::Vec2;
 use vello::kurbo::{Affine, BezPath, Stroke};
 use std::time::Duration;
 
+const DEFAULT_FILL_COLOR: Color = Color::RED;
+const DEFAULT_STROKE_COLOR: Color = Color::TRANSPARENT;
+const DEFAULT_STROKE_WIDTH: f32 = 0.0;
+const DEFAULT_OPACITY: f32 = 1.0;
+
 #[derive(Clone)]
 pub struct Polygon {
     pub transform: Signal<Affine>,
@@ -20,10 +25,10 @@ impl Default for Polygon {
         Self {
             transform: Signal::new(Affine::IDENTITY),
             points: Signal::new(Vec::new()),
-            fill_color: Signal::new(Color::RED),
-            stroke_color: Signal::new(Color::TRANSPARENT),
-            stroke_width: Signal::new(0.0),
-            opacity: Signal::new(1.0),
+            fill_color: Signal::new(DEFAULT_FILL_COLOR),
+            stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
+            stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
+            opacity: Signal::new(DEFAULT_OPACITY),
         }
     }
 }

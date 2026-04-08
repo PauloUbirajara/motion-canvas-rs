@@ -15,6 +15,9 @@ lazy_static! {
     static ref GLOBAL_TEXT_CACHE: Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
 }
 
+const DEFAULT_FONT_SIZE: f32 = 32.0;
+const DEFAULT_COLOR: Color = Color::WHITE;
+const DEFAULT_OPACITY: f32 = 1.0;
 const DEFAULT_FONT_FAMILY: &str = "Inter";
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
@@ -40,9 +43,9 @@ impl Default for TextNode {
         Self {
             transform: Signal::new(Affine::IDENTITY),
             text: Signal::new("".to_string()),
-            font_size: Signal::new(32.0),
-            color: Signal::new(Color::RED),
-            opacity: Signal::new(1.0),
+            font_size: Signal::new(DEFAULT_FONT_SIZE),
+            color: Signal::new(DEFAULT_COLOR),
+            opacity: Signal::new(DEFAULT_OPACITY),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
             cache: Arc::new(Mutex::new(None)),
         }

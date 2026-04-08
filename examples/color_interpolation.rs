@@ -11,16 +11,15 @@ fn main() {
     let spacing = 180.0;
     let start_x = 100.0;
 
-    let circle = Circle::new(
-        Vec2::new(start_x, start_y),
-        50.0,
-        Color::rgb8(0xe1, 0x32, 0x38),
-    ); // Red
-    let rect = Rect::new(
-        Vec2::new(start_x + spacing - 50.0, start_y - 50.0),
-        Vec2::new(100.0, 100.0),
-        Color::rgb8(0xff, 0xc6, 0x6d), // Orange
-    );
+    let circle = Circle::default()
+        .with_position(Vec2::new(start_x, start_y))
+        .with_radius(50.0)
+        .with_color(Color::rgb8(0xe1, 0x32, 0x38)); // Red
+
+    let rect = Rect::default()
+        .with_position(Vec2::new(start_x + spacing - 50.0, start_y - 50.0))
+        .with_size(Vec2::new(100.0, 100.0))
+        .with_color(Color::rgb8(0xff, 0xc6, 0x6d)); // Orange
 
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(rect.clone()));

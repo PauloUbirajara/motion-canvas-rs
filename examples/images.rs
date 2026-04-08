@@ -5,16 +5,15 @@ fn main() {
     let mut project = Project::new(600, 600);
 
     // Using the sample logo path from the project
-    let png = ImageNode::new(
-        Vec2::new(350.0, 350.0),
-        "./examples/images/motion-canvas-logo.png",
-    )
-    .with_size(Vec2::new(200.0, 200.0));
-    let svg = ImageNode::new(
-        Vec2::new(50.0, 50.0),
-        "./examples/images/motion-canvas-rs.svg",
-    )
-    .with_size(Vec2::new(200.0, 200.0));
+    let png = ImageNode::default()
+        .with_position(Vec2::new(350.0, 350.0))
+        .with_path("./examples/images/motion-canvas-logo.png")
+        .with_size(Vec2::new(200.0, 200.0));
+
+    let svg = ImageNode::default()
+        .with_position(Vec2::new(50.0, 50.0))
+        .with_path("./examples/images/motion-canvas-rs.svg")
+        .with_size(Vec2::new(200.0, 200.0));
 
     project.scene.timeline.add(chain!(
         all!(

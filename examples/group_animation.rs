@@ -5,18 +5,30 @@ fn main() {
     let mut project = Project::new(800, 600).with_title("Group Animation");
 
     // Create some child nodes
-    let rect = Rect::new(Vec2::new(-50.0, -50.0), Vec2::new(100.0, 100.0), Color::rgba8(100, 100, 255, 255))
+    // Create some child nodes
+    let rect = Rect::default()
+        .with_position(Vec2::new(-50.0, -50.0))
+        .with_size(Vec2::new(100.0, 100.0))
+        .with_color(Color::rgba8(100, 100, 255, 255))
         .with_radius(10.0);
     
-    let circle1 = Circle::new(Vec2::new(-40.0, -40.0), 20.0, Color::rgba8(255, 100, 100, 255));
-    let circle2 = Circle::new(Vec2::new(40.0, 40.0), 20.0, Color::rgba8(100, 255, 100, 255));
+    let circle1 = Circle::default()
+        .with_position(Vec2::new(-40.0, -40.0))
+        .with_radius(20.0)
+        .with_color(Color::rgba8(255, 100, 100, 255));
+
+    let circle2 = Circle::default()
+        .with_position(Vec2::new(40.0, 40.0))
+        .with_radius(20.0)
+        .with_color(Color::rgba8(100, 255, 100, 255));
 
     // Create a GroupNode holding them
-    let group = GroupNode::new(vec![
-        Box::new(rect.clone()),
-        Box::new(circle1.clone()),
-        Box::new(circle2.clone()),
-    ])
+    let group = GroupNode::default()
+        .with_nodes(vec![
+            Box::new(rect.clone()),
+            Box::new(circle1.clone()),
+            Box::new(circle2.clone()),
+        ])
     .with_position(Vec2::new(400.0, 300.0));
 
     // We must add the group to the scene's nodes to render it

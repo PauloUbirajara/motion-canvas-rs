@@ -29,6 +29,9 @@ lazy_static! {
 const DEFAULT_FONT_SIZE: f32 = 24.0;
 const DEFAULT_THEME: &str = "base16-ocean.dark";
 const DEFAULT_FONT_FAMILY: &str = "Fira Code";
+const DEFAULT_LANGUAGE: &str = "rust";
+const DEFAULT_OPACITY: f32 = 1.0;
+const DEFAULT_DIM_OPACITY: f32 = 0.2;
 const LINE_HEIGHT_MULTIPLIER: f32 = 1.5;
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
@@ -186,9 +189,9 @@ impl Default for CodeNode {
             transform: Signal::new(Affine::IDENTITY),
             code: Signal::new(CodeValue::default()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
-            opacity: Signal::new(1.0),
-            dim_opacity: Signal::new(0.2),
-            language: "rust".to_string(),
+            opacity: Signal::new(DEFAULT_OPACITY),
+            dim_opacity: Signal::new(DEFAULT_DIM_OPACITY),
+            language: DEFAULT_LANGUAGE.to_string(),
             theme: DEFAULT_THEME.to_string(),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
         };

@@ -6,13 +6,16 @@ fn main() {
     let mut project = Project::new(800, 600).with_fps(60).with_cache(true);
 
     // 2. Define Nodes
-    let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::rgb8(0xe1, 0x32, 0x38)); // Red
-    let text = TextNode::new(
-        Vec2::new(400.0, 450.0),
-        "Hello Rust",
-        40.0,
-        Color::rgb8(0xf2, 0xf2, 0xf2),
-    ); // White-ish
+    let circle = Circle::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_radius(50.0)
+        .with_color(Color::rgb8(0xe1, 0x32, 0x38)); // Red
+
+    let text = TextNode::default()
+        .with_position(Vec2::new(400.0, 450.0))
+        .with_text("Hello Rust")
+        .with_font_size(40.0)
+        .with_color(Color::rgb8(0xf2, 0xf2, 0xf2)); // White-ish
 
     // 3. Add Nodes to the Scene
     project.scene.add(Box::new(circle.clone()));
