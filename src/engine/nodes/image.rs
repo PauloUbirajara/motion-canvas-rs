@@ -1,130 +1,105 @@
 use crate::engine::animation::{Signal, Node};
-use vello::peniko::{Image as PenikoImage, Format, Extend, Blob};
 use vello::Scene;
 use glam::Vec2;
 use vello::kurbo::Affine;
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
-use lazy_static::lazy_static;
-
-lazy_static! {
-    static ref IMAGE_CACHE: Mutex<HashMap<String, Arc<PenikoImage>>> = Mutex::new(HashMap::new());
-}
-
-pub struct ImageManager;
-
-impl ImageManager {
-    pub fn get_image(path: &str) -> Option<Arc<PenikoImage>> {
-        let mut cache = IMAGE_CACHE.lock().unwrap();
-        if let Some(img) = cache.get(path) {
-            return Some(img.clone());
-        }
-
-        if path.ends_with(".svg") {
-            let svg_data = std::fs::read(path).ok()?;
-            let opt = usvg::Options::default();
-            let tree = usvg::Tree::from_data(&svg_data, &opt).ok()?;
-            
-            let size = tree.size();
-            let mut pixmap = resvg::tiny_skia::Pixmap::new(size.width() as u32, size.height() as u32)?;
-            resvg::render(&tree, resvg::tiny_skia::Transform::default(), &mut pixmap.as_mut());
-            
-            let data = Arc::new(pixmap.take());
-            let peniko_img = Arc::new(PenikoImage {
-                data: Blob::new(data),
-                format: Format::Rgba8,
-                width: size.width() as u32,
-                height: size.height() as u32,
-                extend: Extend::Pad,
-            });
-            cache.insert(path.to_string(), peniko_img.clone());
-            return Some(peniko_img);
-        }
-
-        // Load raster image from disk
-        match image::open(path) {
-            Ok(img) => {
-                let rgba = img.to_rgba8();
-                let (width, height) = rgba.dimensions();
-                let data = Arc::new(rgba.into_raw());
-                let peniko_img = Arc::new(PenikoImage {
-                    data: Blob::new(data),
-                    format: Format::Rgba8,
-                    width,
-                    height,
-                    extend: Extend::Pad,
-                });
-                cache.insert(path.to_string(), peniko_img.clone());
-                return Some(peniko_img);
-            }
-            Err(e) => {
-                eprintln!("Error: Failed to load image at '{}': {}", path, e);
-            }
-        }
-        
-        None
-    }
-}
+use vello::peniko::Image;
 
 #[derive(Clone)]
 pub struct ImageNode {
-    pub position: Signal<Vec2>,
-    pub size: Signal<Vec2>,
-    pub image: Option<Arc<PenikoImage>>,
+    pub transform: Signal<Affine>,
     pub opacity: Signal<f32>,
+    pub image: Image,
+    pub size: Vec2,
 }
 
 impl ImageNode {
-    pub fn new(pos: Vec2, path: &str) -> Self {
-        let image = ImageManager::get_image(path);
-        let size = if let Some(ref img) = image {
-            Vec2::new(img.width as f32, img.height as f32)
-        } else {
-            Vec2::ZERO
-        };
-
+    pub fn new(pos: Vec2, image: Image) -> Self {
+        let size = Vec2::new(image.width as f32, image.height as f32);
         Self {
-            position: Signal::new(pos),
-            size: Signal::new(size),
-            image,
+            transform: Signal::new(Affine::translate((pos.x as f64, pos.y as f64))),
             opacity: Signal::new(1.0),
+            image,
+            size,
         }
     }
 
-    pub fn with_size(mut self, size: Vec2) -> Self {
-        self.size = Signal::new(size);
+    pub fn with_size(mut self, width: f32, height: f32) -> Self {
+        self.size = Vec2::new(width, height);
+        self
+    }
+
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = Signal::new(transform);
+        self
+    }
+
+    pub fn with_position(mut self, pos: Vec2) -> Self {
+        self.transform = Signal::new(Affine::translate((pos.x as f64, pos.y as f64)));
+        self
+    }
+
+    pub fn with_rotation(mut self, rad: f32) -> Self {
+        self.transform = Signal::new(self.transform.get() * Affine::rotate(rad as f64));
+        self
+    }
+
+    pub fn with_scale(mut self, s: f32) -> Self {
+        self.transform = Signal::new(self.transform.get() * Affine::scale(s as f64));
+        self
+    }
+
+    pub fn with_opacity(mut self, a: f32) -> Self {
+        self.opacity = Signal::new(a);
         self
     }
 }
 
 impl Node for ImageNode {
-    fn render(&self, scene: &mut Scene) {
-        if let Some(ref img) = self.image {
-            let pos = self.position.get();
-            let size = self.size.get();
-            let _opacity = self.opacity.get();
-
-            let transform = Affine::translate((pos.x as f64, pos.y as f64))
-                * Affine::scale_non_uniform(
-                    size.x as f64 / img.width as f64,
-                    size.y as f64 / img.height as f64
-                );
-
-            scene.draw_image(img, transform);
+    fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
+        let local_transform = self.transform.get();
+        let opacity = self.opacity.get() * parent_opacity;
+        
+        let combined_transform = parent_transform * local_transform;
+        
+        if opacity <= 0.0 {
+            return;
         }
+
+        // Apply scale based on original image size vs requested size
+        let sx = self.size.x as f64 / self.image.width as f64;
+        let sy = self.size.y as f64 / self.image.height as f64;
+        let scale = Affine::scale_non_uniform(sx, sy);
+        
+        scene.push_layer(
+            vello::peniko::Mix::Normal,
+            opacity,
+            combined_transform,
+            &vello::kurbo::Rect::new(0.0, 0.0, self.image.width as f64, self.image.height as f64)
+        );
+        scene.draw_image(&self.image, scale);
+        scene.pop_layer();
     }
+
     fn update(&mut self, _dt: Duration) {}
+
     fn state_hash(&self) -> u64 {
-        let pos = self.position.get();
-        let size = self.size.get();
-        let opacity = self.opacity.get();
-        let mut hash = 0u64;
-        hash ^= pos.x.to_bits() as u64;
-        hash ^= pos.y.to_bits() as u64;
-        hash ^= size.x.to_bits() as u64;
-        hash ^= size.y.to_bits() as u64;
-        hash ^= opacity.to_bits() as u64;
-        hash
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        let mut s = DefaultHasher::new();
+        
+        let coeffs = self.transform.get().as_coeffs();
+        for c in coeffs {
+            c.to_bits().hash(&mut s);
+        }
+        self.opacity.get().to_bits().hash(&mut s);
+        self.size.x.to_bits().hash(&mut s);
+        self.size.y.to_bits().hash(&mut s);
+        
+        s.finish()
+    }
+
+    fn clone_node(&self) -> Box<dyn Node> {
+        Box::new(self.clone())
     }
 }

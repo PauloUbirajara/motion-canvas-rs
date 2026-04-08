@@ -28,7 +28,7 @@ impl BaseScene {
 impl Scene2D for BaseScene {
     fn render(&self, scene: &mut Scene) {
         for node in &self.nodes {
-            node.render(scene);
+            node.render(scene, vello::kurbo::Affine::IDENTITY, 1.0);
         }
     }
 

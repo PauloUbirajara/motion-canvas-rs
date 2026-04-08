@@ -157,6 +157,14 @@ cargo run --example code_animation
 </details>
 
 <details>
+<summary><b>Group Animation</b> - Hierarchical transformations and matrix-based motion.</summary>
+
+```bash
+cargo run --example group_animation
+```
+</details>
+
+<details>
 <summary><b>Export</b> - Video export with color and font-size animations.</summary>
 
 ```bash
@@ -173,4 +181,7 @@ https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
 
 ## Credits
 
-This project is heavily inspired by the original [Motion Canvas](https://github.com/motion-canvas/motion-canvas) by [aarthificial](https://github.com/aarthificial). It aims to be a proof of concept of the same declarative animation feel in Rust.
+This project is heavily inspired by the original [Motion Canvas](https://github.com/motion-canvas/motion-canvas) by [aarthificial](https://github.com/aarthificial).
+
+Special thanks to:
+- [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.

@@ -78,12 +78,16 @@ impl PathNode {
 }
 
 impl Node for PathNode {
-    fn render(&self, scene: &mut Scene) {
+    fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let pos = self.position.get();
         let color = self.color.get();
         let width = self.width.get();
-        let brush = Brush::Solid(color);
-        scene.stroke(&Stroke::new(width as f64), Affine::translate((pos.x as f64, pos.y as f64)), &brush, None, &self.data.path);
+        
+        let mut final_color = color;
+        final_color.a = (color.a as f32 * parent_opacity).clamp(0.0, 255.0) as u8;
+        
+        let brush = Brush::Solid(final_color);
+        scene.stroke(&Stroke::new(width as f64), parent_transform * Affine::translate((pos.x as f64, pos.y as f64)), &brush, None, &self.data.path);
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
@@ -99,5 +103,9 @@ impl Node for PathNode {
         color.b.hash(&mut s);
         color.a.hash(&mut s);
         s.finish()
+    }
+
+    fn clone_node(&self) -> Box<dyn Node> {
+        Box::new(self.clone())
     }
 }

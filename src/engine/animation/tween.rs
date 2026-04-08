@@ -3,6 +3,7 @@ use crate::engine::nodes::{PathData, PathNode};
 use glam::Vec2;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use vello::kurbo::Affine;
 use vello::peniko::Color;
 
 const DEFAULT_EASING: fn(f32) -> f32 = crate::engine::easings::cubic_in_out;
@@ -46,6 +47,22 @@ impl Tweenable for Color {
             lerp(a.b as f32, b.b as f32, t) as u8,
             lerp(a.a as f32, b.a as f32, t) as u8,
         )
+    }
+}
+
+impl Tweenable for Affine {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        let t = t as f64;
+        let c1 = a.as_coeffs();
+        let c2 = b.as_coeffs();
+        Affine::new([
+            c1[0] + (c2[0] - c1[0]) * t,
+            c1[1] + (c2[1] - c1[1]) * t,
+            c1[2] + (c2[2] - c1[2]) * t,
+            c1[3] + (c2[3] - c1[3]) * t,
+            c1[4] + (c2[4] - c1[4]) * t,
+            c1[5] + (c2[5] - c1[5]) * t,
+        ])
     }
 }
 

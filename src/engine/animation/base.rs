@@ -8,7 +8,8 @@ pub trait Animation: Send + Sync + 'static {
 }
 
 pub trait Node: Send + Sync + 'static {
-    fn render(&self, vello_scene: &mut Scene);
+    fn render(&self, vello_scene: &mut Scene, parent_transform: vello::kurbo::Affine, parent_opacity: f32);
     fn update(&mut self, dt: Duration);
     fn state_hash(&self) -> u64;
+    fn clone_node(&self) -> Box<dyn Node>;
 }

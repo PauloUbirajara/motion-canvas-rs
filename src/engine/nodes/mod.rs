@@ -9,6 +9,7 @@ pub mod math;
 #[cfg(feature = "image")]
 pub mod image;
 pub mod path;
+pub mod group;
 
 pub use circle::*;
 pub use rect::*;
@@ -21,3 +22,4 @@ pub use math::*;
 #[cfg(feature = "image")]
 pub use image::*;
 pub use path::*;
+pub use group::*;
