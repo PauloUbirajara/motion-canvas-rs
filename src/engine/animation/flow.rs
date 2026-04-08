@@ -40,6 +40,12 @@ impl Animation for All {
             .max()
             .unwrap_or(Duration::ZERO)
     }
+
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        for anim in &mut self.animations {
+            anim.set_easing(easing);
+        }
+    }
 }
 
 // --- Any (Race) ---
@@ -70,6 +76,12 @@ impl Animation for Any {
             .map(|a| a.duration())
             .min()
             .unwrap_or(Duration::ZERO)
+    }
+
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        for anim in &mut self.animations {
+            anim.set_easing(easing);
+        }
     }
 }
 
@@ -107,6 +119,12 @@ impl Animation for Chain {
             .map(|a| a.duration())
             .fold(Duration::ZERO, |acc, d| acc + d)
     }
+
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        for anim in &mut self.animations {
+            anim.set_easing(easing);
+        }
+    }
 }
 
 // --- Delay ---
@@ -138,6 +156,10 @@ impl Animation for Delay {
 
     fn duration(&self) -> Duration {
         self.duration + self.inner.duration()
+    }
+
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        self.inner.set_easing(easing);
     }
 }
 
@@ -192,6 +214,12 @@ impl Animation for Sequence {
             .map(|(start, anim)| *start + anim.duration())
             .max()
             .unwrap_or(Duration::ZERO)
+    }
+
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        for (_, anim) in &mut self.items {
+            anim.set_easing(easing);
+        }
     }
 }
 
@@ -292,4 +320,10 @@ where
     F: Fn() -> Box<dyn Animation> + Send + Sync + 'static,
 {
     Box::new(LoopAnim::new(Box::new(factory), count))
+}
+
+pub fn with_easing(easing: fn(f32) -> f32, animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
+    let mut all = All::new(animations);
+    all.set_easing(easing);
+    Box::new(all)
 }

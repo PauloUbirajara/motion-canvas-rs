@@ -146,6 +146,10 @@ impl<T: Tweenable> Animation for SignalTween<T> {
     fn duration(&self) -> Duration {
         self.duration
     }
+
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        self.easing = easing;
+    }
 }
 
 pub struct FollowPath<T> {
@@ -183,6 +187,10 @@ impl<T: Tweenable + From<Vec2>> Animation for FollowPath<T> {
 
     fn duration(&self) -> Duration {
         self.duration
+    }
+
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        self.easing = easing;
     }
 }
 

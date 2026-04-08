@@ -4,6 +4,7 @@ use vello::Scene;
 pub trait Animation: Send + Sync + 'static {
     fn update(&mut self, dt: Duration) -> bool;
     fn duration(&self) -> Duration;
+    fn set_easing(&mut self, _easing: fn(f32) -> f32) {}
 }
 
 pub trait Node: Send + Sync + 'static {

@@ -93,3 +93,10 @@ macro_rules! loop_anim {
         )
     };
 }
+/// Run animations in parallel with a shared easing override.
+#[macro_export]
+macro_rules! with_easing {
+    ($easing:expr, [$($x:expr),* $(,)?]) => {
+        $crate::engine::animation::flow::with_easing($easing, vec![$(Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($x)),*])
+    };
+}
