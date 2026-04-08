@@ -11,6 +11,8 @@ lazy_static::lazy_static! {
     static ref GLOBAL_MATH_CACHE: Mutex<HashMap<MathCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
 }
 
+
+
 #[derive(Hash, Eq, PartialEq)]
 struct MathCacheKey {
     equation: String,
@@ -95,16 +97,7 @@ impl MathNode {
             font_size_bits: size.to_bits(),
         };
 
-        // 1. Check if we already have it locally
-        {
-            let local = self.cache.lock().unwrap();
-            if let Some(_paths) = local.as_ref() {
-                // If we want to be more efficient, we'd store the key locally too to avoid locking GLOBAL_MATH_CACHE
-                // For now, let's keep it simple.
-            }
-        }
-
-        // 2. Check global cache
+        // 1. Check global cache
         let mut global = GLOBAL_MATH_CACHE.lock().unwrap();
         if let Some(paths) = global.get(&key) {
             let mut local = self.cache.lock().unwrap();

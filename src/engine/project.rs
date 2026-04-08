@@ -13,6 +13,15 @@ use std::path::Path;
 use std::path::PathBuf;
 use vello::peniko::Color;
 
+const DEFAULT_FPS: u32 = 60;
+const DEFAULT_TITLE: &str = "Motion Canvas Rust";
+const DEFAULT_OUTPUT_PATH: &str = "output";
+const DEFAULT_FRAME_TEMPLATE: &str = "frame_{:04}.png";
+const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
+const DEFAULT_USE_CACHE: bool = true;
+const DEFAULT_USE_GPU: bool = true;
+const DEFAULT_USE_FFMPEG: bool = false;
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct CacheManifest {
     pub frames: HashMap<u32, u64>, // frame_index -> state_hash
@@ -37,15 +46,15 @@ impl Project {
         Self {
             width,
             height,
-            fps: 60,
-            title: "Motion Canvas Rust".to_string(),
+            fps: DEFAULT_FPS,
+            title: DEFAULT_TITLE.to_string(),
             scene: BaseScene::new(),
-            output_path: PathBuf::from("output"),
-            frame_template: "frame_{:04}.png".to_string(),
-            use_cache: true, // Cache is now enabled by default
-            use_ffmpeg: false,
-            use_gpu: true,
-            background_color: Color::rgb8(0x1a, 0x1a, 0x1a),
+            output_path: PathBuf::from(DEFAULT_OUTPUT_PATH),
+            frame_template: DEFAULT_FRAME_TEMPLATE.to_string(),
+            use_cache: DEFAULT_USE_CACHE,
+            use_ffmpeg: DEFAULT_USE_FFMPEG,
+            use_gpu: DEFAULT_USE_GPU,
+            background_color: DEFAULT_BACKGROUND_COLOR,
         }
     }
 

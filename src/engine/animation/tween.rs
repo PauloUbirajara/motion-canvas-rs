@@ -5,6 +5,8 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use vello::peniko::Color;
 
+const DEFAULT_EASING: fn(f32) -> f32 = crate::engine::easings::cubic_in_out;
+
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
@@ -83,7 +85,7 @@ impl<T: Tweenable + PartialEq> Signal<T> {
             target_value: target,
             duration,
             elapsed: Duration::ZERO,
-            easing: crate::engine::easings::cubic_in_out,
+            easing: DEFAULT_EASING,
         }
     }
 
@@ -96,7 +98,7 @@ impl<T: Tweenable + PartialEq> Signal<T> {
             path_data: path.data.clone(),
             duration,
             elapsed: Duration::ZERO,
-            easing: crate::engine::easings::cubic_in_out,
+            easing: DEFAULT_EASING,
         }
     }
 }

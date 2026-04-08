@@ -1,8 +1,18 @@
 use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
+const CANVAS_WIDTH: u32 = 800;
+const CANVAS_HEIGHT: u32 = 800;
+const START_X: f32 = 150.0;
+const END_X: f32 = 750.0;
+const START_Y: f32 = 100.0;
+const SPACING_Y: f32 = 80.0;
+const ANIM_DURATION_GO: Duration = Duration::from_secs(2);
+const ANIM_DURATION_RETURN: Duration = Duration::from_secs(2);
+const WAIT_DURATION: Duration = Duration::from_secs(1);
+
 fn main() {
-    let mut project = Project::new(800, 800);
+    let mut project = Project::new(CANVAS_WIDTH, CANVAS_HEIGHT);
 
     let easing_configs = vec![
         ("Linear", easings::linear as fn(f32) -> f32),
@@ -17,10 +27,6 @@ fn main() {
     ];
 
     let mut balls = Vec::new();
-    let start_x = 150.0;
-    let end_x = 750.0;
-    let start_y = 100.0;
-    let spacing_y = 80.0;
 
     let colors = vec![
         Color::rgb8(0xe1, 0x32, 0x38), // Red
@@ -34,9 +40,9 @@ fn main() {
     ];
 
     for (i, (name, _)) in easing_configs.iter().enumerate() {
-        let y = start_y + (i as f32 * spacing_y);
-        let ball = Circle::new(Vec2::new(start_x, y), 20.0, colors[i % colors.len()]);
-        let label = TextNode::new(Vec2::new(start_x - 130.0, y), name, 18.0, Color::rgb8(0xcc, 0xcc, 0xcc));
+        let y = START_Y + (i as f32 * SPACING_Y);
+        let ball = Circle::new(Vec2::new(START_X, y), 20.0, colors[i % colors.len()]);
+        let label = TextNode::new(Vec2::new(START_X - 130.0, y), name, 18.0, Color::rgb8(0xcc, 0xcc, 0xcc));
         
         project.scene.add(Box::new(ball.clone()));
         project.scene.add(Box::new(label.clone()));
@@ -54,21 +60,21 @@ fn main() {
         
         // 1. Move to right using individual scoped easings
         let right_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
-            let end_pos = Vec2::new(end_x, start_y + i as f32 * spacing_y);
-            flows::with_easing(*easing, vec![balls[i].position.to(end_pos, Duration::from_secs(2)).into()])
+            let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
+            flows::with_easing(*easing, vec![balls[i].position.to(end_pos, ANIM_DURATION_GO).into()])
         }).collect());
 
         // 2. Move back to left using the SAME scoped easings
         let left_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
-            let start_pos = Vec2::new(start_x, start_y + i as f32 * spacing_y);
-            flows::with_easing(*easing, vec![balls[i].position.to(start_pos, Duration::from_secs(2)).into()])
+            let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
+            flows::with_easing(*easing, vec![balls[i].position.to(start_pos, ANIM_DURATION_RETURN).into()])
         }).collect());
 
         flows::chain(vec![
             right_anims,
-            flows::wait(Duration::from_secs(1)),
+            flows::wait(WAIT_DURATION),
             left_anims,
-            flows::wait(Duration::from_secs(1)),
+            flows::wait(WAIT_DURATION),
         ])
     }, None));
 

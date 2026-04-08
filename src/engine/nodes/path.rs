@@ -6,6 +6,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use crate::engine::animation::{Node, Signal};
 
+const FLATTEN_TOLERANCE: f64 = 0.1;
+
 pub struct PathData {
     pub path: BezPath,
     pub segments: Vec<(Vec2, f32)>,
@@ -17,7 +19,7 @@ impl PathData {
         let mut segments = Vec::new();
         let mut total_length = 0.0;
         let mut last_point: Option<Vec2> = None;
-        vello::kurbo::flatten(&path, 0.1, |el| {
+        vello::kurbo::flatten(&path, FLATTEN_TOLERANCE, |el| {
             match el {
                 vello::kurbo::PathEl::MoveTo(p) => {
                     let pt = Vec2::new(p.x as f32, p.y as f32);

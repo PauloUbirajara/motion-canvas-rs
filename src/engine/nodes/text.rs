@@ -15,6 +15,9 @@ lazy_static! {
     static ref GLOBAL_TEXT_CACHE: Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
 }
 
+const DEFAULT_FONT_FAMILY: &str = "Inter";
+const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
+
 #[derive(Hash, Eq, PartialEq)]
 struct TextCacheKey {
     text: String,
@@ -40,7 +43,7 @@ impl TextNode {
             font_size: Signal::new(size),
             color: Signal::new(color),
             opacity: Signal::new(1.0),
-            font_family: "Inter".to_string(),
+            font_family: DEFAULT_FONT_FAMILY.to_string(),
             cache: Arc::new(Mutex::new(None)),
         }
     }
@@ -89,15 +92,7 @@ impl Node for TextNode {
             font_family: self.font_family.clone(),
         };
 
-        // 1. Check local cache
-        {
-            let local = self.cache.lock().unwrap();
-            if local.is_some() {
-                // ...
-            }
-        }
-
-        // 2. Check global cache
+        // 1. Check global cache
         let mut global = GLOBAL_TEXT_CACHE.lock().unwrap();
         if let Some(paths) = global.get(&key) {
             let mut local = self.cache.lock().unwrap();
@@ -105,7 +100,7 @@ impl Node for TextNode {
         } else {
             // 3. Rebuild
             let mut paths = Vec::new();
-            if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Inter", "Arial", "sans-serif"]) {
+            if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, DEFAULT_FONT_FAMILY, "Arial", "sans-serif"]) {
                 let font_ref = FontManager::get_font_ref(&font_data);
                 let charmap = font_ref.charmap();
                 let outlines = font_ref.outline_glyphs();
@@ -114,7 +109,7 @@ impl Node for TextNode {
                 for c in text.chars() {
                     let glyph_id = charmap.map(c).unwrap_or_default();
                     let mut pb = BezPath::new();
-                    let mut advance = (size * 0.6) as f64;
+                    let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
                     
                     if let Some(glyph) = outlines.get(glyph_id) {
                         let mut sink = PathSink(&mut pb);

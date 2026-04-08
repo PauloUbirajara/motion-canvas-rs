@@ -21,6 +21,12 @@ lazy_static! {
     static ref GLOBAL_CODE_CACHE: Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>> = Mutex::new(HashMap::new());
 }
 
+const DEFAULT_FONT_SIZE: f32 = 24.0;
+const DEFAULT_THEME: &str = "base16-ocean.dark";
+const DEFAULT_FONT_FAMILY: &str = "Fira Code";
+const LINE_HEIGHT_MULTIPLIER: f32 = 1.5;
+const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
+
 #[derive(Hash, Eq, PartialEq, Clone)]
 struct CodeCacheKey {
     code: String,
@@ -147,15 +153,30 @@ impl CodeNode {
         let node = Self {
             position: Signal::new(pos),
             code: Signal::new(CodeValue::default()),
-            font_size: Signal::new(24.0),
+            font_size: Signal::new(DEFAULT_FONT_SIZE),
             language: lang.to_string(),
-            theme: "base16-ocean.dark".to_string(),
-            font_family: "Fira Code".to_string(),
+            theme: DEFAULT_THEME.to_string(),
+            font_family: DEFAULT_FONT_FAMILY.to_string(),
         };
         
         let initial_value = CodeValue::new(code.to_string(), &node);
         node.code.set(initial_value);
         node
+    }
+
+    pub fn with_theme(mut self, theme: &str) -> Self {
+        self.theme = theme.to_string();
+        self
+    }
+
+    pub fn with_font(mut self, font: &str) -> Self {
+        self.font_family = font.to_string();
+        self
+    }
+
+    pub fn with_font_size(mut self, size: f32) -> Self {
+        self.font_size = Signal::new(size);
+        self
     }
 
     pub fn edit(&self, code: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
@@ -204,7 +225,7 @@ impl CodeNode {
                     for c in text.chars() {
                         let glyph_id = charmap.map(c).unwrap_or_default();
                         let mut pb = BezPath::new();
-                        let mut advance = (size * 0.6) as f64;
+                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
                         
                         if let Some(glyph) = outlines.get(glyph_id) {
                             let mut sink = PathSink(&mut pb);
@@ -233,7 +254,7 @@ impl CodeNode {
                     
                     x_offset += token_width;
                 }
-                y_offset += (size * 1.5) as f64;
+                y_offset += (size * LINE_HEIGHT_MULTIPLIER) as f64;
             }
         }
 
