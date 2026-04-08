@@ -1,4 +1,5 @@
 use crate::engine::scene::BaseScene;
+use vello::peniko::Color;
 #[cfg(feature = "export")]
 use crate::engine::scene::Scene2D;
 use crate::render::AnimationWindow;
@@ -28,6 +29,7 @@ pub struct Project {
     pub use_cache: bool,
     pub use_ffmpeg: bool,
     pub use_gpu: bool,
+    pub background_color: Color,
 }
 
 impl Project {
@@ -43,6 +45,7 @@ impl Project {
             use_cache: true, // Cache is now enabled by default
             use_ffmpeg: false,
             use_gpu: true,
+            background_color: Color::BLACK,
         }
     }
 
@@ -81,6 +84,11 @@ impl Project {
         self
     }
 
+    pub fn with_background(mut self, color: Color) -> Self {
+        self.background_color = color;
+        self
+    }
+
     pub fn export(&mut self) -> anyhow::Result<()> {
         #[cfg(feature = "export")]
         {
@@ -95,7 +103,7 @@ impl Project {
                 CacheManifest::default()
             };
 
-            let mut exporter = crate::render::export::Exporter::new(self.width, self.height, self.use_gpu);
+            let mut exporter = crate::render::export::Exporter::new(self.width, self.height, self.use_gpu, self.background_color);
             let dt = std::time::Duration::from_secs_f32(1.0 / self.fps as f32);
             let mut frame_count = 0;
             let mut rendered_count = 0;

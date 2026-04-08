@@ -39,4 +39,8 @@ name = "export"
 required-features = ["export"]
 
 [[example]]
+name = "math_animation"
+required-features = ["math"]
+
+[[example]]
 name = "color_interpolation"

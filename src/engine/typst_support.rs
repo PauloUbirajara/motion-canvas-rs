@@ -21,10 +21,25 @@ impl TypstWorld {
         let library = Library::default();
         let mut fonts = Vec::new();
         
-        if let Some(data) = FontManager::get_font("Inter") {
+        // 1. Always try a system math font first for MathNode compatibility
+        if let Some(data) = FontManager::get_math_font() {
             if let Some(font) = Font::new(Bytes::new(data.data.clone()), 0) {
                 fonts.push(font);
             }
+        }
+
+        // 2. Add some standard fallbacks for general text within Typst
+        let families = ["Inter", "Noto Sans", "DejaVu Sans", "Arial", "sans-serif"];
+        for family in families {
+            if let Some(data) = FontManager::get_font(family) {
+                if let Some(font) = Font::new(Bytes::new(data.data.clone()), 0) {
+                    fonts.push(font);
+                }
+            }
+        }
+        
+        if fonts.is_empty() {
+            eprintln!("CRITICAL: TypstWorld has no fonts. Layout will fail.");
         }
         
         let book = FontBook::from_fonts(&fonts);

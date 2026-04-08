@@ -14,10 +14,11 @@ pub struct Exporter {
     output_buffer: wgpu::Buffer,
     bytes_per_row: u32,
     unaligned_bytes_per_row: u32,
+    background_color: vello::peniko::Color,
 }
 
 impl Exporter {
-    pub fn new(width: u32, height: u32, use_gpu: bool) -> Self {
+    pub fn new(width: u32, height: u32, use_gpu: bool, background_color: vello::peniko::Color) -> Self {
         let mut context = RenderContext::new();
         let device_id = pollster::block_on(context.device(None)).unwrap();
         let device_handle = &context.devices[device_id];
@@ -79,6 +80,7 @@ impl Exporter {
             output_buffer,
             bytes_per_row,
             unaligned_bytes_per_row,
+            background_color,
         }
     }
 
@@ -99,7 +101,7 @@ impl Exporter {
                 &self.scene,
                 &self.texture_view,
                 &vello::RenderParams {
-                    base_color: vello::peniko::Color::BLACK,
+                    base_color: self.background_color,
                     width: self.width,
                     height: self.height,
                     antialiasing_method: vello::AaConfig::Msaa16,

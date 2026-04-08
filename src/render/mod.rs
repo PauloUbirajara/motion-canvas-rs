@@ -18,16 +18,18 @@ pub struct VelloRenderer<'a> {
     renderer: Option<Renderer>,
     scene: Scene,
     use_gpu: bool,
+    background_color: vello::peniko::Color,
 }
 
 impl<'a> VelloRenderer<'a> {
-    pub fn new(use_gpu: bool) -> Self {
+    pub fn new(use_gpu: bool, background_color: vello::peniko::Color) -> Self {
         Self {
             context: RenderContext::new(),
             surface: None,
             renderer: None,
             scene: Scene::new(),
             use_gpu,
+            background_color,
         }
     }
 
@@ -78,7 +80,7 @@ impl<'a> VelloRenderer<'a> {
                     &self.scene,
                     &surface_texture,
                     &vello::RenderParams {
-                        base_color: vello::peniko::Color::BLACK,
+                        base_color: self.background_color,
                         width,
                         height,
                         antialiasing_method: vello::AaConfig::Msaa16,
@@ -113,7 +115,7 @@ impl AnimationWindow {
         // Wrap renderer in an Option so we can create it inside 'resumed' if needed,
         // or just keep it outside and manage lifetimes carefully.
         // For simplicity in event_loop.run, we can use a wrapper or just pollster::block_on.
-        let mut renderer = VelloRenderer::new(self.project.use_gpu);
+        let mut renderer = VelloRenderer::new(self.project.use_gpu, self.project.background_color);
         let mut last_update = Instant::now();
         let mut last_hash = 0u64;
         let mut finished = false;

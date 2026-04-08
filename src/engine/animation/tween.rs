@@ -65,6 +65,10 @@ impl<T: Tweenable> Signal<T> {
         self.data.lock().unwrap().value.clone()
     }
 
+    pub fn set(&self, value: T) {
+        self.data.lock().unwrap().value = value;
+    }
+
     pub fn to(&self, target: T, duration: Duration) -> SignalTween<T> {
         SignalTween {
             data: self.data.clone(),

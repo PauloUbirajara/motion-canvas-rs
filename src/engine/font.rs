@@ -90,6 +90,37 @@ impl FontManager {
         None
     }
 
+    pub fn get_math_font() -> Option<Arc<FontData>> {
+        // First try specific known math fonts
+        let known_math = ["DejaVu Math TeX Gyre", "Noto Sans Math", "New Computer Modern Math", "STIX Two Math"];
+        for family in known_math {
+            if let Some(font) = Self::get_font(family) {
+                return Some(font);
+            }
+        }
+
+        // Search all system fonts for anything with "Math" in the name
+        let source = SystemSource::new();
+        if let Ok(fonts) = source.all_fonts() {
+            for handle in fonts {
+                if let Ok(font) = handle.load() {
+                    let name = font.full_name();
+                    if name.contains("Math") {
+                        if let Some(data) = font.copy_font_data() {
+                            return Some(Arc::new(FontData {
+                                name,
+                                data: (*data).clone(),
+                            }));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback to serif if no math font found (better than nothing for Typst)
+        Self::get_font_with_fallback(&["serif"])
+    }
+
     pub fn get_font_ref(data: &Arc<FontData>) -> FontRef<'_> {
         FontRef::new(&data.data).unwrap()
     }
