@@ -1,4 +1,8 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::engine::nodes::MathNode;
+use motion_canvas_rs::flows;
+use motion_canvas_rs::render::Color;
+use glam::Vec2;
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
@@ -18,13 +22,13 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(Box::new(tex.clone()));
 
     // 3. Define Animation Sequence
-    // Note: We use Typst math syntax here.
-    project.scene.timeline.add(chain![
-        wait(Duration::from_millis(500)),
+    project.scene.timeline.add(flows::chain![
+        flows::wait(Duration::from_millis(500)),
         tex.tex("y = a x^2 + b x", Duration::from_secs(1)),
-        wait(Duration::from_millis(500)),
-        tex.tex("(a x^2 + b x) / 1", Duration::from_secs(1)),
-        wait(Duration::from_millis(500)),
+        flows::wait(Duration::from_millis(500)),
+        // Euler's Identity in Typst: e^(i pi) + 1 = 0
+        tex.tex("e^(i pi) + 1 = 0", Duration::from_secs(1)),
+        flows::wait(Duration::from_millis(500)),
         tex.tex("y = a x^2", Duration::from_secs(1)),
     ]);
 

@@ -1,4 +1,8 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::engine::nodes::MathNode;
+use motion_canvas_rs::flows;
+use motion_canvas_rs::render::Color;
+use glam::Vec2;
 use std::time::Duration;
 
 #[test]
@@ -17,12 +21,12 @@ fn test_math_animation_export() -> anyhow::Result<()> {
     );
     project.scene.add(Box::new(tex.clone()));
 
-    project.scene.timeline.add(chain![
-        wait(Duration::from_millis(100)),
+    project.scene.timeline.add(flows::chain![
+        flows::wait(Duration::from_millis(100)),
         tex.tex("y = a x^2 + b x", Duration::from_millis(200)),
-        wait(Duration::from_millis(100)),
-        tex.tex("(a x^2 + b x) / 1", Duration::from_millis(200)),
-        wait(Duration::from_millis(100)),
+        flows::wait(Duration::from_millis(100)),
+        tex.tex("e^(i pi) + 1 = 0", Duration::from_millis(200)),
+        flows::wait(Duration::from_millis(100)),
         tex.tex("y = a x^2", Duration::from_millis(200)),
     ]);
 

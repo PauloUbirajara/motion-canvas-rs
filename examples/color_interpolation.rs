@@ -1,4 +1,8 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::engine::nodes::{Circle, Rect};
+use motion_canvas_rs::flows;
+use motion_canvas_rs::render::Color;
+use glam::Vec2;
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
@@ -24,7 +28,7 @@ fn main() -> anyhow::Result<()> {
     let target_color = Color::rgb8(0xf2, 0xf2, 0xf2); // White-ish
     let duration = Duration::from_secs(1);
 
-    project.scene.timeline.add(all![
+    project.scene.timeline.add(flows::all![
         circle.color.to(target_color, duration),
         rect.color.to(target_color, duration),
     ]);

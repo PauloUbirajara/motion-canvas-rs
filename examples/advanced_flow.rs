@@ -1,4 +1,9 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::engine::nodes::{Circle, Rect, Line, PathNode, TextNode, CodeNode, MathNode, ImageNode};
+use motion_canvas_rs::flows;
+use motion_canvas_rs::engine::easings;
+use motion_canvas_rs::render::Color;
+use glam::Vec2;
 use std::time::Duration;
 use vello::kurbo::BezPath;
 
@@ -49,7 +54,7 @@ fn main() -> anyhow::Result<()> {
 
     let math_eq = MathNode::new(
         Vec2::new(50.0, 200.0),
-        "e^{i\\pi} + 1 = 0",
+        "e^(i pi) + 1 = 0",
         30.0,
         Color::rgb8(0xe6, 0xa7, 0x00), // Yellow
     );
@@ -66,18 +71,18 @@ fn main() -> anyhow::Result<()> {
     let text_pos = title_text.position.clone();
 
     // 3. Define the Animation "Super Sequence"
-    project.scene.timeline.add(all![
+    project.scene.timeline.add(flows::all![
         // Background loop pulse
-        loop_anim![
+        flows::loop_anim![
             bg_size
                 .to(Vec2::new(780.0, 580.0), Duration::from_secs(2))
                 .ease(easings::quad_in_out),
             Some(3)
         ],
         // Main sequence
-        chain![
+        flows::chain![
             // Staggered appearance of nodes
-            sequence![
+            flows::sequence![
                 Duration::from_millis(200),
                 divider_line
                     .end
@@ -89,16 +94,16 @@ fn main() -> anyhow::Result<()> {
                     .ease(easings::elastic_out),
             ],
             // The path follow combined with a "race" logic
-            any![
+            flows::any![
                 follower
                     .position
                     .follow(&path_node, Duration::from_secs(4))
                     .ease(easings::cubic_in_out),
                 // Race: if this 'wait' finishes first, the follow is done
-                wait(Duration::from_secs(5)),
+                flows::wait(Duration::from_secs(5)),
             ],
             // Final flourishes using different easings
-            all![
+            flows::all![
                 follower
                     .radius
                     .to(10.0, Duration::from_secs(1))
@@ -107,7 +112,7 @@ fn main() -> anyhow::Result<()> {
                     .start
                     .to(Vec2::new(400.0, 300.0), Duration::from_secs(1))
                     .ease(easings::cubic_in),
-                delay![
+                flows::delay![
                     Duration::from_millis(200),
                     bg_pos
                         .to(Vec2::new(400.0, 280.0), Duration::from_secs(1))

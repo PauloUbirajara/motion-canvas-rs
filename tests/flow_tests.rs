@@ -1,4 +1,5 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::Animation;
+use motion_canvas_rs::engine::animation::flow::{Chain, All};
 use std::time::Duration;
 
 struct MockAnim {
@@ -25,8 +26,8 @@ impl Animation for MockAnim {
 #[test]
 fn test_chain_execution() {
     let anims: Vec<Box<dyn Animation>> = vec![
-        Box::new(MockAnim::new()),
-        Box::new(MockAnim::new()),
+        Box::new(MockAnim::new()) as Box<dyn Animation>,
+        Box::new(MockAnim::new()) as Box<dyn Animation>,
     ];
     let mut chain = Chain::new(anims);
 
@@ -38,8 +39,8 @@ fn test_chain_execution() {
 #[test]
 fn test_all_execution() {
     let anims: Vec<Box<dyn Animation>> = vec![
-        Box::new(MockAnim::new()),
-        Box::new(MockAnim::new()),
+        Box::new(MockAnim::new()) as Box<dyn Animation>,
+        Box::new(MockAnim::new()) as Box<dyn Animation>,
     ];
     let mut all = All::new(anims);
 

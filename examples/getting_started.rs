@@ -1,4 +1,8 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::engine::nodes::{Circle, TextNode};
+use motion_canvas_rs::flows;
+use motion_canvas_rs::render::Color;
+use glam::Vec2;
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
@@ -16,7 +20,7 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(Box::new(text.clone()));
 
     // 4. Add Animations to the Timeline
-    project.scene.timeline.add(all![
+    project.scene.timeline.add(flows::all![
         circle.radius.to(100.0, Duration::from_secs(1)),
         text.position.to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
     ]);

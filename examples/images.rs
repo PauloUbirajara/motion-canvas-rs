@@ -1,4 +1,6 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::engine::nodes::ImageNode;
+use glam::Vec2;
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {

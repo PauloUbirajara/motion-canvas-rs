@@ -1,3 +1,4 @@
+pub use vello::peniko::Color;
 use crate::engine::scene::Scene2D;
 use std::time::{Duration, Instant};
 use vello::{

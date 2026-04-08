@@ -1,4 +1,7 @@
-use motion_canvas_rs::prelude::*;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::engine::nodes::{Circle, Rect, Line};
+use motion_canvas_rs::render::Color;
+use glam::Vec2;
 
 fn main() -> anyhow::Result<()> {
     let mut project = Project::new(800, 600);
