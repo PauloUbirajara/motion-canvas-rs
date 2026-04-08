@@ -48,11 +48,15 @@ impl Node for Rect {
     fn state_hash(&self) -> u64 {
         let pos = self.position.get();
         let size = self.size.get();
+        let color = self.color.get();
+        let radius = self.radius.get();
         let mut hash = 0u64;
         hash ^= pos.x.to_bits() as u64;
         hash ^= pos.y.to_bits() as u64;
         hash ^= size.x.to_bits() as u64;
         hash ^= size.y.to_bits() as u64;
+        hash ^= radius.to_bits() as u64;
+        hash ^= (color.r as u64) << 24 | (color.g as u64) << 16 | (color.b as u64) << 8 | (color.a as u64);
         hash
     }
 }

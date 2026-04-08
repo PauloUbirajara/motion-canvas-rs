@@ -44,9 +44,15 @@ impl Node for Line {
     fn state_hash(&self) -> u64 {
         let start = self.start.get();
         let end = self.end.get();
+        let color = self.color.get();
+        let width = self.width.get();
         let mut hash = 0u64;
         hash ^= start.x.to_bits() as u64;
+        hash ^= start.y.to_bits() as u64;
         hash ^= end.x.to_bits() as u64;
+        hash ^= end.y.to_bits() as u64;
+        hash ^= width.to_bits() as u64;
+        hash ^= (color.r as u64) << 24 | (color.g as u64) << 16 | (color.b as u64) << 8 | (color.a as u64);
         hash
     }
 }

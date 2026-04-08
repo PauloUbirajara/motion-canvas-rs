@@ -118,5 +118,19 @@ impl Node for MathNode {
         }
     }
     fn update(&mut self, _dt: Duration) {}
-    fn state_hash(&self) -> u64 { self.position.data.lock().unwrap().value.x.to_bits() as u64 }
+    fn state_hash(&self) -> u64 {
+        let pos = self.position.get();
+        let eq = self.equation.get();
+        let size = self.font_size.get();
+        let color = self.color.get();
+        let mut hash = 0u64;
+        hash ^= pos.x.to_bits() as u64;
+        hash ^= pos.y.to_bits() as u64;
+        hash ^= size.to_bits() as u64;
+        hash ^= (color.r as u64) << 24 | (color.g as u64) << 16 | (color.b as u64) << 8 | (color.a as u64);
+        for b in eq.as_bytes() {
+            hash = hash.wrapping_mul(31).wrapping_add(*b as u64);
+        }
+        hash
+    }
 }

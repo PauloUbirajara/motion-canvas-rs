@@ -97,7 +97,15 @@ impl Node for ImageNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.data.lock().unwrap().value;
-        pos.x.to_bits() as u64
+        let pos = self.position.get();
+        let size = self.size.get();
+        let opacity = self.opacity.get();
+        let mut hash = 0u64;
+        hash ^= pos.x.to_bits() as u64;
+        hash ^= pos.y.to_bits() as u64;
+        hash ^= size.x.to_bits() as u64;
+        hash ^= size.y.to_bits() as u64;
+        hash ^= opacity.to_bits() as u64;
+        hash
     }
 }

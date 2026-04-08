@@ -126,7 +126,18 @@ impl Node for TextNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.data.lock().unwrap().value;
-        pos.x.to_bits() as u64
+        let pos = self.position.get();
+        let text = self.text.get();
+        let size = self.font_size.get();
+        let color = self.color.get();
+        let mut hash = 0u64;
+        hash ^= pos.x.to_bits() as u64;
+        hash ^= pos.y.to_bits() as u64;
+        hash ^= size.to_bits() as u64;
+        hash ^= (color.r as u64) << 24 | (color.g as u64) << 16 | (color.b as u64) << 8 | (color.a as u64);
+        for b in text.as_bytes() {
+            hash = hash.wrapping_mul(31).wrapping_add(*b as u64);
+        }
+        hash
     }
 }

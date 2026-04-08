@@ -148,5 +148,17 @@ impl Node for CodeNode {
         }
     }
     fn update(&mut self, _dt: Duration) {}
-    fn state_hash(&self) -> u64 { self.position.data.lock().unwrap().value.x.to_bits() as u64 }
+    fn state_hash(&self) -> u64 {
+        let pos = self.position.get();
+        let code = self.code.get();
+        let size = self.font_size.get();
+        let mut hash = 0u64;
+        hash ^= pos.x.to_bits() as u64;
+        hash ^= pos.y.to_bits() as u64;
+        hash ^= size.to_bits() as u64;
+        for b in code.as_bytes() {
+            hash = hash.wrapping_mul(31).wrapping_add(*b as u64);
+        }
+        hash
+    }
 }
