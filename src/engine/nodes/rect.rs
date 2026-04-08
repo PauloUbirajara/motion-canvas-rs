@@ -7,21 +7,57 @@ use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Rect {
-    pub position: Signal<Vec2>,
+    pub transform: Signal<Affine>,
     pub size: Signal<Vec2>,
     pub color: Signal<Color>,
     pub radius: Signal<f32>,
+    pub opacity: Signal<f32>,
 }
 
 impl Rect {
     pub fn new(position: Vec2, size: Vec2, color: Color) -> Self {
         Self {
-            position: Signal::new(position),
+            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
             size: Signal::new(size),
             color: Signal::new(color),
             radius: Signal::new(0.0),
+            opacity: Signal::new(1.0),
         }
     }
+
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = Signal::new(transform);
+        self
+    }
+
+    pub fn with_position(mut self, position: Vec2) -> Self {
+        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self
+    }
+
+    pub fn with_rotation(mut self, angle: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self
+    }
+
+    pub fn with_scale(mut self, scale: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self
+    }
+
+    pub fn with_opacity(mut self, opacity: f32) -> Self {
+        self.opacity = Signal::new(opacity);
+        self
+    }
+
     pub fn with_radius(mut self, radius: f32) -> Self {
         self.radius = Signal::new(radius);
         self
@@ -30,19 +66,23 @@ impl Rect {
 
 impl Node for Rect {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let pos = self.position.get();
         let size = self.size.get();
         let color = self.color.get();
         let radius = self.radius.get();
+        let local_transform = self.transform.get();
+        let opacity = self.opacity.get();
         
+        let combined_transform = parent_transform * local_transform;
+        let combined_opacity = parent_opacity * opacity;
+
         let mut final_color = color;
-        final_color.a = (color.a as f32 * parent_opacity).clamp(0.0, 255.0) as u8;
+        final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
         
         let brush = Brush::Solid(final_color);
         
         scene.fill(
             Fill::NonZero,
-            parent_transform * Affine::translate((pos.x as f64, pos.y as f64)),
+            combined_transform,
             &brush,
             None,
             &KurboRoundedRect::new(0.0, 0.0, size.x as f64, size.y as f64, radius as f64),
@@ -53,8 +93,12 @@ impl Node for Rect {
         use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
         let mut s = DefaultHasher::new();
-        self.position.get().x.to_bits().hash(&mut s);
-        self.position.get().y.to_bits().hash(&mut s);
+        
+        let coeffs = self.transform.get().as_coeffs();
+        for c in coeffs {
+            c.to_bits().hash(&mut s);
+        }
+        
         self.size.get().x.to_bits().hash(&mut s);
         self.size.get().y.to_bits().hash(&mut s);
         self.radius.get().to_bits().hash(&mut s);
@@ -62,6 +106,7 @@ impl Node for Rect {
         color.r.hash(&mut s);
         color.g.hash(&mut s);
         color.b.hash(&mut s);
+        self.opacity.get().to_bits().hash(&mut s);
         s.finish()
     }
 
