@@ -26,6 +26,23 @@ impl FontManager {
             return Some(font.clone());
         }
 
+        // Check if it's a local file path
+        let path = std::path::Path::new(family);
+        if path.exists() && path.is_file() {
+            if let Ok(data) = std::fs::read(path) {
+                let font_data = Arc::new(FontData {
+                    name: path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or(family)
+                        .to_string(),
+                    data,
+                });
+                cache.insert(family.to_string(), font_data.clone());
+                return Some(font_data);
+            }
+        }
+
         // Search system fonts
         let source = SystemSource::new();
         let family_names = [FamilyName::Title(family.to_string())];
@@ -43,6 +60,17 @@ impl FontManager {
         }
 
         None
+    }
+
+    pub fn register_font(name: &str, path: impl AsRef<std::path::Path>) -> Result<(), Box<dyn std::error::Error>> {
+        let data = std::fs::read(path)?;
+        let font_data = Arc::new(FontData {
+            name: name.to_string(),
+            data,
+        });
+        let mut cache = FONT_CACHE.lock().unwrap();
+        cache.insert(name.to_string(), font_data);
+        Ok(())
     }
 
     pub fn get_font_with_fallback(families: &[&str]) -> Option<Arc<FontData>> {

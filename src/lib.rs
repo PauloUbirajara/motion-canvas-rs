@@ -15,6 +15,9 @@ pub use glam::Vec2;
 /// Custom Result type for the library
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
+/// Font management and local font registration
+pub use engine::font::FontManager;
+
 /// Individual node types (Circle, Rect, TextNode, etc.)
 pub mod nodes {
     pub use crate::engine::nodes::*;
@@ -53,6 +56,7 @@ pub mod prelude {
     pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing};
 
     pub use crate::Result;
+    pub use crate::FontManager;
     pub use glam::Vec2;
     pub use vello::peniko::Color;
     pub use vello::kurbo::{Affine, BezPath};
