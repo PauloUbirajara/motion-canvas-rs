@@ -9,43 +9,45 @@ use std::time::Duration;
 pub struct Rect {
     pub position: Signal<Vec2>,
     pub size: Signal<Vec2>,
-    pub fill: Color,
-    pub radius: f32,
+    pub color: Signal<Color>,
+    pub radius: Signal<f32>,
 }
 
 impl Rect {
-    pub fn new(position: Vec2, size: Vec2, fill: Color) -> Self {
+    pub fn new(position: Vec2, size: Vec2, color: Color) -> Self {
         Self {
             position: Signal::new(position),
             size: Signal::new(size),
-            fill,
-            radius: 0.0,
+            color: Signal::new(color),
+            radius: Signal::new(0.0),
         }
     }
     pub fn with_radius(mut self, radius: f32) -> Self {
-        self.radius = radius;
+        self.radius = Signal::new(radius);
         self
     }
 }
 
 impl Node for Rect {
     fn render(&self, scene: &mut Scene) {
-        let brush = Brush::Solid(self.fill);
-        let pos = self.position.data.lock().unwrap().value.clone();
-        let size = self.size.data.lock().unwrap().value.clone();
+        let pos = self.position.get();
+        let size = self.size.get();
+        let color = self.color.get();
+        let radius = self.radius.get();
+        let brush = Brush::Solid(color);
         
         scene.fill(
             Fill::NonZero,
             Affine::translate((pos.x as f64, pos.y as f64)),
             &brush,
             None,
-            &KurboRoundedRect::new(0.0, 0.0, size.x as f64, size.y as f64, self.radius as f64),
+            &KurboRoundedRect::new(0.0, 0.0, size.x as f64, size.y as f64, radius as f64),
         );
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.data.lock().unwrap().value;
-        let size = self.size.data.lock().unwrap().value;
+        let pos = self.position.get();
+        let size = self.size.get();
         let mut hash = 0u64;
         hash ^= pos.x.to_bits() as u64;
         hash ^= pos.y.to_bits() as u64;

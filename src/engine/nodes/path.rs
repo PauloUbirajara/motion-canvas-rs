@@ -4,7 +4,7 @@ use vello::Scene;
 use glam::Vec2;
 use std::sync::Arc;
 use std::time::Duration;
-use crate::engine::animation::{Node};
+use crate::engine::animation::{Node, Signal};
 
 pub struct PathData {
     pub path: BezPath,
@@ -58,30 +58,39 @@ impl PathData {
 
 #[derive(Clone)]
 pub struct PathNode {
+    pub position: Signal<Vec2>,
     pub data: Arc<PathData>,
-    pub stroke: Color,
-    pub thickness: f32,
+    pub color: Signal<Color>,
+    pub width: Signal<f32>,
 }
 
 impl PathNode {
-    pub fn new(path: BezPath, stroke: Color, thickness: f32) -> Self {
+    pub fn new(position: Vec2, path: BezPath, color: Color, width: f32) -> Self {
         Self {
+            position: Signal::new(position),
             data: Arc::new(PathData::new(path)),
-            stroke,
-            thickness,
+            color: Signal::new(color),
+            width: Signal::new(width),
         }
     }
 }
 
 impl Node for PathNode {
     fn render(&self, scene: &mut Scene) {
-        let brush = Brush::Solid(self.stroke);
-        scene.stroke(&Stroke::new(self.thickness as f64), Affine::IDENTITY, &brush, None, &self.data.path);
+        let pos = self.position.get();
+        let color = self.color.get();
+        let width = self.width.get();
+        let brush = Brush::Solid(color);
+        scene.stroke(&Stroke::new(width as f64), Affine::translate((pos.x as f64, pos.y as f64)), &brush, None, &self.data.path);
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
+        let pos = self.position.get();
+        let width = self.width.get();
         let mut hash = 0u64;
-        hash ^= self.thickness.to_bits() as u64;
+        hash ^= pos.x.to_bits() as u64;
+        hash ^= pos.y.to_bits() as u64;
+        hash ^= width.to_bits() as u64;
         hash
     }
 }

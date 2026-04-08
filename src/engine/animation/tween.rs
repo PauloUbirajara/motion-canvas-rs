@@ -33,7 +33,13 @@ impl Tweenable for String {
 
 impl Tweenable for Color {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
-        if t >= 1.0 { *b } else { *a }
+        let t = t.clamp(0.0, 1.0);
+        Color::rgba8(
+            lerp(a.r as f32, b.r as f32, t) as u8,
+            lerp(a.g as f32, b.g as f32, t) as u8,
+            lerp(a.b as f32, b.b as f32, t) as u8,
+            lerp(a.a as f32, b.a as f32, t) as u8,
+        )
     }
 }
 

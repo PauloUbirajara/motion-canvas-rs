@@ -9,29 +9,31 @@ use std::time::Duration;
 pub struct Line {
     pub start: Signal<Vec2>,
     pub end: Signal<Vec2>,
-    pub stroke: Color,
-    pub thickness: f32,
+    pub color: Signal<Color>,
+    pub width: Signal<f32>,
 }
 
 impl Line {
-    pub fn new(start: Vec2, end: Vec2, stroke: Color, thickness: f32) -> Self {
+    pub fn new(start: Vec2, end: Vec2, color: Color, width: f32) -> Self {
         Self {
             start: Signal::new(start),
             end: Signal::new(end),
-            stroke,
-            thickness,
+            color: Signal::new(color),
+            width: Signal::new(width),
         }
     }
 }
 
 impl Node for Line {
     fn render(&self, scene: &mut Scene) {
-        let brush = Brush::Solid(self.stroke);
-        let start = self.start.data.lock().unwrap().value.clone();
-        let end = self.end.data.lock().unwrap().value.clone();
+        let start = self.start.get();
+        let end = self.end.get();
+        let color = self.color.get();
+        let width = self.width.get();
+        let brush = Brush::Solid(color);
         
         scene.stroke(
-            &Stroke::new(self.thickness as f64),
+            &Stroke::new(width as f64),
             Affine::IDENTITY,
             &brush,
             None,
@@ -40,8 +42,8 @@ impl Node for Line {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let start = self.start.data.lock().unwrap().value;
-        let end = self.end.data.lock().unwrap().value;
+        let start = self.start.get();
+        let end = self.end.get();
         let mut hash = 0u64;
         hash ^= start.x.to_bits() as u64;
         hash ^= end.x.to_bits() as u64;

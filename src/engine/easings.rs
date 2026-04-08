@@ -38,6 +38,18 @@ pub fn cubic_in_out(t: f32) -> f32 {
     }
 }
 
+pub fn sine_in(t: f32) -> f32 {
+    1.0 - ((t * PI) / 2.0).cos()
+}
+
+pub fn sine_out(t: f32) -> f32 {
+    ((t * PI) / 2.0).sin()
+}
+
+pub fn sine_in_out(t: f32) -> f32 {
+    -0.5 * ((PI * t).cos() - 1.0)
+}
+
 pub fn elastic_in(t: f32) -> f32 {
     if t == 0.0 {
         0.0
@@ -68,6 +80,7 @@ mod tests {
             linear,
             quad_in, quad_out, quad_in_out,
             cubic_in, cubic_out, cubic_in_out,
+            sine_in, sine_out, sine_in_out,
             elastic_in, elastic_out,
         ];
 

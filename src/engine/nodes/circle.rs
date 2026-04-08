@@ -9,24 +9,25 @@ use std::time::Duration;
 pub struct Circle {
     pub position: Signal<Vec2>,
     pub radius: Signal<f32>,
-    pub fill: Color,
+    pub color: Signal<Color>,
 }
 
 impl Circle {
-    pub fn new(position: Vec2, radius: f32, fill: Color) -> Self {
+    pub fn new(position: Vec2, radius: f32, color: Color) -> Self {
         Self {
             position: Signal::new(position),
             radius: Signal::new(radius),
-            fill,
+            color: Signal::new(color),
         }
     }
 }
 
 impl Node for Circle {
     fn render(&self, scene: &mut Scene) {
-        let brush = Brush::Solid(self.fill);
-        let pos = self.position.data.lock().unwrap().value.clone();
-        let radius = self.radius.data.lock().unwrap().value;
+        let pos = self.position.get();
+        let radius = self.radius.get();
+        let color = self.color.get();
+        let brush = Brush::Solid(color);
         
         scene.fill(
             Fill::NonZero,
@@ -38,8 +39,8 @@ impl Node for Circle {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.data.lock().unwrap().value;
-        let radius = self.radius.data.lock().unwrap().value;
+        let pos = self.position.get();
+        let radius = self.radius.get();
         let mut hash = 0u64;
         hash ^= pos.x.to_bits() as u64;
         hash ^= pos.y.to_bits() as u64;

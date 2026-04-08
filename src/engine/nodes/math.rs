@@ -20,7 +20,7 @@ pub struct MathNode {
     pub position: Signal<Vec2>,
     pub equation: Signal<String>,
     pub font_size: Signal<f32>,
-    pub color: Color,
+    pub color: Signal<Color>,
     cache: Mutex<Option<MathCache>>,
 }
 
@@ -30,7 +30,7 @@ impl Clone for MathNode {
             position: self.position.clone(),
             equation: self.equation.clone(),
             font_size: self.font_size.clone(),
-            color: self.color,
+            color: self.color.clone(),
             cache: Mutex::new(None),
         }
     }
@@ -42,7 +42,7 @@ impl MathNode {
             position: Signal::new(pos),
             equation: Signal::new(equation.to_string()),
             font_size: Signal::new(size),
-            color,
+            color: Signal::new(color),
             cache: Mutex::new(None),
         }
     }
@@ -63,10 +63,11 @@ impl Node for MathNode {
         let pos = self.position.get();
         let eq = self.equation.get();
         let size = self.font_size.get();
+        let color = self.color.get();
 
         let mut cache = self.cache.lock().unwrap();
         let needs_rebuild = cache.as_ref().map_or(true, |c| {
-            c.equation != eq || c.font_size != size || c.color != self.color
+            c.equation != eq || c.font_size != size || c.color != color
         });
 
         if needs_rebuild {
@@ -93,7 +94,7 @@ impl Node for MathNode {
                                         p.x.to_pt() + glyph.x_offset.at(text.size).to_pt(), 
                                         p.y.to_pt() + glyph.y_offset.at(text.size).to_pt() + text.size.to_pt()
                                     )) * Affine::scale_non_uniform(1.0, -1.0);
-                                    paths.push((transform, self.color, pb));
+                                    paths.push((transform, color, pb));
                                 }
                             }
                             _ => {}
@@ -104,7 +105,7 @@ impl Node for MathNode {
             *cache = Some(MathCache {
                 equation: eq.clone(),
                 font_size: size,
-                color: self.color,
+                color,
                 paths,
             });
         }
