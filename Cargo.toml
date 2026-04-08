@@ -20,9 +20,23 @@ typst = { version = "0.14.2", optional = true }
 lazy_static = "1.5.0"
 
 [features]
-default = ["code", "math", "ffmpeg", "image", "export"]
+default = ["code", "math", "image", "export"]
 code = ["dep:syntect"]
 math = ["dep:typst"]
 image = ["dep:image"]
 export = ["dep:image", "dep:rayon"]
-ffmpeg = []
+
+[[example]]
+name = "math_code"
+required-features = ["math", "code"]
+
+[[example]]
+name = "images"
+required-features = ["image"]
+
+[[example]]
+name = "export"
+required-features = ["export"]
+
+[[example]]
+name = "color_interpolation"

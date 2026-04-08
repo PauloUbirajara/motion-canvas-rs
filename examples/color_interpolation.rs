@@ -2,7 +2,7 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
-    let mut project = Project::new(1200, 400)
+    let mut project = Project::new(400, 400)
         .with_fps(60)
         .with_title("Color Interpolation")
         .with_cache(true); // Ensure cache is active for test
@@ -29,6 +29,6 @@ fn main() -> anyhow::Result<()> {
         rect.color.to(target_color, duration),
     ]);
 
-    // Export instead of show
+    // Show
     project.show()
 }

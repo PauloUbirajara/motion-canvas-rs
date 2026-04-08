@@ -104,43 +104,35 @@ impl Project {
 
             // Initialize FFmpeg if requested
             let mut ffmpeg_process: Option<std::process::ChildStdin> = if self.use_ffmpeg {
-                #[cfg(feature = "ffmpeg")]
-                {
-                    use std::process::{Command, Stdio};
-                    let child = Command::new("ffmpeg")
-                        .args([
-                            "-y",
-                            "-f",
-                            "rawvideo",
-                            "-pixel_format",
-                            "rgba",
-                            "-video_size",
-                            &format!("{}x{}", width, height),
-                            "-framerate",
-                            &self.fps.to_string(),
-                            "-i",
-                            "-",
-                            "-c:v",
-                            "libx264rgb",
-                            "out.mkv",
-                        ])
-                        .stdin(Stdio::piped())
-                        .stdout(Stdio::null())
-                        .stderr(Stdio::null())
-                        .spawn();
+                use std::process::{Command, Stdio};
+                let child = Command::new("ffmpeg")
+                    .args([
+                        "-y",
+                        "-f",
+                        "rawvideo",
+                        "-pixel_format",
+                        "rgba",
+                        "-video_size",
+                        &format!("{}x{}", width, height),
+                        "-framerate",
+                        &self.fps.to_string(),
+                        "-i",
+                        "-",
+                        "-c:v",
+                        "libx264rgb",
+                        "out.mkv",
+                    ])
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .spawn();
 
-                    match child {
-                        Ok(mut c) => Some(c.stdin.take().unwrap()),
-                        Err(e) => {
-                            eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
-                            None
-                        }
+                match child {
+                    Ok(mut c) => Some(c.stdin.take().unwrap()),
+                    Err(e) => {
+                        eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
+                        None
                     }
-                }
-                #[cfg(not(feature = "ffmpeg"))]
-                {
-                    eprintln!("Error: FFmpeg export requested but 'ffmpeg' feature is disabled. Falling back to PNGs.");
-                    None
                 }
             } else {
                 None
