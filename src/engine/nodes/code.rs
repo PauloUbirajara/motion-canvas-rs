@@ -132,9 +132,10 @@ impl Tweenable for CodeValue {
 }
 
 pub struct CodeNode {
-    pub position: Signal<Vec2>,
+    pub transform: Signal<Affine>,
     pub code: Signal<CodeValue>,
     pub font_size: Signal<f32>,
+    pub opacity: Signal<f32>,
     pub language: String,
     pub theme: String,
     pub font_family: String,
@@ -143,9 +144,10 @@ pub struct CodeNode {
 impl Clone for CodeNode {
     fn clone(&self) -> Self {
         Self {
-            position: self.position.clone(),
+            transform: self.transform.clone(),
             code: self.code.clone(),
             font_size: self.font_size.clone(),
+            opacity: self.opacity.clone(),
             language: self.language.clone(),
             theme: self.theme.clone(),
             font_family: self.font_family.clone(),
@@ -156,9 +158,10 @@ impl Clone for CodeNode {
 impl CodeNode {
     pub fn new(pos: Vec2, code: &str, lang: &str) -> Self {
         let node = Self {
-            position: Signal::new(pos),
+            transform: Signal::new(Affine::translate((pos.x as f64, pos.y as f64))),
             code: Signal::new(CodeValue::default()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
+            opacity: Signal::new(1.0),
             language: lang.to_string(),
             theme: DEFAULT_THEME.to_string(),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
@@ -167,6 +170,39 @@ impl CodeNode {
         let initial_value = CodeValue::new(code.to_string(), &node);
         node.code.set(initial_value);
         node
+    }
+
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = Signal::new(transform);
+        self
+    }
+
+    pub fn with_position(mut self, position: Vec2) -> Self {
+        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self
+    }
+
+    pub fn with_rotation(mut self, angle: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self
+    }
+
+    pub fn with_scale(mut self, scale: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self
+    }
+
+    pub fn with_opacity(mut self, opacity: f32) -> Self {
+        self.opacity = Signal::new(opacity);
+        self
     }
 
     pub fn with_theme(mut self, theme: &str) -> Self {
@@ -289,9 +325,11 @@ impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
 
 impl Node for CodeNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let pos = self.position.get();
         let code_val = self.code.get();
-        let root_transform = parent_transform * Affine::translate((pos.x as f64, pos.y as f64));
+        let local_transform = self.transform.get();
+        let opacity = self.opacity.get();
+        let root_transform = parent_transform * local_transform;
+        let combined_opacity = parent_opacity * opacity;
 
         if let Some(trans) = &code_val.transition {
             let p = trans.progress;
@@ -307,7 +345,7 @@ impl Node for CodeNode {
                 let current_pos = from.pos.lerp(to.pos, p);
                 let current_color = Color::interpolate(&from.color, &to.color, p);
                 
-                draw_token(scene, root_transform * Affine::translate((current_pos.x as f64, current_pos.y as f64)), to, current_color, parent_opacity);
+                draw_token(scene, root_transform * Affine::translate((current_pos.x as f64, current_pos.y as f64)), to, current_color, combined_opacity);
                 
                 matched_from[from_idx] = true;
                 matched_to[to_idx] = true;
@@ -316,20 +354,20 @@ impl Node for CodeNode {
             // 2. Fade out deletions
             for (i, from) in trans.from_tokens.iter().enumerate() {
                 if !matched_from[i] {
-                    draw_token(scene, root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)), from, from.color, (1.0 - p) * parent_opacity);
+                    draw_token(scene, root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)), from, from.color, (1.0 - p) * combined_opacity);
                 }
             }
             
             // 3. Fade in additions
             for (i, to) in trans.to_tokens.iter().enumerate() {
                 if !matched_to[i] {
-                    draw_token(scene, root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)), to, to.color, p * parent_opacity);
+                    draw_token(scene, root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)), to, to.color, p * combined_opacity);
                 }
             }
         } else {
             // Static render
             for token in &code_val.tokens {
-                draw_token(scene, root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)), token, token.color, parent_opacity);
+                draw_token(scene, root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)), token, token.color, combined_opacity);
             }
         }
     }
@@ -340,8 +378,12 @@ impl Node for CodeNode {
         use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
         let mut s = DefaultHasher::new();
-        self.position.get().x.to_bits().hash(&mut s);
-        self.position.get().y.to_bits().hash(&mut s);
+        
+        let coeffs = self.transform.get().as_coeffs();
+        for c in coeffs {
+            c.to_bits().hash(&mut s);
+        }
+        
         self.font_size.get().to_bits().hash(&mut s);
         let val = self.code.get();
         val.text.hash(&mut s);
@@ -351,6 +393,7 @@ impl Node for CodeNode {
         self.language.hash(&mut s);
         self.theme.hash(&mut s);
         self.font_family.hash(&mut s);
+        self.opacity.get().to_bits().hash(&mut s);
         s.finish()
     }
 
