@@ -42,17 +42,19 @@ impl Node for Line {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let start = self.start.get();
-        let end = self.end.get();
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        let mut s = DefaultHasher::new();
+        self.start.get().x.to_bits().hash(&mut s);
+        self.start.get().y.to_bits().hash(&mut s);
+        self.end.get().x.to_bits().hash(&mut s);
+        self.end.get().y.to_bits().hash(&mut s);
+        self.width.get().to_bits().hash(&mut s);
         let color = self.color.get();
-        let width = self.width.get();
-        let mut hash = 0u64;
-        hash ^= start.x.to_bits() as u64;
-        hash ^= start.y.to_bits() as u64;
-        hash ^= end.x.to_bits() as u64;
-        hash ^= end.y.to_bits() as u64;
-        hash ^= width.to_bits() as u64;
-        hash ^= (color.r as u64) << 24 | (color.g as u64) << 16 | (color.b as u64) << 8 | (color.a as u64);
-        hash
+        color.r.hash(&mut s);
+        color.g.hash(&mut s);
+        color.b.hash(&mut s);
+        color.a.hash(&mut s);
+        s.finish()
     }
 }

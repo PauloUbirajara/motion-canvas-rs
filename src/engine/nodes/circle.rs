@@ -39,14 +39,17 @@ impl Node for Circle {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.get();
-        let radius = self.radius.get();
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        let mut s = DefaultHasher::new();
+        self.position.get().x.to_bits().hash(&mut s);
+        self.position.get().y.to_bits().hash(&mut s);
+        self.radius.get().to_bits().hash(&mut s);
         let color = self.color.get();
-        let mut hash = 0u64;
-        hash ^= pos.x.to_bits() as u64;
-        hash ^= pos.y.to_bits() as u64;
-        hash ^= radius.to_bits() as u64;
-        hash ^= (color.r as u64) << 24 | (color.g as u64) << 16 | (color.b as u64) << 8 | (color.a as u64);
-        hash
+        color.r.hash(&mut s);
+        color.g.hash(&mut s);
+        color.b.hash(&mut s);
+        color.a.hash(&mut s);
+        s.finish()
     }
 }

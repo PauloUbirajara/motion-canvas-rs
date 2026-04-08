@@ -10,22 +10,23 @@ use skrifa::instance::{Size, LocationRef};
 use syntect::parsing::SyntaxSet;
 use syntect::highlighting::ThemeSet;
 use syntect::easy::HighlightLines;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 use lazy_static::lazy_static;
 
 lazy_static! {
     static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
+    static ref GLOBAL_CODE_CACHE: Mutex<HashMap<CodeCacheKey, Arc<Vec<(Affine, Color, BezPath)>>>> = Mutex::new(HashMap::new());
 }
 
-#[derive(Clone, Default)]
-struct CodeCache {
+#[derive(Hash, Eq, PartialEq)]
+struct CodeCacheKey {
     code: String,
-    font_size: f32,
+    font_size_bits: u32,
     language: String,
     theme: String,
     font_family: String,
-    paths: Vec<(Affine, Color, BezPath)>,
 }
 
 pub struct CodeNode {
@@ -35,7 +36,7 @@ pub struct CodeNode {
     pub language: String,
     pub theme: String,
     pub font_family: String,
-    cache: Mutex<Option<CodeCache>>,
+    cache: Arc<Mutex<Option<Arc<Vec<(Affine, Color, BezPath)>>>>>,
 }
 
 impl Clone for CodeNode {
@@ -47,7 +48,7 @@ impl Clone for CodeNode {
             language: self.language.clone(),
             theme: self.theme.clone(),
             font_family: self.font_family.clone(),
-            cache: Mutex::new(None),
+            cache: self.cache.clone(),
         }
     }
 }
@@ -61,7 +62,7 @@ impl CodeNode {
             language: lang.to_string(),
             theme: "base16-ocean.dark".to_string(),
             font_family: "Fira Code".to_string(),
-            cache: Mutex::new(None),
+            cache: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -82,12 +83,29 @@ impl Node for CodeNode {
         let size = self.font_size.get();
         let pos = self.position.get();
 
-        let mut cache = self.cache.lock().unwrap();
-        let needs_rebuild = cache.as_ref().map_or(true, |c| {
-            c.code != code || c.font_size != size || c.language != self.language || c.theme != self.theme || c.font_family != self.font_family
-        });
+        let key = CodeCacheKey {
+            code: code.clone(),
+            font_size_bits: size.to_bits(),
+            language: self.language.clone(),
+            theme: self.theme.clone(),
+            font_family: self.font_family.clone(),
+        };
 
-        if needs_rebuild {
+        // 1. Check local cache
+        {
+            let local = self.cache.lock().unwrap();
+            if local.is_some() {
+                // Optimization: could check if key matches
+            }
+        }
+
+        // 2. Check global cache
+        let mut global = GLOBAL_CODE_CACHE.lock().unwrap();
+        if let Some(paths) = global.get(&key) {
+            let mut local = self.cache.lock().unwrap();
+            *local = Some(paths.clone());
+        } else {
+            // 3. Build it
             let mut paths = Vec::new();
             let syntax = SYNTAX_SET.find_syntax_by_extension(&self.language)
                 .or_else(|| SYNTAX_SET.find_syntax_by_name(&self.language))
@@ -130,35 +148,31 @@ impl Node for CodeNode {
                     y_offset += (size * 1.2) as f64;
                 }
             }
-            *cache = Some(CodeCache {
-                code: code.clone(),
-                font_size: size,
-                language: self.language.clone(),
-                theme: self.theme.clone(),
-                font_family: self.font_family.clone(),
-                paths,
-            });
+            let arc_paths = Arc::new(paths);
+            global.insert(key, arc_paths.clone());
+            let mut local = self.cache.lock().unwrap();
+            *local = Some(arc_paths);
         }
 
-        if let Some(c) = cache.as_ref() {
+        if let Some(c) = self.cache.lock().unwrap().as_ref() {
             let root_transform = Affine::translate((pos.x as f64, pos.y as f64));
-            for (local_transform, color, pb) in &c.paths {
+            for (local_transform, color, pb) in c.as_ref() {
                 scene.fill(Fill::NonZero, root_transform * *local_transform, &Brush::Solid(*color), None, pb);
             }
         }
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.get();
-        let code = self.code.get();
-        let size = self.font_size.get();
-        let mut hash = 0u64;
-        hash ^= pos.x.to_bits() as u64;
-        hash ^= pos.y.to_bits() as u64;
-        hash ^= size.to_bits() as u64;
-        for b in code.as_bytes() {
-            hash = hash.wrapping_mul(31).wrapping_add(*b as u64);
-        }
-        hash
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        let mut s = DefaultHasher::new();
+        self.position.get().x.to_bits().hash(&mut s);
+        self.position.get().y.to_bits().hash(&mut s);
+        self.font_size.get().to_bits().hash(&mut s);
+        self.code.get().hash(&mut s);
+        self.language.hash(&mut s);
+        self.theme.hash(&mut s);
+        self.font_family.hash(&mut s);
+        s.finish()
     }
 }

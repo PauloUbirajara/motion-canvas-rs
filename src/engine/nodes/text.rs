@@ -7,15 +7,19 @@ use vello::kurbo::{Affine, BezPath};
 use std::time::Duration;
 use skrifa::MetadataProvider;
 use skrifa::instance::{Size, LocationRef};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use lazy_static::lazy_static;
 
-#[derive(Clone, Default)]
-struct TextCache {
+lazy_static! {
+    static ref GLOBAL_TEXT_CACHE: Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
+}
+
+#[derive(Hash, Eq, PartialEq)]
+struct TextCacheKey {
     text: String,
-    font_size: f32,
+    font_size_bits: u32,
     font_family: String,
-    color: Color,
-    paths: Vec<(Affine, Color, BezPath)>,
 }
 
 pub struct TextNode {
@@ -23,8 +27,9 @@ pub struct TextNode {
     pub text: Signal<String>,
     pub font_size: Signal<f32>,
     pub color: Signal<Color>,
+    pub opacity: Signal<f32>,
     pub font_family: String,
-    cache: Mutex<Option<TextCache>>,
+    cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
 
 impl TextNode {
@@ -34,8 +39,9 @@ impl TextNode {
             text: Signal::new(text.to_string()),
             font_size: Signal::new(size),
             color: Signal::new(color),
+            opacity: Signal::new(1.0),
             font_family: "Inter".to_string(),
-            cache: Mutex::new(None),
+            cache: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -52,8 +58,9 @@ impl Clone for TextNode {
             text: self.text.clone(),
             font_size: self.font_size.clone(),
             color: self.color.clone(),
+            opacity: self.opacity.clone(),
             font_family: self.font_family.clone(),
-            cache: Mutex::new(None),
+            cache: self.cache.clone(),
         }
     }
 }
@@ -70,17 +77,33 @@ impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
 
 impl Node for TextNode {
     fn render(&self, scene: &mut Scene) {
-        let text = self.text.data.lock().unwrap().value.clone();
-        let size = self.font_size.data.lock().unwrap().value;
-        let color = self.color.data.lock().unwrap().value;
-        let pos = self.position.data.lock().unwrap().value;
+        let text = self.text.get();
+        let size = self.font_size.get();
+        let color = self.color.get();
+        let pos = self.position.get();
+        let opacity = self.opacity.get();
 
-        let mut cache = self.cache.lock().unwrap();
-        let needs_rebuild = cache.as_ref().map_or(true, |c| {
-            c.text != text || c.font_size != size || c.font_family != self.font_family || c.color != color
-        });
+        let key = TextCacheKey {
+            text: text.clone(),
+            font_size_bits: size.to_bits(),
+            font_family: self.font_family.clone(),
+        };
 
-        if needs_rebuild {
+        // 1. Check local cache
+        {
+            let local = self.cache.lock().unwrap();
+            if local.is_some() {
+                // ...
+            }
+        }
+
+        // 2. Check global cache
+        let mut global = GLOBAL_TEXT_CACHE.lock().unwrap();
+        if let Some(paths) = global.get(&key) {
+            let mut local = self.cache.lock().unwrap();
+            *local = Some(paths.clone());
+        } else {
+            // 3. Rebuild
             let mut paths = Vec::new();
             if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Inter", "Arial", "sans-serif"]) {
                 let font_ref = FontManager::get_font_ref(&font_data);
@@ -104,40 +127,42 @@ impl Node for TextNode {
                     }
                     
                     let base_transform = Affine::translate((x_offset, size as f64)) * Affine::scale_non_uniform(1.0, -1.0);
-                    paths.push((base_transform, color, pb));
+                    paths.push((base_transform, pb));
                     x_offset += advance;
                 }
             }
-            *cache = Some(TextCache {
-                text: text.clone(),
-                font_size: size,
-                font_family: self.font_family.clone(),
-                color,
-                paths,
-            });
+            let arc_paths = Arc::new(paths);
+            global.insert(key, arc_paths.clone());
+            let mut local = self.cache.lock().unwrap();
+            *local = Some(arc_paths);
         }
 
-        if let Some(c) = cache.as_ref() {
+        if let Some(c) = self.cache.lock().unwrap().as_ref() {
             let root_transform = Affine::translate((pos.x as f64, pos.y as f64));
-            for (local_transform, path_color, pb) in &c.paths {
-                scene.fill(Fill::NonZero, root_transform * *local_transform, &Brush::Solid(*path_color), None, pb);
+            let mut render_color = color;
+            render_color.a = (color.a as f32 * opacity) as u8;
+            let brush = Brush::Solid(render_color);
+            for (local_transform, pb) in c.as_ref() {
+                scene.fill(Fill::NonZero, root_transform * *local_transform, &brush, None, pb);
             }
         }
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.get();
-        let text = self.text.get();
-        let size = self.font_size.get();
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        let mut s = DefaultHasher::new();
+        self.position.get().x.to_bits().hash(&mut s);
+        self.position.get().y.to_bits().hash(&mut s);
+        self.text.get().hash(&mut s);
+        self.font_size.get().to_bits().hash(&mut s);
         let color = self.color.get();
-        let mut hash = 0u64;
-        hash ^= pos.x.to_bits() as u64;
-        hash ^= pos.y.to_bits() as u64;
-        hash ^= size.to_bits() as u64;
-        hash ^= (color.r as u64) << 24 | (color.g as u64) << 16 | (color.b as u64) << 8 | (color.a as u64);
-        for b in text.as_bytes() {
-            hash = hash.wrapping_mul(31).wrapping_add(*b as u64);
-        }
-        hash
+        color.r.hash(&mut s);
+        color.g.hash(&mut s);
+        color.b.hash(&mut s);
+        color.a.hash(&mut s);
+        self.opacity.get().to_bits().hash(&mut s);
+        self.font_family.hash(&mut s);
+        s.finish()
     }
 }

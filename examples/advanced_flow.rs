@@ -50,7 +50,10 @@ fn main() -> anyhow::Result<()> {
 
     let code_block = CodeNode::new(
         Vec2::new(50.0, 400.0),
-        "fn main() {\n    let mut engine = MotionCanvas::new();\n    engine.render();\n}",
+        r#"fn main() {
+    let mut engine = MotionCanvas::new();
+    engine.render();
+}"#,
         "rust",
     );
 

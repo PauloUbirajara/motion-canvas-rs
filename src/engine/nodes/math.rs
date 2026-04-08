@@ -4,14 +4,17 @@ use vello::Scene;
 use glam::Vec2;
 use vello::kurbo::{Affine, BezPath};
 use std::time::Duration;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 
-#[derive(Clone, Default)]
-struct MathCache {
+lazy_static::lazy_static! {
+    static ref GLOBAL_MATH_CACHE: Mutex<HashMap<MathCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
+}
+
+#[derive(Hash, Eq, PartialEq)]
+struct MathCacheKey {
     equation: String,
-    font_size: f32,
-    color: Color,
-    paths: Vec<(Affine, Color, BezPath)>,
+    font_size_bits: u32,
 }
 
 pub struct MathNode {
@@ -21,11 +24,9 @@ pub struct MathNode {
     pub color: Signal<Color>,
     pub opacity: Signal<f32>,
     pub transition_progress: Signal<f32>,
-    cache: Arc<Mutex<Option<MathCache>>>,
-    prev_cache: Arc<Mutex<Option<MathCache>>>,
+    cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
+    prev_cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
-
-use std::sync::Arc;
 
 impl Clone for MathNode {
     fn clone(&self) -> Self {
@@ -82,58 +83,56 @@ impl MathNode {
         self.transition_progress.set(0.0);
         self.equation.set(new_eq.to_string());
         
-        // Trigger a rebuild of the NEW equation cache immediately so it's ready for the first frame of transition
         self.rebuild_if_needed();
     }
 
     fn rebuild_if_needed(&self) {
         let eq = self.equation.get();
         let size = self.font_size.get();
-        let color = self.color.get();
 
-        // println!("MathNode: rebuild_if_needed checking '{}'", eq);
-        let cache_guard = self.cache.lock().unwrap();
-        // println!("MathNode: got cache lock");
-        let needs_rebuild = cache_guard.as_ref().map_or(true, |c| {
-            c.equation != eq || c.font_size != size || c.color != color
-        });
+        let key = MathCacheKey {
+            equation: eq.clone(),
+            font_size_bits: size.to_bits(),
+        };
 
-        if needs_rebuild {
-            drop(cache_guard);
-            
-            let mut paths = Vec::new();
-            let (font_name, _) = crate::engine::font::FontManager::get_math_font();
-            let typst_code = format!("#set text(size: {}pt)\n#show math.equation: set text(font: \"{}\")\n$ {} $", size, font_name, eq);
-            let world = crate::engine::typst_support::TypstWorld::new(&typst_code);
-            let output = typst::compile::<typst::layout::PagedDocument>(&world).output;
-            match output {
-                Ok(document) => {
-                    for page in document.pages {
-                        crate::engine::typst_support::collect_paths(&page.frame, Affine::IDENTITY, &mut paths);
-                    }
-                }
-                Err(e) => println!("Typst compilation failed: {:?}", e),
+        // 1. Check if we already have it locally
+        {
+            let local = self.cache.lock().unwrap();
+            if let Some(_paths) = local.as_ref() {
+                // If we want to be more efficient, we'd store the key locally too to avoid locking GLOBAL_MATH_CACHE
+                // For now, let's keep it simple.
             }
-
-            // println!("MathNode: re-taking cache lock");
-            let mut cache_guard = self.cache.lock().unwrap();
-            // println!("MathNode: got cache lock again");
-            if let Some(c) = cache_guard.as_ref() {
-                if c.equation == eq && c.font_size == size && c.color == color {
-                    // println!("MathNode: already rebuilt by someone else");
-                    return;
-                }
-            }
-
-            *cache_guard = Some(MathCache {
-                equation: eq.clone(),
-                font_size: size,
-                color,
-                paths,
-            });
-            // println!("MathNode: cache updated");
         }
-        // println!("MathNode: rebuild_if_needed done");
+
+        // 2. Check global cache
+        let mut global = GLOBAL_MATH_CACHE.lock().unwrap();
+        if let Some(paths) = global.get(&key) {
+            let mut local = self.cache.lock().unwrap();
+            *local = Some(paths.clone());
+            return;
+        }
+
+        // 3. Compile
+        let mut paths_with_color = Vec::new();
+        let (font_name, _) = crate::engine::font::FontManager::get_math_font();
+        let typst_code = format!("#set text(size: {}pt)\n#show math.equation: set text(font: \"{}\")\n$ {} $", size, font_name, eq);
+        let world = crate::engine::typst_support::TypstWorld::new(&typst_code);
+        let output = typst::compile::<typst::layout::PagedDocument>(&world).output;
+        
+        match output {
+            Ok(document) => {
+                for page in document.pages {
+                    crate::engine::typst_support::collect_paths(&page.frame, Affine::IDENTITY, &mut paths_with_color);
+                }
+            }
+            Err(e) => println!("Typst compilation failed: {:?}", e),
+        }
+
+        let paths: Arc<Vec<(Affine, BezPath)>> = Arc::new(paths_with_color.into_iter().map(|(a, _, p)| (a, p)).collect());
+        global.insert(key, paths.clone());
+        
+        let mut local = self.cache.lock().unwrap();
+        *local = Some(paths);
     }
 }
 
@@ -177,7 +176,7 @@ impl Node for MathNode {
             if let Some(prev) = self.prev_cache.lock().unwrap().as_ref() {
                 let mut prev_color = color;
                 prev_color.a = (color.a as f32 * base_opacity * (1.0 - progress)) as u8;
-                for (local_transform, _c, pb) in &prev.paths {
+                for (local_transform, pb) in prev.as_ref() {
                     scene.fill(Fill::NonZero, root_transform * *local_transform, &Brush::Solid(prev_color), None, pb);
                 }
             }
@@ -192,7 +191,7 @@ impl Node for MathNode {
             let mut current_color = color;
             current_color.a = (color.a as f32 * current_alpha) as u8;
 
-            for (local_transform, _cached_color, pb) in &c.paths {
+            for (local_transform, pb) in c.as_ref() {
                 scene.fill(Fill::NonZero, root_transform * *local_transform, &Brush::Solid(current_color), None, pb);
             }
         }
@@ -200,22 +199,17 @@ impl Node for MathNode {
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
         let mut s = DefaultHasher::new();
-        let pos = self.position.get();
-        let eq = self.equation.get();
-        let size = self.font_size.get();
+        self.position.get().x.to_bits().hash(&mut s);
+        self.position.get().y.to_bits().hash(&mut s);
+        self.equation.get().hash(&mut s);
+        self.font_size.get().to_bits().hash(&mut s);
         let color = self.color.get();
-        
-        pos.x.to_bits().hash(&mut s);
-        pos.y.to_bits().hash(&mut s);
-        eq.hash(&mut s);
-        size.to_bits().hash(&mut s);
         color.r.hash(&mut s);
         color.g.hash(&mut s);
         color.b.hash(&mut s);
         color.a.hash(&mut s);
         self.opacity.get().to_bits().hash(&mut s);
         self.transition_progress.get().to_bits().hash(&mut s);
-        
         s.finish()
     }
 }

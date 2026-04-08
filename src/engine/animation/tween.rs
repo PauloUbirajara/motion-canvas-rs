@@ -58,7 +58,7 @@ pub struct Signal<T> {
     pub data: Arc<Mutex<SignalData<T>>>,
 }
 
-impl<T: Tweenable> Signal<T> {
+impl<T: Tweenable + PartialEq> Signal<T> {
     pub fn new(value: T) -> Self {
         Self {
             data: Arc::new(Mutex::new(SignalData { value })),
@@ -70,7 +70,10 @@ impl<T: Tweenable> Signal<T> {
     }
 
     pub fn set(&self, value: T) {
-        self.data.lock().unwrap().value = value;
+        let mut data = self.data.lock().unwrap();
+        if data.value != value {
+            data.value = value;
+        }
     }
 
     pub fn to(&self, target: T, duration: Duration) -> SignalTween<T> {
