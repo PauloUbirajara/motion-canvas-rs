@@ -4,6 +4,9 @@
 
 A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst.
 
+> [!IMPORTANT]
+> **Prototype Status**: This project is a functional prototype and proof-of-concept. It is **not** a 1:1 implementation of the original Motion Canvas API or features.
+
 ## Features
 
 - High-performance vector rendering using Vello.
