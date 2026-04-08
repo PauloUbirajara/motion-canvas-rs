@@ -157,6 +157,14 @@ cargo run --example code_animation
 </details>
 
 <details>
+<summary><b>Group Animation</b> - Hierarchical transformations and inherited opacity.</summary>
+
+```bash
+cargo run --example group_animation
+```
+</details>
+
+<details>
 <summary><b>Export</b> - Video export with color and font-size animations.</summary>
 
 ```bash
