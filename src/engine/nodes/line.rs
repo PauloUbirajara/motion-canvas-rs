@@ -15,16 +15,26 @@ pub struct Line {
     pub opacity: Signal<f32>,
 }
 
-impl Line {
-    pub fn new(start: Vec2, end: Vec2, color: Color, width: f32) -> Self {
+impl Default for Line {
+    fn default() -> Self {
         Self {
             transform: Signal::new(Affine::IDENTITY),
-            start: Signal::new(start),
-            end: Signal::new(end),
-            color: Signal::new(color),
-            width: Signal::new(width),
+            start: Signal::new(Vec2::ZERO),
+            end: Signal::new(Vec2::new(100.0, 0.0)),
+            color: Signal::new(Color::RED),
+            width: Signal::new(2.0),
             opacity: Signal::new(1.0),
         }
+    }
+}
+
+impl Line {
+    pub fn new(start: Vec2, end: Vec2, color: Color, width: f32) -> Self {
+        Self::default()
+            .with_start(start)
+            .with_end(end)
+            .with_color(color)
+            .with_width(width)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -57,6 +67,26 @@ impl Line {
 
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
+        self
+    }
+
+    pub fn with_start(mut self, start: Vec2) -> Self {
+        self.start = Signal::new(start);
+        self
+    }
+
+    pub fn with_end(mut self, end: Vec2) -> Self {
+        self.end = Signal::new(end);
+        self
+    }
+
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = Signal::new(color);
+        self
+    }
+
+    pub fn with_width(mut self, width: f32) -> Self {
+        self.width = Signal::new(width);
         self
     }
 }

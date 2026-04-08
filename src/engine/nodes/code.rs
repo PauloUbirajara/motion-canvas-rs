@@ -180,6 +180,25 @@ pub struct CodeNode {
     pub font_family: String,
 }
 
+impl Default for CodeNode {
+    fn default() -> Self {
+        let node = Self {
+            transform: Signal::new(Affine::IDENTITY),
+            code: Signal::new(CodeValue::default()),
+            font_size: Signal::new(DEFAULT_FONT_SIZE),
+            opacity: Signal::new(1.0),
+            dim_opacity: Signal::new(0.2),
+            language: "rust".to_string(),
+            theme: DEFAULT_THEME.to_string(),
+            font_family: DEFAULT_FONT_FAMILY.to_string(),
+        };
+        // Initialize with empty code
+        let val = CodeValue::new("".to_string(), &node);
+        node.code.set(val);
+        node
+    }
+}
+
 impl Clone for CodeNode {
     fn clone(&self) -> Self {
         Self {
@@ -197,20 +216,10 @@ impl Clone for CodeNode {
 
 impl CodeNode {
     pub fn new(pos: Vec2, code: &str, lang: &str) -> Self {
-        let node = Self {
-            transform: Signal::new(Affine::translate((pos.x as f64, pos.y as f64))),
-            code: Signal::new(CodeValue::default()),
-            font_size: Signal::new(DEFAULT_FONT_SIZE),
-            opacity: Signal::new(1.0),
-            dim_opacity: Signal::new(0.2), // Default dimming factor
-            language: lang.to_string(),
-            theme: DEFAULT_THEME.to_string(),
-            font_family: DEFAULT_FONT_FAMILY.to_string(),
-        };
-        
-        let initial_value = CodeValue::new(code.to_string(), &node);
-        node.code.set(initial_value);
-        node
+        Self::default()
+            .with_position(pos)
+            .with_language(lang)
+            .with_code(code)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -243,6 +252,21 @@ impl CodeNode {
 
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
+        self
+    }
+
+    pub fn with_code(self, code: &str) -> Self {
+        let val = CodeValue::new(code.to_string(), &self);
+        self.code.set(val);
+        self
+    }
+
+    pub fn with_language(mut self, lang: &str) -> Self {
+        self.language = lang.to_string();
+        // Re-tokenize if code exists
+        let current_text = self.code.get().text;
+        let val = CodeValue::new(current_text, &self);
+        self.code.set(val);
         self
     }
 

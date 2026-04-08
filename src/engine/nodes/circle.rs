@@ -13,14 +13,23 @@ pub struct Circle {
     pub opacity: Signal<f32>,
 }
 
-impl Circle {
-    pub fn new(position: Vec2, radius: f32, color: Color) -> Self {
+impl Default for Circle {
+    fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
-            radius: Signal::new(radius),
-            color: Signal::new(color),
+            transform: Signal::new(Affine::IDENTITY),
+            radius: Signal::new(50.0),
+            color: Signal::new(Color::RED),
             opacity: Signal::new(1.0),
         }
+    }
+}
+
+impl Circle {
+    pub fn new(position: Vec2, radius: f32, color: Color) -> Self {
+        Self::default()
+            .with_position(position)
+            .with_radius(radius)
+            .with_color(color)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -54,6 +63,16 @@ impl Circle {
 
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
+        self
+    }
+
+    pub fn with_radius(mut self, radius: f32) -> Self {
+        self.radius = Signal::new(radius);
+        self
+    }
+
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = Signal::new(color);
         self
     }
 }

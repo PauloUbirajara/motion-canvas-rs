@@ -10,13 +10,20 @@ pub struct GroupNode {
     pub opacity: Signal<f32>,
 }
 
-impl GroupNode {
-    pub fn new(nodes: Vec<Box<dyn Node>>) -> Self {
+impl Default for GroupNode {
+    fn default() -> Self {
         Self {
-            nodes,
+            nodes: Vec::new(),
             transform: Signal::new(Affine::IDENTITY),
             opacity: Signal::new(1.0),
         }
+    }
+}
+
+impl GroupNode {
+    pub fn new(nodes: Vec<Box<dyn Node>>) -> Self {
+        Self::default()
+            .with_nodes(nodes)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -49,6 +56,11 @@ impl GroupNode {
         let tx = coeffs[4];
         let ty = coeffs[5];
         self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self
+    }
+
+    pub fn with_nodes(mut self, nodes: Vec<Box<dyn Node>>) -> Self {
+        self.nodes = nodes;
         self
     }
 }

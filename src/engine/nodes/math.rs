@@ -30,6 +30,21 @@ pub struct MathNode {
     prev_cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
 
+impl Default for MathNode {
+    fn default() -> Self {
+        Self {
+            transform: Signal::new(Affine::IDENTITY),
+            equation: Signal::new("".to_string()),
+            font_size: Signal::new(32.0),
+            color: Signal::new(Color::RED),
+            opacity: Signal::new(1.0),
+            transition_progress: Signal::new(1.0),
+            cache: Arc::new(Mutex::new(None)),
+            prev_cache: Arc::new(Mutex::new(None)),
+        }
+    }
+}
+
 impl Clone for MathNode {
     fn clone(&self) -> Self {
         Self {
@@ -47,16 +62,11 @@ impl Clone for MathNode {
 
 impl MathNode {
     pub fn new(pos: Vec2, equation: &str, size: f32, color: Color) -> Self {
-        Self {
-            transform: Signal::new(Affine::translate((pos.x as f64, pos.y as f64))),
-            equation: Signal::new(equation.to_string()),
-            font_size: Signal::new(size),
-            color: Signal::new(color),
-            opacity: Signal::new(1.0),
-            transition_progress: Signal::new(1.0),
-            cache: Arc::new(Mutex::new(None)),
-            prev_cache: Arc::new(Mutex::new(None)),
-        }
+        Self::default()
+            .with_position(pos)
+            .with_equation(equation)
+            .with_font_size(size)
+            .with_color(color)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -99,6 +109,21 @@ impl MathNode {
             duration,
             tween: None,
         })
+    }
+
+    pub fn with_equation(mut self, equation: &str) -> Self {
+        self.equation = Signal::new(equation.to_string());
+        self
+    }
+
+    pub fn with_font_size(mut self, size: f32) -> Self {
+        self.font_size = Signal::new(size);
+        self
+    }
+
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = Signal::new(color);
+        self
     }
     // ...
 

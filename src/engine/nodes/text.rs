@@ -35,17 +35,27 @@ pub struct TextNode {
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
 
-impl TextNode {
-    pub fn new(position: Vec2, text: &str, size: f32, color: Color) -> Self {
+impl Default for TextNode {
+    fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
-            text: Signal::new(text.to_string()),
-            font_size: Signal::new(size),
-            color: Signal::new(color),
+            transform: Signal::new(Affine::IDENTITY),
+            text: Signal::new("".to_string()),
+            font_size: Signal::new(32.0),
+            color: Signal::new(Color::RED),
             opacity: Signal::new(1.0),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
             cache: Arc::new(Mutex::new(None)),
         }
+    }
+}
+
+impl TextNode {
+    pub fn new(position: Vec2, text: &str, size: f32, color: Color) -> Self {
+        Self::default()
+            .with_position(position)
+            .with_text(text)
+            .with_font_size(size)
+            .with_color(color)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -83,6 +93,21 @@ impl TextNode {
 
     pub fn with_font(mut self, family: &str) -> Self {
         self.font_family = family.to_string();
+        self
+    }
+
+    pub fn with_text(mut self, text: &str) -> Self {
+        self.text = Signal::new(text.to_string());
+        self
+    }
+
+    pub fn with_font_size(mut self, size: f32) -> Self {
+        self.font_size = Signal::new(size);
+        self
+    }
+
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = Signal::new(color);
         self
     }
 }

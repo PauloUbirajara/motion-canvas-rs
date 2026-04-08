@@ -15,16 +15,25 @@ pub struct Polygon {
     pub opacity: Signal<f32>,
 }
 
-impl Polygon {
-    pub fn new(position: Vec2, points: Vec<Vec2>, fill_color: Color) -> Self {
+impl Default for Polygon {
+    fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
-            points: Signal::new(points),
-            fill_color: Signal::new(fill_color),
+            transform: Signal::new(Affine::IDENTITY),
+            points: Signal::new(Vec::new()),
+            fill_color: Signal::new(Color::RED),
             stroke_color: Signal::new(Color::TRANSPARENT),
             stroke_width: Signal::new(0.0),
             opacity: Signal::new(1.0),
         }
+    }
+}
+
+impl Polygon {
+    pub fn new(position: Vec2, points: Vec<Vec2>, fill_color: Color) -> Self {
+        Self::default()
+            .with_position(position)
+            .with_points(points)
+            .with_fill(fill_color)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -63,6 +72,16 @@ impl Polygon {
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);
+        self
+    }
+
+    pub fn with_points(mut self, points: Vec<Vec2>) -> Self {
+        self.points = Signal::new(points);
+        self
+    }
+
+    pub fn with_fill(mut self, color: Color) -> Self {
+        self.fill_color = Signal::new(color);
         self
     }
 

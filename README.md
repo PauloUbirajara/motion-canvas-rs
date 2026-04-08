@@ -56,8 +56,16 @@ use std::time::Duration;
 fn main() {
     let mut project = Project::new(800, 600);
 
-    let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::RED);
-    let text = TextNode::new(Vec2::new(400.0, 450.0), "Hello Rust", 40.0, Color::WHITE);
+    // Nodes now support a convenient builder pattern and Default traits
+    let circle = Circle::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_radius(50.0)
+        .with_color(Color::RED);
+
+    let text = TextNode::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_text("Hello Motion Canvas!")
+        .with_color(Color::WHITE);
 
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(text.clone()));

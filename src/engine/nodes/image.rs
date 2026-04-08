@@ -75,21 +75,22 @@ pub struct ImageNode {
     pub opacity: Signal<f32>,
 }
 
-impl ImageNode {
-    pub fn new(pos: Vec2, path: &str) -> Self {
-        let image = ImageManager::get_image(path);
-        let size = if let Some(ref img) = image {
-            Vec2::new(img.width as f32, img.height as f32)
-        } else {
-            Vec2::ZERO
-        };
-
+impl Default for ImageNode {
+    fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::translate((pos.x as f64, pos.y as f64))),
-            size: Signal::new(size),
-            image,
+            transform: Signal::new(Affine::IDENTITY),
+            size: Signal::new(Vec2::ZERO),
+            image: None,
             opacity: Signal::new(1.0),
         }
+    }
+}
+
+impl ImageNode {
+    pub fn new(pos: Vec2, path: &str) -> Self {
+        Self::default()
+            .with_position(pos)
+            .with_path(path)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -127,6 +128,14 @@ impl ImageNode {
 
     pub fn with_size(mut self, size: Vec2) -> Self {
         self.size = Signal::new(size);
+        self
+    }
+
+    pub fn with_path(mut self, path: &str) -> Self {
+        self.image = ImageManager::get_image(path);
+        if let Some(ref img) = self.image {
+            self.size = Signal::new(Vec2::new(img.width as f32, img.height as f32));
+        }
         self
     }
 }

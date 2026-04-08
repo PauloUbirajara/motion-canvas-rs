@@ -14,15 +14,24 @@ pub struct Rect {
     pub opacity: Signal<f32>,
 }
 
-impl Rect {
-    pub fn new(position: Vec2, size: Vec2, color: Color) -> Self {
+impl Default for Rect {
+    fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
-            size: Signal::new(size),
-            color: Signal::new(color),
+            transform: Signal::new(Affine::IDENTITY),
+            size: Signal::new(Vec2::new(100.0, 100.0)),
+            color: Signal::new(Color::RED),
             radius: Signal::new(0.0),
             opacity: Signal::new(1.0),
         }
+    }
+}
+
+impl Rect {
+    pub fn new(position: Vec2, size: Vec2, color: Color) -> Self {
+        Self::default()
+            .with_position(position)
+            .with_size(size)
+            .with_color(color)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -60,6 +69,16 @@ impl Rect {
 
     pub fn with_radius(mut self, radius: f32) -> Self {
         self.radius = Signal::new(radius);
+        self
+    }
+
+    pub fn with_size(mut self, size: Vec2) -> Self {
+        self.size = Signal::new(size);
+        self
+    }
+
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = Signal::new(color);
         self
     }
 }
