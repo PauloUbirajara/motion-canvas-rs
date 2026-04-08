@@ -54,17 +54,21 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(800, 600);
+    // Project::default() uses default values (800x600, 60fps)
+    let mut project = Project::default()
+        .with_title("Quick Start")
+        .with_background(Color::rgb8(0x1a, 0x1a, 0x1a));
 
-    // Nodes now support a convenient builder pattern and Default traits
+    // Nodes support a builder pattern and Default traits
     let circle = Circle::default()
         .with_position(Vec2::new(400.0, 300.0))
-        .with_radius(50.0)
+        .with_radius(100.0)
         .with_color(Color::RED);
 
     let text = TextNode::default()
         .with_position(Vec2::new(400.0, 300.0))
         .with_text("Hello Motion Canvas!")
+        .with_font_size(48.0)
         .with_color(Color::WHITE);
 
     project.scene.add(Box::new(circle.clone()));
@@ -82,7 +86,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes several formal examples covering different features. You can run them using `cargo run --example <name>`.
+The project includes 13+ formal examples. Detailed documentation for each can be found in the [examples directory](./examples/README.md).
 
 <details>
 <summary><b>Getting Started</b> - Basic node creation and animation.</summary>
