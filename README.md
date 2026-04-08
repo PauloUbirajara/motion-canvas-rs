@@ -64,7 +64,8 @@ fn main() {
 
     project.scene.timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
-        text.position.to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
+        text.transform
+            .to(Affine::translate((400.0, 500.0)), Duration::from_secs(1)),
     ]);
 
     project.show().expect("Failed to render");
@@ -92,6 +93,14 @@ https://github.com/user-attachments/assets/7590c3da-8917-4ac4-8832-425211fab67b
 cargo run --example shapes
 ```
 <img width="400" height="200" alt="shapes" src="https://github.com/user-attachments/assets/24d3c9a4-6330-4d03-a0b0-6d0fed318ab7" />
+</details>
+
+<details>
+<summary><b>Polygon</b> - Regular and custom polygon primitives.</summary>
+
+```bash
+cargo run --example polygon
+```
 </details>
 
 <details>
@@ -153,6 +162,14 @@ https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
 
 ```bash
 cargo run --example code_animation
+```
+</details>
+
+<details>
+<summary><b>Advanced Code</b> - Fine-grained selection and content manipulation.</summary>
+
+```bash
+cargo run --example code_advanced
 ```
 </details>
 
