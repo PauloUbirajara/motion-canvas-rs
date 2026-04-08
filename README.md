@@ -1,5 +1,7 @@
 # Motion Canvas in Rust
 
+![example](examples/images/motion-canvas-rs.svg)
+
 A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst.
 
 ## Features
@@ -8,7 +10,8 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 - Typst-powered LaTeX math rendering.
 - Syntax-highlighted code blocks via Syntect.
 - System font discovery and path-based text rendering.
-- Support for bitmap images (PNG, JPEG, etc.).
+- Support for bitmap images (PNG, JPEG, etc.) and Vector graphics (SVG).
+- Native SVG rasterization using `resvg` for high-fidelity vector rendering.
 - Parallel PNG encoding and direct FFmpeg streaming.
 - Arc-length sampled path animations.
 

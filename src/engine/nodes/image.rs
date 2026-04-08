@@ -21,7 +21,28 @@ impl ImageManager {
             return Some(img.clone());
         }
 
-        // Load image from disk
+        if path.ends_with(".svg") {
+            let svg_data = std::fs::read(path).ok()?;
+            let opt = usvg::Options::default();
+            let tree = usvg::Tree::from_data(&svg_data, &opt).ok()?;
+            
+            let size = tree.size();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(size.width() as u32, size.height() as u32)?;
+            resvg::render(&tree, resvg::tiny_skia::Transform::default(), &mut pixmap.as_mut());
+            
+            let data = Arc::new(pixmap.take());
+            let peniko_img = Arc::new(PenikoImage {
+                data: Blob::new(data),
+                format: Format::Rgba8,
+                width: size.width() as u32,
+                height: size.height() as u32,
+                extend: Extend::Pad,
+            });
+            cache.insert(path.to_string(), peniko_img.clone());
+            return Some(peniko_img);
+        }
+
+        // Load raster image from disk
         match image::open(path) {
             Ok(img) => {
                 let rgba = img.to_rgba8();
@@ -80,9 +101,9 @@ impl ImageNode {
 impl Node for ImageNode {
     fn render(&self, scene: &mut Scene) {
         if let Some(ref img) = self.image {
-            let pos = self.position.data.lock().unwrap().value;
-            let size = self.size.data.lock().unwrap().value;
-            let _opacity = self.opacity.data.lock().unwrap().value;
+            let pos = self.position.get();
+            let size = self.size.get();
+            let _opacity = self.opacity.get();
 
             let transform = Affine::translate((pos.x as f64, pos.y as f64))
                 * Affine::scale_non_uniform(
@@ -91,8 +112,6 @@ impl Node for ImageNode {
                 );
 
             scene.draw_image(img, transform);
-            // Note: Peniko/Vello basic draw_image doesn't take opacity directly easily in this version
-            // Alternative: use a layer or brush, but for now we draw the image.
         }
     }
     fn update(&mut self, _dt: Duration) {}

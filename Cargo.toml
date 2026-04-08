@@ -18,13 +18,16 @@ skrifa = "0.42.0"
 syntect = { version = "5.3.0", optional = true }
 typst = { version = "0.14.2", optional = true }
 lazy_static = "1.5.0"
+resvg = { version = "0.45", optional = true }
+usvg = { version = "0.45", optional = true }
 
 [features]
-default = ["code", "math", "image", "export"]
+default = ["code", "math", "image", "export", "svg"]
 code = ["dep:syntect"]
 math = ["dep:typst"]
 image = ["dep:image"]
 export = ["dep:image", "dep:rayon"]
+svg = ["dep:resvg", "dep:usvg"]
 
 [[example]]
 name = "math_code"
@@ -32,7 +35,7 @@ required-features = ["math", "code"]
 
 [[example]]
 name = "images"
-required-features = ["image"]
+required-features = ["image", "svg"]
 
 [[example]]
 name = "export"

@@ -76,6 +76,7 @@ pub fn collect_paths(frame: &typst::layout::Frame, transform: Affine, paths: &mu
         let item_transform = transform * Affine::translate((p.x.to_pt(), p.y.to_pt()));
         match item {
             typst::layout::FrameItem::Text(text) => {
+                let mut x_cursor = 0.0;
                 let font_data = text.font.data();
                 let font_ref = skrifa::FontRef::new(font_data).unwrap();
                 let outlines = font_ref.outline_glyphs();
@@ -87,11 +88,12 @@ pub fn collect_paths(frame: &typst::layout::Frame, transform: Affine, paths: &mu
                         let _ = g_out.draw(skrifa::instance::Size::new(s), &mut sink);
                     }
                     let glyph_transform = item_transform * Affine::translate((
-                        glyph.x_offset.at(text.size).to_pt(), 
+                        x_cursor + glyph.x_offset.at(text.size).to_pt(), 
                         glyph.y_offset.at(text.size).to_pt() + text.size.to_pt()
                     )) * Affine::scale_non_uniform(1.0, -1.0);
                     // Note: Color is passed from the node
                     paths.push((glyph_transform, Color::WHITE, pb));
+                    x_cursor += glyph.x_advance.at(text.size).to_pt();
                 }
             }
             typst::layout::FrameItem::Group(group) => {

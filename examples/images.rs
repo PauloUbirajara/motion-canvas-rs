@@ -1,22 +1,53 @@
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::engine::nodes::ImageNode;
 use glam::Vec2;
+use motion_canvas_rs::engine::nodes::ImageNode;
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::flows::{all, chain};
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
-    let mut project = Project::new(800, 600);
+    let mut project = Project::new(600, 600);
 
     // Using the sample logo path from the project
-    let logo = ImageNode::new(
-        Vec2::new(400.0, 300.0), 
-        "./examples/images/motion-canvas-logo.png"
-    ).with_size(Vec2::new(200.0, 200.0));
+    let png = ImageNode::new(
+        Vec2::new(350.0, 350.0),
+        "./examples/images/motion-canvas-logo.png",
+    )
+    .with_size(Vec2::new(200.0, 200.0));
+    let svg = ImageNode::new(
+        Vec2::new(50.0, 50.0),
+        "./examples/images/motion-canvas-rs.svg",
+    )
+    .with_size(Vec2::new(200.0, 200.0));
 
-    project.scene.add(Box::new(logo.clone()));
+    project.scene.timeline.add(chain!(
+        all!(
+            png.position
+                .to(Vec2::new(50.0, 350.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(350.0, 50.0), Duration::from_secs(1)),
+        ),
+        all!(
+            png.position
+                .to(Vec2::new(50.0, 50.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(350.0, 350.0), Duration::from_secs(1)),
+        ),
+        all!(
+            png.position
+                .to(Vec2::new(350.0, 50.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(50.0, 350.0), Duration::from_secs(1)),
+        ),
+        all!(
+            png.position
+                .to(Vec2::new(350.0, 350.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(50.0, 50.0), Duration::from_secs(1)),
+        ),
+    ));
 
-    project.scene.timeline.add(
-        logo.position.to(Vec2::new(400.0, 100.0), Duration::from_secs(1))
-    );
-    
+    project.scene.add(Box::new(png.clone()));
+    project.scene.add(Box::new(svg.clone()));
+
     project.show()
 }
