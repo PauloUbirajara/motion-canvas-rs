@@ -1,10 +1,7 @@
-use glam::Vec2;
-use motion_canvas_rs::engine::nodes::ImageNode;
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::flows::{all, chain};
+use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     let mut project = Project::new(600, 600);
 
     // Using the sample logo path from the project
@@ -49,5 +46,5 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(Box::new(png.clone()));
     project.scene.add(Box::new(svg.clone()));
 
-    project.show()
+    project.show().expect("Failed to render");
 }

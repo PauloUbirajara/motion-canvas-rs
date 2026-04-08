@@ -34,7 +34,7 @@ The engine is organized into a modular structure:
 use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     let mut project = Project::new(800, 600);
 
     let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::RED);

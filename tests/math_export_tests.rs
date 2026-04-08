@@ -1,19 +1,15 @@
-use glam::Vec2;
-use motion_canvas_rs::engine::nodes::MathNode;
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::flows;
-use motion_canvas_rs::render::Color;
+use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 #[test]
-fn test_math_animation_export() -> anyhow::Result<()> {
+fn test_math_animation_export() {
     let mut project = Project::new(800, 600)
         .with_fps(60)
         .with_title("Test Math Animation Export")
         .with_gpu(false)
         .with_background(Color::rgb8(40, 44, 52));
 
-    let tex = MathNode::new(Vec2::new(100.0, 300.0), "y = a x^2", 48.0, Color::WHITE);
+    let tex = MathNode::new(Vec2::new(100.0, 300.0), "y = a x^2", 48.0, Color::rgb8(0xff, 0xff, 0xff));
     project.scene.add(Box::new(tex.clone()));
 
     project.scene.timeline.add(flows::chain![
@@ -26,12 +22,10 @@ fn test_math_animation_export() -> anyhow::Result<()> {
     ]);
 
     // Export to PNGs (headless)
-    project.export()?;
+    project.export().expect("Failed to export");
 
     // Verify that at least some frames were generated
     let output_path = std::path::Path::new("output");
     assert!(output_path.exists());
     assert!(output_path.is_dir());
-
-    Ok(())
 }

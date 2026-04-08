@@ -89,7 +89,7 @@ impl Project {
         self
     }
 
-    pub fn export(&mut self) -> anyhow::Result<()> {
+    pub fn export(&mut self) -> crate::Result<()> {
         #[cfg(feature = "export")]
         {
             println!("Exporting project: {}", self.title);
@@ -250,11 +250,11 @@ impl Project {
         }
         #[cfg(not(feature = "export"))]
         {
-            anyhow::bail!("Export failed: 'export' feature is disabled.")
+            Err("Export failed: 'export' feature is disabled.".into())
         }
     }
 
-    pub fn show(self) -> anyhow::Result<()> {
+    pub fn show(self) -> crate::Result<()> {
         let window = AnimationWindow::new(self)?;
         window.run()
     }

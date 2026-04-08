@@ -1,12 +1,7 @@
-use glam::Vec2;
-use motion_canvas_rs::engine::easings;
-use motion_canvas_rs::engine::nodes::{Circle, MathNode, TextNode};
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::flows;
-use motion_canvas_rs::render::Color;
+use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     // 1. Initialize for Export
     let mut project = Project::new(800, 600)
         .with_fps(30)
@@ -55,5 +50,5 @@ fn main() -> anyhow::Result<()> {
 
     // 4. Export (Renders frames and combines them into out.mkv)
     println!("Starting export to {}...", project.output_path.display());
-    project.export()
+    project.export().expect("Failed to export");
 }

@@ -99,11 +99,11 @@ pub struct AnimationWindow {
 }
 
 impl AnimationWindow {
-    pub fn new(project: crate::engine::Project) -> anyhow::Result<Self> {
+    pub fn new(project: crate::engine::Project) -> crate::Result<Self> {
         Ok(Self { project })
     }
 
-    pub fn run(mut self) -> anyhow::Result<()> {
+    pub fn run(mut self) -> crate::Result<()> {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
             .with_title(&self.project.title)

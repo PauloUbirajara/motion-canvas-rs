@@ -1,10 +1,7 @@
-use glam::Vec2;
-use motion_canvas_rs::engine::nodes::{CodeNode, MathNode};
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::render::Color;
+use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     let mut project = Project::new(400, 400);
 
     let code = CodeNode::new(
@@ -30,5 +27,5 @@ fn main() -> anyhow::Result<()> {
         .timeline
         .add(math.font_size.to(20.0, Duration::from_secs(1)));
 
-    project.show()
+    project.show().expect("Failed to render");
 }

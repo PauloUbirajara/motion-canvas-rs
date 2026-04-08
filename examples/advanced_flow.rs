@@ -1,15 +1,7 @@
-use glam::Vec2;
-use motion_canvas_rs::engine::easings;
-use motion_canvas_rs::engine::nodes::{
-    Circle, CodeNode, ImageNode, Line, MathNode, PathNode, Rect, TextNode,
-};
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::flows;
-use motion_canvas_rs::render::Color;
+use motion_canvas_rs::prelude::*;
 use std::time::Duration;
-use vello::kurbo::BezPath;
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     // 1. Initialize Project with full API coverage
     let mut project = Project::new(800, 600)
         .with_fps(120)
@@ -144,6 +136,6 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(Box::new(logo));
 
     // 5. Run (Choose show() for interactive or export() for PNGs)
-    project.show()
-    // project.export()
+    project.show().expect("Failed to render");
+    // project.export().expect("Failed to export");
 }

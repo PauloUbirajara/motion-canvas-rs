@@ -1,9 +1,6 @@
-use glam::Vec2;
-use motion_canvas_rs::engine::nodes::{Circle, Line, Rect};
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::render::Color;
+use motion_canvas_rs::prelude::*;
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     let mut project = Project::new(400, 200);
 
     // Red
@@ -29,5 +26,5 @@ fn main() -> anyhow::Result<()> {
     project.scene.add(Box::new(rect));
     project.scene.add(Box::new(line));
 
-    project.show()
+    project.show().expect("Failed to render");
 }

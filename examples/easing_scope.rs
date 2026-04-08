@@ -1,12 +1,7 @@
-use glam::Vec2;
-use motion_canvas_rs::engine::easings;
-use motion_canvas_rs::engine::nodes::{Circle, TextNode};
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::{all, with_easing, chain, loop_anim, flows::wait};
-use motion_canvas_rs::render::Color;
+use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     let mut project = Project::new(800, 800);
 
     let easing_configs = vec![
@@ -83,5 +78,5 @@ fn main() -> anyhow::Result<()> {
         None
     ]);
 
-    project.show()
+    project.show().expect("Failed to render");
 }
