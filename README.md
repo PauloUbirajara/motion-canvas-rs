@@ -7,16 +7,35 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 > [!IMPORTANT]
 > **Prototype Status**: This project is a functional prototype and proof-of-concept. It is **not** a 1:1 implementation of the original Motion Canvas API or features.
 
+## Installation
+
+Add the library to your `Cargo.toml`. To enable all features (math, code blocks, images, export), use the `full` flag:
+
+```bash
+# Enable everything
+cargo add motion-canvas-rs --features full
+
+# Or pick only what you need (e.g., just math and images)
+cargo add motion-canvas-rs --features math,image
+```
+
 ## Features
 
-- High-performance vector rendering using Vello.
-- Typst-powered LaTeX math rendering.
-- Syntax-highlighted code blocks via Syntect.
-- System font discovery and path-based text rendering.
-- Support for bitmap images (PNG, JPEG, etc.) and Vector graphics (SVG).
-- Native SVG rasterization using `resvg` for high-fidelity vector rendering.
-- Parallel PNG encoding and direct FFmpeg streaming.
-- Arc-length sampled path animations.
+| Feature | Description | Enables |
+|:---|:---|:---|
+| `math` | Typst-powered LaTeX math rendering. | `MathNode` |
+| `code` | Syntax-highlighted code blocks via Syntect. | `CodeNode` |
+| `image` | Bitmap image support (PNG, JPEG, etc.). | `ImageNode` |
+| `svg` | Vector graphics support using `resvg`. | `SvgNode` |
+| `export` | Headless frame rendering and video generation. | `project.export()` |
+| `full` | Meta-feature that enables all of the above. | Everything |
+
+### Key Capabilities
+- **High-performance**: GPU-accelerated vector rendering via Vello.
+- **Arc-length Sampling**: Accurate path animations and offsets.
+- **Easing Library**: 30+ standardized easing functions.
+- **FFmpeg Integration**: Direct streaming of animation frames to video.
+- **Clean API**: Streamlined prelude for high-speed prototyping.
 
 ## Project Structure
 
@@ -28,13 +47,13 @@ The engine is organized into a modular structure:
 - `src/engine/easings.rs`: Comprehensive easing function library.
 - `examples/`: Ready-to-run demonstration scripts.
 
-## Quick Start (Getting Started)
+## Quick Start
 
 ```rust
 use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
-fn main() -> Result<()> {
+fn main() {
     let mut project = Project::new(800, 600);
 
     let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::RED);
@@ -48,7 +67,7 @@ fn main() -> Result<()> {
         text.position.to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
     ]);
 
-    project.show()
+    project.show().expect("Failed to render");
 }
 ```
 

@@ -1,6 +1,6 @@
 [package]
 name = "motion-canvas-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Paulo Ubirajara"]
 description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
