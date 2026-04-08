@@ -130,6 +130,9 @@ impl Project {
             let (tx, rx) = std::sync::mpsc::channel::<(Vec<u8>, PathBuf)>();
             let width = self.width;
             let height = self.height;
+            use std::sync::atomic::{AtomicU32, Ordering};
+            let saved_count = std::sync::Arc::new(AtomicU32::new(0));
+            let saved_count_clone = saved_count.clone();
 
             // Initialize FFmpeg if requested
             let mut ffmpeg_process: Option<std::process::ChildStdin> = if self.use_ffmpeg {
@@ -172,6 +175,7 @@ impl Project {
                     let buffer: image::ImageBuffer<image::Rgba<u8>, _> =
                         image::ImageBuffer::from_raw(width, height, pixels).unwrap();
                     buffer.save(path).unwrap();
+                    saved_count_clone.fetch_add(1, Ordering::SeqCst);
                 }
             });
 
@@ -188,6 +192,7 @@ impl Project {
                     && frame_path.exists()
                 {
                     skipped_count += 1;
+                    saved_count.fetch_add(1, Ordering::SeqCst);
                     // If we are skipping, we still need to feed FFmpeg the frame if it's open
                     if let Some(ref mut stdin) = ffmpeg_process {
                         let pixels = image::open(&frame_path).unwrap().to_rgba8().into_raw();
@@ -207,9 +212,10 @@ impl Project {
                     rendered_count += 1;
                 }
 
-                // Progress Bar
+                // Progress Bar (now reflects saved count)
+                let current_saved = saved_count.load(Ordering::SeqCst);
                 let progress = if total_frames > 0 {
-                    (frame_count as f32 / total_frames as f32).min(1.0)
+                    (current_saved as f32 / total_frames as f32).min(1.0)
                 } else {
                     1.0
                 };
@@ -223,7 +229,7 @@ impl Project {
 
                 print!(
                     "\r[Exporting] Frame {}/{} [{}] {:.0}% (Skipped {})",
-                    frame_count + 1,
+                    current_saved.min(total_frames),
                     total_frames,
                     bar,
                     progress * 100.0,
@@ -240,6 +246,35 @@ impl Project {
 
             // Clean up
             drop(tx);
+            
+            // Wait for all frames to be saved while updating the progress bar
+            while saved_count.load(Ordering::SeqCst) < frame_count + 1 {
+                let current_saved = saved_count.load(Ordering::SeqCst);
+                let progress = if total_frames > 0 {
+                    (current_saved as f32 / total_frames as f32).min(1.0)
+                } else {
+                    1.0
+                };
+                let bar_len = 20;
+                let filled = (progress * bar_len as f32) as usize;
+                let bar: String = std::iter::repeat('=')
+                    .take(filled)
+                    .chain(std::iter::once('>'))
+                    .chain(std::iter::repeat(' ').take(bar_len - filled))
+                    .collect();
+
+                print!(
+                    "\r[Exporting] Frame {}/{} [{}] {:.0}% (Skipped {})",
+                    current_saved.min(total_frames),
+                    total_frames,
+                    bar,
+                    progress * 100.0,
+                    skipped_count
+                );
+                io::stdout().flush()?;
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+
             saving_thread.join().unwrap();
             if let Some(stdin) = ffmpeg_process {
                 drop(stdin); // Flush and close FFmpeg pipe
