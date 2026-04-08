@@ -1,19 +1,22 @@
-use motion_canvas_rs::engine::project::Project;
+use glam::Vec2;
 use motion_canvas_rs::engine::nodes::{Circle, TextNode};
+use motion_canvas_rs::engine::project::Project;
 use motion_canvas_rs::flows;
 use motion_canvas_rs::render::Color;
-use glam::Vec2;
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
     // 1. Initialize the Project
-    let mut project = Project::new(800, 600)
-        .with_fps(60)
-        .with_cache(true);
+    let mut project = Project::new(800, 600).with_fps(60).with_cache(true);
 
     // 2. Define Nodes
     let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::rgb8(0xe1, 0x32, 0x38)); // Red
-    let text = TextNode::new(Vec2::new(400.0, 450.0), "Hello Rust", 40.0, Color::rgb8(0xf2, 0xf2, 0xf2)); // White-ish
+    let text = TextNode::new(
+        Vec2::new(400.0, 450.0),
+        "Hello Rust",
+        40.0,
+        Color::rgb8(0xf2, 0xf2, 0xf2),
+    ); // White-ish
 
     // 3. Add Nodes to the Scene
     project.scene.add(Box::new(circle.clone()));
@@ -22,7 +25,8 @@ fn main() -> anyhow::Result<()> {
     // 4. Add Animations to the Timeline
     project.scene.timeline.add(flows::all![
         circle.radius.to(100.0, Duration::from_secs(1)),
-        text.position.to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
+        text.position
+            .to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
     ]);
 
     // 5. Show

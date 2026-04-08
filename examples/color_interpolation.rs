@@ -1,8 +1,8 @@
-use motion_canvas_rs::engine::project::Project;
+use glam::Vec2;
 use motion_canvas_rs::engine::nodes::{Circle, Rect};
+use motion_canvas_rs::engine::project::Project;
 use motion_canvas_rs::flows;
 use motion_canvas_rs::render::Color;
-use glam::Vec2;
 use std::time::Duration;
 
 fn main() -> anyhow::Result<()> {
@@ -15,7 +15,11 @@ fn main() -> anyhow::Result<()> {
     let spacing = 180.0;
     let start_x = 100.0;
 
-    let circle = Circle::new(Vec2::new(start_x, start_y), 50.0, Color::rgb8(0xe1, 0x32, 0x38)); // Red
+    let circle = Circle::new(
+        Vec2::new(start_x, start_y),
+        50.0,
+        Color::rgb8(0xe1, 0x32, 0x38),
+    ); // Red
     let rect = Rect::new(
         Vec2::new(start_x + spacing - 50.0, start_y - 50.0),
         Vec2::new(100.0, 100.0),

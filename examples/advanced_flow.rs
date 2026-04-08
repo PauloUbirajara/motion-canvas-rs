@@ -1,9 +1,11 @@
-use motion_canvas_rs::engine::project::Project;
-use motion_canvas_rs::engine::nodes::{Circle, Rect, Line, PathNode, TextNode, CodeNode, MathNode, ImageNode};
-use motion_canvas_rs::flows;
-use motion_canvas_rs::engine::easings;
-use motion_canvas_rs::render::Color;
 use glam::Vec2;
+use motion_canvas_rs::engine::easings;
+use motion_canvas_rs::engine::nodes::{
+    Circle, CodeNode, ImageNode, Line, MathNode, PathNode, Rect, TextNode,
+};
+use motion_canvas_rs::engine::project::Project;
+use motion_canvas_rs::flows;
+use motion_canvas_rs::render::Color;
 use std::time::Duration;
 use vello::kurbo::BezPath;
 
