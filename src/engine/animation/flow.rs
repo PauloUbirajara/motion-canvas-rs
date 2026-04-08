@@ -18,19 +18,24 @@ impl All {
 }
 
 impl Animation for All {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         let mut all_finished = true;
+        let mut min_leftover = dt;
         for i in 0..self.animations.len() {
             if self.finished[i] {
                 continue;
             }
-            if self.animations[i].update(dt) {
+            let (finished, leftover) = self.animations[i].update(dt);
+            if finished {
                 self.finished[i] = true;
+                if leftover < min_leftover {
+                    min_leftover = leftover;
+                }
             } else {
                 all_finished = false;
             }
         }
-        all_finished
+        (all_finished, if all_finished { min_leftover } else { Duration::ZERO })
     }
 
     fn duration(&self) -> Duration {
@@ -60,14 +65,19 @@ impl Any {
 }
 
 impl Animation for Any {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         let mut any_finished = false;
+        let mut max_leftover = Duration::ZERO;
         for anim in &mut self.animations {
-            if anim.update(dt) {
+            let (finished, leftover) = anim.update(dt);
+            if finished {
                 any_finished = true;
+                if leftover > max_leftover {
+                    max_leftover = leftover;
+                }
             }
         }
-        any_finished
+        (any_finished, if any_finished { max_leftover } else { Duration::ZERO })
     }
 
     fn duration(&self) -> Duration {
@@ -101,16 +111,22 @@ impl Chain {
 }
 
 impl Animation for Chain {
-    fn update(&mut self, dt: Duration) -> bool {
-        if self.index >= self.animations.len() {
-            return true;
+    fn update(&mut self, mut dt: Duration) -> (bool, Duration) {
+        while self.index < self.animations.len() {
+            let (finished, leftover) = self.animations[self.index].update(dt);
+            if finished {
+                self.index += 1;
+                dt = leftover;
+                if dt == Duration::ZERO && self.index < self.animations.len() {
+                    // Even if dt is zero, we might want to move to the next one if it's zero-duration
+                    // but usually we just stop here for the frame.
+                    return (false, Duration::ZERO);
+                }
+            } else {
+                return (false, Duration::ZERO);
+            }
         }
-
-        if self.animations[self.index].update(dt) {
-            self.index += 1;
-        }
-
-        self.index >= self.animations.len()
+        (true, dt)
     }
 
     fn duration(&self) -> Duration {
@@ -145,10 +161,15 @@ impl Delay {
 }
 
 impl Animation for Delay {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         if self.elapsed < self.duration {
             self.elapsed += dt;
-            false
+            if self.elapsed >= self.duration {
+                let leftover = self.elapsed - self.duration;
+                self.inner.update(leftover)
+            } else {
+                (false, Duration::ZERO)
+            }
         } else {
             self.inner.update(dt)
         }
@@ -187,17 +208,30 @@ impl Sequence {
 }
 
 impl Animation for Sequence {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.elapsed += dt;
         let mut all_finished = true;
+        let mut min_leftover = dt;
         for i in 0..self.items.len() {
             if self.finished[i] {
                 continue;
             }
             let (start_time, anim) = &mut self.items[i];
             if self.elapsed >= *start_time {
-                if anim.update(dt) {
+                // Calculate how much dt actually applied to this animation
+                // if it just started in this frame
+                let effective_dt = if self.elapsed - dt < *start_time {
+                    self.elapsed - *start_time
+                } else {
+                    dt
+                };
+
+                let (finished, leftover) = anim.update(effective_dt);
+                if finished {
                     self.finished[i] = true;
+                    if leftover < min_leftover {
+                        min_leftover = leftover;
+                    }
                 } else {
                     all_finished = false;
                 }
@@ -205,7 +239,16 @@ impl Animation for Sequence {
                 all_finished = false;
             }
         }
-        all_finished
+
+        let total_finished = all_finished && self.elapsed >= self.duration();
+        let final_leftover = if total_finished {
+            let dur = self.duration();
+            if self.elapsed > dur { self.elapsed - dur } else { Duration::ZERO }
+        } else {
+            Duration::ZERO
+        };
+
+        (total_finished, final_leftover)
     }
 
     fn duration(&self) -> Duration {
@@ -247,20 +290,28 @@ impl LoopAnim {
 }
 
 impl Animation for LoopAnim {
-    fn update(&mut self, dt: Duration) -> bool {
-        if self.current.update(dt) {
-            self.finished_count += 1;
+    fn update(&mut self, mut dt: Duration) -> (bool, Duration) {
+        loop {
+            let (finished, leftover) = self.current.update(dt);
+            if finished {
+                self.finished_count += 1;
 
-            if let Some(max) = self.repeat_count {
-                if self.finished_count >= max {
-                    return true;
+                if let Some(max) = self.repeat_count {
+                    if self.finished_count >= max {
+                        return (true, leftover);
+                    }
                 }
-            }
 
-            // Restart
-            self.current = (self.factory)();
+                // Restart
+                self.current = (self.factory)();
+                dt = leftover;
+                if dt == Duration::ZERO {
+                    return (false, Duration::ZERO);
+                }
+            } else {
+                return (false, Duration::ZERO);
+            }
         }
-        false
     }
 
     fn duration(&self) -> Duration {
@@ -298,9 +349,11 @@ pub struct Wait {
 }
 
 impl Animation for Wait {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.elapsed += dt;
-        self.elapsed >= self.duration
+        let finished = self.elapsed >= self.duration;
+        let leftover = if finished { self.elapsed - self.duration } else { Duration::ZERO };
+        (finished, leftover)
     }
 
     fn duration(&self) -> Duration {

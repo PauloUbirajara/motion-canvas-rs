@@ -51,7 +51,7 @@ fn main() {
     project.scene.add(Box::new(triangle_line_group.clone()));
     project.scene.add(Box::new(pytagorean_theorem.clone()));
 
-    project.scene.timeline.add(chain![
+    project.scene.timeline.add(all![
         triangle_line_group.transform.to(
             Affine::translate((50.0, 200.0)) * Affine::scale(1.0),
             Duration::from_secs(1),

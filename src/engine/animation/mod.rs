@@ -21,8 +21,19 @@ impl Timeline {
         self.animations.push(anim.into());
     }
 
-    pub fn update(&mut self, dt: std::time::Duration) {
-        self.animations.retain_mut(|anim| !anim.update(dt));
+    pub fn update(&mut self, mut dt: std::time::Duration) {
+        while !self.animations.is_empty() {
+            let (finished, leftover) = self.animations[0].update(dt);
+            if finished {
+                self.animations.remove(0);
+                dt = leftover;
+                if dt == std::time::Duration::ZERO {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
     }
 
     pub fn finished(&self) -> bool {
@@ -33,8 +44,7 @@ impl Timeline {
         self.animations
             .iter()
             .map(|a| a.duration())
-            .max()
-            .unwrap_or(std::time::Duration::ZERO)
+            .fold(std::time::Duration::ZERO, |acc, d| acc + d)
     }
 }
 

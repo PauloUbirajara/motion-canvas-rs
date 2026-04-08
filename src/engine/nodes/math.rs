@@ -171,7 +171,7 @@ struct MathTransition {
 }
 
 impl crate::engine::animation::Animation for MathTransition {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         if self.tween.is_none() {
             self.node.start_transition(&self.target_eq);
             self.tween = Some(self.node.transition_progress.to(1.0, self.duration));

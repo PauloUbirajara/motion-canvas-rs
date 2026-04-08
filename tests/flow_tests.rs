@@ -13,9 +13,9 @@ impl MockAnim {
 }
 
 impl Animation for MockAnim {
-    fn update(&mut self, _dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.finished = true;
-        true
+        (true, dt)
     }
 
     fn duration(&self) -> Duration {
@@ -32,8 +32,8 @@ fn test_chain_execution() {
     let mut chain = Chain::new(anims);
 
     // Each call should finish one animation in this mock
-    assert!(!chain.update(Duration::from_secs(1))); // finished first
-    assert!(chain.update(Duration::from_secs(1))); // finished second
+    assert!(!chain.update(Duration::from_secs(1)).0); // finished first
+    assert!(chain.update(Duration::from_secs(1)).0); // finished second
 }
 
 #[test]
@@ -45,5 +45,5 @@ fn test_all_execution() {
     let mut all = All::new(anims);
 
     // All should finish in one tick since mocks are instant
-    assert!(all.update(Duration::from_secs(1)));
+    assert!(all.update(Duration::from_secs(1)).0);
 }

@@ -197,7 +197,7 @@ impl<T: Tweenable> SignalTween<T> {
 }
 
 impl<T: Tweenable> Animation for SignalTween<T> {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         // Capture values on first update
         if self.start_value.is_none() {
             let current = self.data.lock().unwrap().value.clone();
@@ -215,10 +215,13 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         if self.duration == Duration::ZERO {
             let mut data = self.data.lock().unwrap();
             data.value = target.clone();
-            return true;
+            return (true, dt);
         }
 
         self.elapsed += dt;
+        let finished = self.elapsed >= self.duration;
+        let leftover = if finished { self.elapsed - self.duration } else { Duration::ZERO };
+        
         let t_linear = (self.elapsed.as_secs_f32() / self.duration.as_secs_f32()).min(1.0);
         let t_eased = (self.easing)(t_linear);
 
@@ -226,7 +229,7 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         let mut data = self.data.lock().unwrap();
         data.value = T::interpolate(start, target, t_eased);
 
-        self.elapsed >= self.duration
+        (finished, leftover)
     }
 
     fn duration(&self) -> Duration {
@@ -254,21 +257,24 @@ impl<T: Send + Sync + 'static> FollowPath<T> {
 }
 
 impl<T: Tweenable + FromVec2> Animation for FollowPath<T> {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         if self.duration == Duration::ZERO {
             let mut data = self.data.lock().unwrap();
             data.value = T::from_vec2(self.path_data.sample(1.0));
-            return true;
+            return (true, dt);
         }
 
         self.elapsed += dt;
+        let finished = self.elapsed >= self.duration;
+        let leftover = if finished { self.elapsed - self.duration } else { Duration::ZERO };
+        
         let t_linear = (self.elapsed.as_secs_f32() / self.duration.as_secs_f32()).min(1.0);
         let t_eased = (self.easing)(t_linear);
 
         let mut data = self.data.lock().unwrap();
         data.value = T::from_vec2(self.path_data.sample(t_eased));
 
-        self.elapsed >= self.duration
+        (finished, leftover)
     }
 
     fn duration(&self) -> Duration {
