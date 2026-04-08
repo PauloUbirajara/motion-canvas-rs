@@ -5,6 +5,7 @@ fn main() {
     let mut project = Project::new(800, 800);
 
     let easing_configs = vec![
+        ("Linear", easings::linear as fn(f32) -> f32),
         ("Sine InOut", easings::sine_in_out as fn(f32) -> f32),
         ("Quad InOut", easings::quad_in_out as fn(f32) -> f32),
         ("Cubic InOut", easings::cubic_in_out as fn(f32) -> f32),
@@ -16,8 +17,6 @@ fn main() {
     ];
 
     let mut balls = Vec::new();
-    let mut labels = Vec::new();
-
     let start_x = 150.0;
     let end_x = 750.0;
     let start_y = 100.0;
@@ -43,40 +42,35 @@ fn main() {
         project.scene.add(Box::new(label.clone()));
         
         balls.push(ball);
-        labels.push(label);
     }
 
-    project.scene.timeline.add(loop_anim![
-        chain![
-            // 1. Move to right using individual scoped easings
-            all![
-                with_easing!(easing_configs[0].1, [balls[0].position.to(Vec2::new(end_x, start_y + 0.0 * spacing_y), Duration::from_secs(2))]),
-                with_easing!(easing_configs[1].1, [balls[1].position.to(Vec2::new(end_x, start_y + 1.0 * spacing_y), Duration::from_secs(2))]),
-                with_easing!(easing_configs[2].1, [balls[2].position.to(Vec2::new(end_x, start_y + 2.0 * spacing_y), Duration::from_secs(2))]),
-                with_easing!(easing_configs[3].1, [balls[3].position.to(Vec2::new(end_x, start_y + 3.0 * spacing_y), Duration::from_secs(2))]),
-                with_easing!(easing_configs[4].1, [balls[4].position.to(Vec2::new(end_x, start_y + 4.0 * spacing_y), Duration::from_secs(2))]),
-                with_easing!(easing_configs[5].1, [balls[5].position.to(Vec2::new(end_x, start_y + 5.0 * spacing_y), Duration::from_secs(2))]),
-                with_easing!(easing_configs[6].1, [balls[6].position.to(Vec2::new(end_x, start_y + 6.0 * spacing_y), Duration::from_secs(2))]),
-                with_easing!(easing_configs[7].1, [balls[7].position.to(Vec2::new(end_x, start_y + 7.0 * spacing_y), Duration::from_secs(2))]),
-            ],
-            wait(Duration::from_secs(1)),
-            // 2. Move back to left with linear easing (to show contrast)
-            with_easing!(easings::linear, [
-                all![
-                    balls[0].position.to(Vec2::new(start_x, start_y + 0.0 * spacing_y), Duration::from_secs(1)),
-                    balls[1].position.to(Vec2::new(start_x, start_y + 1.0 * spacing_y), Duration::from_secs(1)),
-                    balls[2].position.to(Vec2::new(start_x, start_y + 2.0 * spacing_y), Duration::from_secs(1)),
-                    balls[3].position.to(Vec2::new(start_x, start_y + 3.0 * spacing_y), Duration::from_secs(1)),
-                    balls[4].position.to(Vec2::new(start_x, start_y + 4.0 * spacing_y), Duration::from_secs(1)),
-                    balls[5].position.to(Vec2::new(start_x, start_y + 5.0 * spacing_y), Duration::from_secs(1)),
-                    balls[6].position.to(Vec2::new(start_x, start_y + 6.0 * spacing_y), Duration::from_secs(1)),
-                    balls[7].position.to(Vec2::new(start_x, start_y + 7.0 * spacing_y), Duration::from_secs(1)),
-                ]
-            ]),
-            wait(Duration::from_secs(1)),
-        ],
-        None
-    ]);
+    let balls_clone = balls.clone();
+    let configs_clone = easing_configs.clone();
+
+    // Loop animation factory
+    project.scene.timeline.add(flows::loop_anim(move || {
+        let balls = &balls_clone;
+        let configs = &configs_clone;
+        
+        // 1. Move to right using individual scoped easings
+        let right_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
+            let end_pos = Vec2::new(end_x, start_y + i as f32 * spacing_y);
+            flows::with_easing(*easing, vec![balls[i].position.to(end_pos, Duration::from_secs(2)).into()])
+        }).collect());
+
+        // 2. Move back to left using the SAME scoped easings
+        let left_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
+            let start_pos = Vec2::new(start_x, start_y + i as f32 * spacing_y);
+            flows::with_easing(*easing, vec![balls[i].position.to(start_pos, Duration::from_secs(2)).into()])
+        }).collect());
+
+        flows::chain(vec![
+            right_anims,
+            flows::wait(Duration::from_secs(1)),
+            left_anims,
+            flows::wait(Duration::from_secs(1)),
+        ])
+    }, None));
 
     project.show().expect("Failed to render");
 }
