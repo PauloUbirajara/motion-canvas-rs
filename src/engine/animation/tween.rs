@@ -9,7 +9,7 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
 
-pub trait Tweenable: Clone + Send + Sync + 'static {
+pub trait Tweenable: Clone + Send + Sync + std::fmt::Debug + 'static {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self;
 }
 
@@ -114,7 +114,8 @@ impl<T: Tweenable> Animation for SignalTween<T> {
     fn update(&mut self, dt: Duration) -> bool {
         // Capture start value on first update
         if self.start_value.is_none() {
-            self.start_value = Some(self.data.lock().unwrap().value.clone());
+            let val = self.data.lock().unwrap().value.clone();
+            self.start_value = Some(val);
         }
 
         if self.duration == Duration::ZERO {

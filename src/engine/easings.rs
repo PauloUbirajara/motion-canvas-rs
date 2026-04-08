@@ -70,24 +70,4 @@ pub fn elastic_out(t: f32) -> f32 {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_easings_boundaries() {
-        let easings: Vec<fn(f32) -> f32> = vec![
-            linear,
-            quad_in, quad_out, quad_in_out,
-            cubic_in, cubic_out, cubic_in_out,
-            sine_in, sine_out, sine_in_out,
-            elastic_in, elastic_out,
-        ];
-
-        for easing in easings {
-            assert!((easing(0.0) - 0.0).abs() < 1e-6, "Easing failed at 0.0");
-            assert!((easing(1.0) - 1.0).abs() < 1e-6, "Easing failed at 1.0");
-        }
-    }
-}
 

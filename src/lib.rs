@@ -27,7 +27,12 @@ pub mod easings {
 pub mod prelude {
     pub use crate::engine::project::Project;
     
-    // Export the modules themselves for namespaced access (e.g. easings::quad_in)
+    // Core Traits
+    pub use crate::engine::animation::base::Animation;
+    pub use crate::engine::animation::base::Node;
+    pub use crate::engine::animation::tween::Tweenable;
+    
+    // Export the modules themselves for namespaced access
     pub use crate::nodes;
     pub use crate::flows;
     pub use crate::easings;

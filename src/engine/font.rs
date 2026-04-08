@@ -4,7 +4,7 @@ use font_kit::source::SystemSource;
 use lazy_static::lazy_static;
 use skrifa::FontRef;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 pub struct FontData {
     pub name: String,
@@ -90,35 +90,38 @@ impl FontManager {
         None
     }
 
-    pub fn get_math_font() -> Option<Arc<FontData>> {
-        // First try specific known math fonts
-        let known_math = ["DejaVu Math TeX Gyre", "Noto Sans Math", "New Computer Modern Math", "STIX Two Math"];
-        for family in known_math {
-            if let Some(font) = Self::get_font(family) {
-                return Some(font);
+    pub fn get_math_font() -> (String, Option<Arc<FontData>>) {
+        static MATH_CACHE: OnceLock<(String, Option<Arc<FontData>>)> = OnceLock::new();
+        MATH_CACHE.get_or_init(|| {
+            // First try specific known math fonts
+            let known_math = ["DejaVu Math TeX Gyre", "Noto Sans Math", "New Computer Modern Math", "STIX Two Math"];
+            for family in known_math {
+                if let Some(font) = Self::get_font(family) {
+                    return (family.to_string(), Some(font));
+                }
             }
-        }
 
-        // Search all system fonts for anything with "Math" in the name
-        let source = SystemSource::new();
-        if let Ok(fonts) = source.all_fonts() {
-            for handle in fonts {
-                if let Ok(font) = handle.load() {
-                    let name = font.full_name();
-                    if name.contains("Math") {
-                        if let Some(data) = font.copy_font_data() {
-                            return Some(Arc::new(FontData {
-                                name,
-                                data: (*data).clone(),
-                            }));
+            // Search all system fonts for anything with "Math" in the name
+            let source = SystemSource::new();
+            if let Ok(fonts) = source.all_fonts() {
+                for handle in fonts {
+                    if let Ok(font) = handle.load() {
+                        let name = font.full_name();
+                        if name.contains("Math") {
+                            if let Some(data) = font.copy_font_data() {
+                                return (name.clone(), Some(Arc::new(FontData {
+                                    name,
+                                    data: (*data).clone(),
+                                })));
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Fallback to serif if no math font found (better than nothing for Typst)
-        Self::get_font_with_fallback(&["serif"])
+            // Fallback to serif if no math font found (better than nothing for Typst)
+            ("serif".to_string(), Self::get_font_with_fallback(&["serif"]))
+        }).clone()
     }
 
     pub fn get_font_ref(data: &Arc<FontData>) -> FontRef<'_> {

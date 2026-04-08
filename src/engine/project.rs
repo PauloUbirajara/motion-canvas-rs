@@ -154,26 +154,11 @@ impl Project {
             };
 
             let saving_thread = std::thread::spawn(move || {
-                use rayon::prelude::*;
-                let mut frames = Vec::new();
-                while let Ok(msg) = rx.recv() {
-                    frames.push(msg);
-                    // Process in batches if we have many
-                    if frames.len() >= 10 {
-                        let batch: Vec<_> = frames.drain(..).collect();
-                        batch.into_par_iter().for_each(|(pixels, path)| {
-                            let buffer: image::ImageBuffer<image::Rgba<u8>, _> =
-                                image::ImageBuffer::from_raw(width, height, pixels).unwrap();
-                            buffer.save(path).unwrap();
-                        });
-                    }
-                }
-                // Final flush
-                frames.into_par_iter().for_each(|(pixels, path)| {
+                while let Ok((pixels, path)) = rx.recv() {
                     let buffer: image::ImageBuffer<image::Rgba<u8>, _> =
                         image::ImageBuffer::from_raw(width, height, pixels).unwrap();
                     buffer.save(path).unwrap();
-                });
+                }
             });
 
             // Export until all animations are finished
