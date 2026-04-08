@@ -69,7 +69,7 @@ impl ImageManager {
 
 #[derive(Clone)]
 pub struct ImageNode {
-    pub position: Signal<Vec2>,
+    pub transform: Signal<Affine>,
     pub size: Signal<Vec2>,
     pub image: Option<Arc<PenikoImage>>,
     pub opacity: Signal<f32>,
@@ -85,11 +85,44 @@ impl ImageNode {
         };
 
         Self {
-            position: Signal::new(pos),
+            transform: Signal::new(Affine::translate((pos.x as f64, pos.y as f64))),
             size: Signal::new(size),
             image,
             opacity: Signal::new(1.0),
         }
+    }
+
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = Signal::new(transform);
+        self
+    }
+
+    pub fn with_position(mut self, position: Vec2) -> Self {
+        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self
+    }
+
+    pub fn with_rotation(mut self, angle: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self
+    }
+
+    pub fn with_scale(mut self, scale: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self
+    }
+
+    pub fn with_opacity(mut self, opacity: f32) -> Self {
+        self.opacity = Signal::new(opacity);
+        self
     }
 
     pub fn with_size(mut self, size: Vec2) -> Self {
@@ -101,24 +134,21 @@ impl ImageNode {
 impl Node for ImageNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         if let Some(ref img) = self.image {
-            let pos = self.position.get();
             let size = self.size.get();
+            let local_transform = self.transform.get();
             let opacity = self.opacity.get();
             let final_opacity = opacity * parent_opacity;
 
             if final_opacity <= 0.0 { return; }
 
             let transform = parent_transform 
-                * Affine::translate((pos.x as f64, pos.y as f64))
+                * local_transform
                 * Affine::scale_non_uniform(
                     size.x as f64 / img.width as f64,
                     size.y as f64 / img.height as f64
                 );
 
             if final_opacity < 1.0 {
-                // Use a layer for opacity
-                // Vello's layer takes a Blend and an alpha.
-                // Note: vello::peniko::BlendMode::Normal etc.
                 scene.push_layer(vello::peniko::Mix::Normal, final_opacity, transform, &vello::kurbo::Rect::new(0.0, 0.0, img.width as f64, img.height as f64));
                 scene.draw_image(img, Affine::IDENTITY);
                 scene.pop_layer();
@@ -129,16 +159,19 @@ impl Node for ImageNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let pos = self.position.get();
-        let size = self.size.get();
-        let opacity = self.opacity.get();
-        let mut hash = 0u64;
-        hash ^= pos.x.to_bits() as u64;
-        hash ^= pos.y.to_bits() as u64;
-        hash ^= size.x.to_bits() as u64;
-        hash ^= size.y.to_bits() as u64;
-        hash ^= opacity.to_bits() as u64;
-        hash
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+        let mut s = DefaultHasher::new();
+        
+        let coeffs = self.transform.get().as_coeffs();
+        for c in coeffs {
+            c.to_bits().hash(&mut s);
+        }
+        
+        self.size.get().x.to_bits().hash(&mut s);
+        self.size.get().y.to_bits().hash(&mut s);
+        self.opacity.get().to_bits().hash(&mut s);
+        s.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {
