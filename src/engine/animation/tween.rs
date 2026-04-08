@@ -1,9 +1,9 @@
-use std::time::Duration;
-use std::sync::{Arc, Mutex};
-use glam::Vec2;
-use vello::peniko::Color;
 use crate::engine::animation::base::Animation;
 use crate::engine::nodes::{PathData, PathNode};
+use glam::Vec2;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use vello::peniko::Color;
 
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
@@ -27,7 +27,11 @@ impl Tweenable for Vec2 {
 
 impl Tweenable for String {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
-        if t >= 1.0 { b.clone() } else { a.clone() }
+        if t >= 1.0 {
+            b.clone()
+        } else {
+            a.clone()
+        }
     }
 }
 
@@ -80,8 +84,9 @@ impl<T: Tweenable> Signal<T> {
         }
     }
 
-    pub fn follow(&self, path: &PathNode, duration: Duration) -> FollowPath<T> 
-    where T: From<Vec2>
+    pub fn follow(&self, path: &PathNode, duration: Duration) -> FollowPath<T>
+    where
+        T: From<Vec2>,
     {
         FollowPath {
             data: self.data.clone(),
@@ -127,11 +132,11 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         self.elapsed += dt;
         let t_linear = (self.elapsed.as_secs_f32() / self.duration.as_secs_f32()).min(1.0);
         let t_eased = (self.easing)(t_linear);
-        
+
         let start = self.start_value.as_ref().unwrap();
         let mut data = self.data.lock().unwrap();
         data.value = T::interpolate(start, &self.target_value, t_eased);
-        
+
         self.elapsed >= self.duration
     }
 
@@ -139,7 +144,6 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         self.duration
     }
 }
-
 
 pub struct FollowPath<T> {
     data: Arc<Mutex<SignalData<T>>>,
@@ -167,10 +171,10 @@ impl<T: Tweenable + From<Vec2>> Animation for FollowPath<T> {
         self.elapsed += dt;
         let t_linear = (self.elapsed.as_secs_f32() / self.duration.as_secs_f32()).min(1.0);
         let t_eased = (self.easing)(t_linear);
-        
+
         let mut data = self.data.lock().unwrap();
         data.value = T::from(self.path_data.sample(t_eased));
-        
+
         self.elapsed >= self.duration
     }
 
@@ -178,7 +182,6 @@ impl<T: Tweenable + From<Vec2>> Animation for FollowPath<T> {
         self.duration
     }
 }
-
 
 impl<T: Tweenable> From<SignalTween<T>> for Box<dyn Animation> {
     fn from(tween: SignalTween<T>) -> Self {

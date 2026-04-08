@@ -18,7 +18,12 @@ pub struct Exporter {
 }
 
 impl Exporter {
-    pub fn new(width: u32, height: u32, use_gpu: bool, background_color: vello::peniko::Color) -> Self {
+    pub fn new(
+        width: u32,
+        height: u32,
+        use_gpu: bool,
+        background_color: vello::peniko::Color,
+    ) -> Self {
         let mut context = RenderContext::new();
         let device_id = pollster::block_on(context.device(None)).unwrap();
         let device_handle = &context.devices[device_id];
@@ -142,7 +147,7 @@ impl Exporter {
         rx.recv().unwrap().unwrap();
 
         let data = buffer_slice.get_mapped_range();
-        
+
         let mut pixels = Vec::with_capacity((self.width * self.height * 4) as usize);
         if self.bytes_per_row == self.unaligned_bytes_per_row {
             pixels.extend_from_slice(&data[..(self.width * self.height * 4) as usize]);
@@ -156,7 +161,7 @@ impl Exporter {
 
         drop(data);
         self.output_buffer.unmap();
-        
+
         pixels
     }
 }

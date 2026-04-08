@@ -1,5 +1,5 @@
-use std::time::Duration;
 use crate::engine::animation::base::Animation;
+use std::time::Duration;
 
 // --- All (Parallel) ---
 pub struct All {
@@ -10,7 +10,7 @@ pub struct All {
 impl All {
     pub fn new(animations: Vec<Box<dyn Animation>>) -> Self {
         let len = animations.len();
-        Self { 
+        Self {
             animations,
             finished: vec![false; len],
         }
@@ -34,10 +34,13 @@ impl Animation for All {
     }
 
     fn duration(&self) -> Duration {
-        self.animations.iter().map(|a| a.duration()).max().unwrap_or(Duration::ZERO)
+        self.animations
+            .iter()
+            .map(|a| a.duration())
+            .max()
+            .unwrap_or(Duration::ZERO)
     }
 }
-
 
 // --- Any (Race) ---
 pub struct Any {
@@ -62,10 +65,13 @@ impl Animation for Any {
     }
 
     fn duration(&self) -> Duration {
-        self.animations.iter().map(|a| a.duration()).min().unwrap_or(Duration::ZERO)
+        self.animations
+            .iter()
+            .map(|a| a.duration())
+            .min()
+            .unwrap_or(Duration::ZERO)
     }
 }
-
 
 // --- Chain (Sequential) ---
 pub struct Chain {
@@ -75,7 +81,10 @@ pub struct Chain {
 
 impl Chain {
     pub fn new(animations: Vec<Box<dyn Animation>>) -> Self {
-        Self { animations, index: 0 }
+        Self {
+            animations,
+            index: 0,
+        }
     }
 }
 
@@ -93,10 +102,12 @@ impl Animation for Chain {
     }
 
     fn duration(&self) -> Duration {
-        self.animations.iter().map(|a| a.duration()).fold(Duration::ZERO, |acc, d| acc + d)
+        self.animations
+            .iter()
+            .map(|a| a.duration())
+            .fold(Duration::ZERO, |acc, d| acc + d)
     }
 }
-
 
 // --- Delay ---
 pub struct Delay {
@@ -130,7 +141,6 @@ impl Animation for Delay {
     }
 }
 
-
 // --- Sequence (Staggered Parallel) ---
 pub struct Sequence {
     items: Vec<(Duration, Box<dyn Animation>)>,
@@ -146,10 +156,10 @@ impl Sequence {
             .enumerate()
             .map(|(i, anim)| (stagger * i as u32, anim))
             .collect();
-        Self { 
+        Self {
             items,
             finished: vec![false; len],
-            elapsed: Duration::ZERO 
+            elapsed: Duration::ZERO,
         }
     }
 }
@@ -177,10 +187,13 @@ impl Animation for Sequence {
     }
 
     fn duration(&self) -> Duration {
-        self.items.iter().map(|(start, anim)| *start + anim.duration()).max().unwrap_or(Duration::ZERO)
+        self.items
+            .iter()
+            .map(|(start, anim)| *start + anim.duration())
+            .max()
+            .unwrap_or(Duration::ZERO)
     }
 }
-
 
 // --- Loop ---
 pub struct LoopAnim {
@@ -191,7 +204,10 @@ pub struct LoopAnim {
 }
 
 impl LoopAnim {
-    pub fn new(factory: Box<dyn Fn() -> Box<dyn Animation> + Send + Sync>, count: Option<usize>) -> Self {
+    pub fn new(
+        factory: Box<dyn Fn() -> Box<dyn Animation> + Send + Sync>,
+        count: Option<usize>,
+    ) -> Self {
         let current = factory();
         Self {
             factory,
@@ -206,7 +222,7 @@ impl Animation for LoopAnim {
     fn update(&mut self, dt: Duration) -> bool {
         if self.current.update(dt) {
             self.finished_count += 1;
-            
+
             if let Some(max) = self.repeat_count {
                 if self.finished_count >= max {
                     return true;
@@ -226,7 +242,6 @@ impl Animation for LoopAnim {
         }
     }
 }
-
 
 // --- Factory Functions ---
 pub fn all(animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
@@ -265,7 +280,6 @@ impl Animation for Wait {
     }
 }
 
-
 pub fn wait(duration: Duration) -> Box<dyn Animation> {
     Box::new(Wait {
         duration,
@@ -279,5 +293,3 @@ where
 {
     Box::new(LoopAnim::new(Box::new(factory), count))
 }
-
-

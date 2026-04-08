@@ -1,5 +1,5 @@
+use motion_canvas_rs::engine::animation::flow::{All, Chain};
 use motion_canvas_rs::engine::Animation;
-use motion_canvas_rs::engine::animation::flow::{Chain, All};
 use std::time::Duration;
 
 struct MockAnim {
@@ -33,7 +33,7 @@ fn test_chain_execution() {
 
     // Each call should finish one animation in this mock
     assert!(!chain.update(Duration::from_secs(1))); // finished first
-    assert!(chain.update(Duration::from_secs(1)));  // finished second
+    assert!(chain.update(Duration::from_secs(1))); // finished second
 }
 
 #[test]

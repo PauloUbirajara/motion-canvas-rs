@@ -69,5 +69,3 @@ pub fn elastic_out(t: f32) -> f32 {
         2.0f32.powf(-10.0 * t) * ((t - 0.1) * 5.0 * PI).sin() + 1.0
     }
 }
-
-

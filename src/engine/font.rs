@@ -46,21 +46,27 @@ impl FontManager {
     }
 
     pub fn get_font_with_fallback(families: &[&str]) -> Option<Arc<FontData>> {
-        let primary = families.first().map(|f| f.to_string()).unwrap_or_else(|| "Unknown".to_string());
-        
+        let primary = families
+            .first()
+            .map(|f| f.to_string())
+            .unwrap_or_else(|| "Unknown".to_string());
+
         for &family in families {
             if let Some(font) = Self::get_font(family) {
                 if family != primary {
                     let mut warnings = FONT_WARNINGS.lock().unwrap();
                     if !warnings.contains_key(&primary) {
-                        eprintln!("Warning: Font '{}' not found. Falling back to '{}'.", primary, family);
+                        eprintln!(
+                            "Warning: Font '{}' not found. Falling back to '{}'.",
+                            primary, family
+                        );
                         warnings.insert(primary.clone(), true);
                     }
                 }
                 return Some(font);
             }
         }
-        
+
         // Final attempt at generic sans-serif
         let source = SystemSource::new();
         let generic_fallbacks = [
@@ -68,14 +74,17 @@ impl FontManager {
             (FamilyName::Monospace, "Monospace"),
             (FamilyName::Serif, "Serif"),
         ];
-        
+
         for (generic, name) in generic_fallbacks {
             if let Ok(handle) = source.select_best_match(&[generic], &Properties::new()) {
-                 if let Ok(font) = handle.load() {
+                if let Ok(font) = handle.load() {
                     if let Some(data) = font.copy_font_data() {
                         let mut warnings = FONT_WARNINGS.lock().unwrap();
                         if !warnings.contains_key(&primary) {
-                            eprintln!("Warning: Font '{}' not found. Falling back to system '{}'.", primary, name);
+                            eprintln!(
+                                "Warning: Font '{}' not found. Falling back to system '{}'.",
+                                primary, name
+                            );
                             warnings.insert(primary.clone(), true);
                         }
                         return Some(Arc::new(FontData {
@@ -86,42 +95,55 @@ impl FontManager {
                 }
             }
         }
-        
+
         None
     }
 
     pub fn get_math_font() -> (String, Option<Arc<FontData>>) {
         static MATH_CACHE: OnceLock<(String, Option<Arc<FontData>>)> = OnceLock::new();
-        MATH_CACHE.get_or_init(|| {
-            // First try specific known math fonts
-            let known_math = ["DejaVu Math TeX Gyre", "Noto Sans Math", "New Computer Modern Math", "STIX Two Math"];
-            for family in known_math {
-                if let Some(font) = Self::get_font(family) {
-                    return (family.to_string(), Some(font));
+        MATH_CACHE
+            .get_or_init(|| {
+                // First try specific known math fonts
+                let known_math = [
+                    "DejaVu Math TeX Gyre",
+                    "Noto Sans Math",
+                    "New Computer Modern Math",
+                    "STIX Two Math",
+                ];
+                for family in known_math {
+                    if let Some(font) = Self::get_font(family) {
+                        return (family.to_string(), Some(font));
+                    }
                 }
-            }
 
-            // Search all system fonts for anything with "Math" in the name
-            let source = SystemSource::new();
-            if let Ok(fonts) = source.all_fonts() {
-                for handle in fonts {
-                    if let Ok(font) = handle.load() {
-                        let name = font.full_name();
-                        if name.contains("Math") {
-                            if let Some(data) = font.copy_font_data() {
-                                return (name.clone(), Some(Arc::new(FontData {
-                                    name,
-                                    data: (*data).clone(),
-                                })));
+                // Search all system fonts for anything with "Math" in the name
+                let source = SystemSource::new();
+                if let Ok(fonts) = source.all_fonts() {
+                    for handle in fonts {
+                        if let Ok(font) = handle.load() {
+                            let name = font.full_name();
+                            if name.contains("Math") {
+                                if let Some(data) = font.copy_font_data() {
+                                    return (
+                                        name.clone(),
+                                        Some(Arc::new(FontData {
+                                            name,
+                                            data: (*data).clone(),
+                                        })),
+                                    );
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Fallback to serif if no math font found (better than nothing for Typst)
-            ("serif".to_string(), Self::get_font_with_fallback(&["serif"]))
-        }).clone()
+                // Fallback to serif if no math font found (better than nothing for Typst)
+                (
+                    "serif".to_string(),
+                    Self::get_font_with_fallback(&["serif"]),
+                )
+            })
+            .clone()
     }
 
     pub fn get_font_ref(data: &Arc<FontData>) -> FontRef<'_> {

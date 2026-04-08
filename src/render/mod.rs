@@ -1,6 +1,6 @@
-pub use vello::peniko::Color;
 use crate::engine::scene::Scene2D;
 use std::time::{Duration, Instant};
+pub use vello::peniko::Color;
 use vello::{
     util::{RenderContext, RenderSurface},
     Renderer, RendererOptions, Scene,
@@ -127,53 +127,51 @@ impl AnimationWindow {
             std::mem::transmute::<&winit::window::Window, &'static winit::window::Window>(&window)
         };
 
-        event_loop.run(move |event, elwt| {
-            match event {
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => elwt.exit(),
-                Event::WindowEvent {
-                    event: WindowEvent::RedrawRequested,
-                    ..
-                } => {
-                    renderer.render(&self.project.scene, self.project.width, self.project.height);
-                }
-                Event::AboutToWait => {
-                    if finished {
-                        elwt.set_control_flow(ControlFlow::Wait);
-                        return;
-                    }
-
-                    let now = Instant::now();
-                    let elapsed = now.duration_since(last_update);
-                    
-                    if elapsed >= dt {
-                        self.project.scene.update(dt);
-                        last_update = now;
-                        
-                        let current_hash = self.project.scene.state_hash();
-                        if current_hash != last_hash {
-                            window_ref.request_redraw();
-                            last_hash = current_hash;
-                        }
-
-                        if self.project.scene.timeline.finished() {
-                            println!("Animation finished.");
-                            finished = true;
-                            elwt.set_control_flow(ControlFlow::Wait);
-                        } else {
-                            elwt.set_control_flow(ControlFlow::WaitUntil(now + dt));
-                        }
-                    } else {
-                        elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
-                    }
-                }
-                Event::Resumed => {
-                    pollster::block_on(renderer.resume(window_ref));
-                }
-                _ => (),
+        event_loop.run(move |event, elwt| match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => elwt.exit(),
+            Event::WindowEvent {
+                event: WindowEvent::RedrawRequested,
+                ..
+            } => {
+                renderer.render(&self.project.scene, self.project.width, self.project.height);
             }
+            Event::AboutToWait => {
+                if finished {
+                    elwt.set_control_flow(ControlFlow::Wait);
+                    return;
+                }
+
+                let now = Instant::now();
+                let elapsed = now.duration_since(last_update);
+
+                if elapsed >= dt {
+                    self.project.scene.update(dt);
+                    last_update = now;
+
+                    let current_hash = self.project.scene.state_hash();
+                    if current_hash != last_hash {
+                        window_ref.request_redraw();
+                        last_hash = current_hash;
+                    }
+
+                    if self.project.scene.timeline.finished() {
+                        println!("Animation finished.");
+                        finished = true;
+                        elwt.set_control_flow(ControlFlow::Wait);
+                    } else {
+                        elwt.set_control_flow(ControlFlow::WaitUntil(now + dt));
+                    }
+                } else {
+                    elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
+                }
+            }
+            Event::Resumed => {
+                pollster::block_on(renderer.resume(window_ref));
+            }
+            _ => (),
         })?;
 
         Ok(())

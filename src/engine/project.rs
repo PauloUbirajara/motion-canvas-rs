@@ -1,5 +1,4 @@
 use crate::engine::scene::BaseScene;
-use vello::peniko::Color;
 #[cfg(feature = "export")]
 use crate::engine::scene::Scene2D;
 use crate::render::AnimationWindow;
@@ -12,6 +11,7 @@ use std::io::{self, Write};
 #[cfg(feature = "export")]
 use std::path::Path;
 use std::path::PathBuf;
+use vello::peniko::Color;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct CacheManifest {
@@ -103,7 +103,12 @@ impl Project {
                 CacheManifest::default()
             };
 
-            let mut exporter = crate::render::export::Exporter::new(self.width, self.height, self.use_gpu, self.background_color);
+            let mut exporter = crate::render::export::Exporter::new(
+                self.width,
+                self.height,
+                self.use_gpu,
+                self.background_color,
+            );
             let dt = std::time::Duration::from_secs_f32(1.0 / self.fps as f32);
             let mut frame_count = 0;
             let mut rendered_count = 0;

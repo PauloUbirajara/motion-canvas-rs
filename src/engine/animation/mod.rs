@@ -30,11 +30,13 @@ impl Timeline {
     }
 
     pub fn duration(&self) -> std::time::Duration {
-        self.animations.iter().map(|a| a.duration()).max().unwrap_or(std::time::Duration::ZERO)
+        self.animations
+            .iter()
+            .map(|a| a.duration())
+            .max()
+            .unwrap_or(std::time::Duration::ZERO)
     }
 }
-
-
 
 /// Run animations in parallel.
 #[macro_export]
@@ -72,7 +74,10 @@ macro_rules! sequence {
 #[macro_export]
 macro_rules! delay {
     ($duration:expr, $inner:expr $(,)?) => {
-        $crate::engine::animation::flow::delay($duration, Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($inner))
+        $crate::engine::animation::flow::delay(
+            $duration,
+            Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($inner),
+        )
     };
 }
 
@@ -81,9 +86,10 @@ macro_rules! delay {
 macro_rules! loop_anim {
     ($anim:expr, $count:expr $(,)?) => {
         $crate::engine::animation::flow::loop_anim(
-            Box::new(move || Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($anim)),
-            $count
+            Box::new(move || {
+                Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($anim)
+            }),
+            $count,
         )
     };
 }
-

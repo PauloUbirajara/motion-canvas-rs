@@ -4,10 +4,17 @@ use motion_canvas_rs::engine::easings;
 fn test_easings_boundaries() {
     let easings_list: Vec<fn(f32) -> f32> = vec![
         easings::linear,
-        easings::quad_in, easings::quad_out, easings::quad_in_out,
-        easings::cubic_in, easings::cubic_out, easings::cubic_in_out,
-        easings::sine_in, easings::sine_out, easings::sine_in_out,
-        easings::elastic_in, easings::elastic_out,
+        easings::quad_in,
+        easings::quad_out,
+        easings::quad_in_out,
+        easings::cubic_in,
+        easings::cubic_out,
+        easings::cubic_in_out,
+        easings::sine_in,
+        easings::sine_out,
+        easings::sine_in_out,
+        easings::elastic_in,
+        easings::elastic_out,
     ];
 
     for easing in easings_list {

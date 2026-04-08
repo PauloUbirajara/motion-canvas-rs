@@ -26,23 +26,23 @@ pub mod easings {
 /// Common types for a quick start
 pub mod prelude {
     pub use crate::engine::project::Project;
-    
+
     // Core Traits
     pub use crate::engine::animation::base::Animation;
     pub use crate::engine::animation::base::Node;
     pub use crate::engine::animation::tween::Tweenable;
-    
+
     // Export the modules themselves for namespaced access
-    pub use crate::nodes;
-    pub use crate::flows;
     pub use crate::easings;
-    
+    pub use crate::flows;
+    pub use crate::nodes;
+
     // Glob-export for direct access (e.g. Circle, all!, quad_in)
-    pub use crate::engine::nodes::*;
     pub use crate::engine::animation::flow::*;
     pub use crate::engine::easings::*;
+    pub use crate::engine::nodes::*;
     pub use crate::{all, any, chain, delay, loop_anim, sequence};
-    
+
     pub use glam::Vec2;
     pub use vello::peniko::Color;
 }
