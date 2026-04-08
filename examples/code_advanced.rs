@@ -18,14 +18,14 @@ fn main() {
 
     project.scene.timeline.add(flows::sequence![
         Duration::from_secs(1),
-        // 1. Highlight line 2 (println) - using 1-based index string
-        code.highlight_lines("2", Duration::from_millis(300)),
-        // 2. Highlight range 1-2
-        code.highlight_lines("1-2", Duration::from_millis(300)),
+        // 1. Select line 2 (println) - using 1-based index string
+        code.select_string("2", Duration::from_millis(300)),
+        // 2. Select range 1-2
+        code.select_string("1-2", Duration::from_millis(300)),
         // 3. Append a comment
         code.append("\n// Done!", Duration::from_millis(300)),
-        // 3. Reset highlights
-        code.highlight(vec![], Duration::from_millis(300)),
+        // 3. Reset selection
+        code.select_lines(vec![], Duration::from_millis(300)),
         // 4. Prepend a header (Now natively lazy, no wrapper needed!)
         code.prepend("// My Script\n", Duration::from_millis(300)),
     ]);

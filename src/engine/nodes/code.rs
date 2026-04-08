@@ -58,8 +58,8 @@ pub struct CodeTransition {
     pub to_tokens: Vec<Token>,
     pub progress: f32,
     pub matches: Vec<(usize, usize)>, // (from_idx, to_idx)
-    pub from_highlights: Vec<usize>,
-    pub to_highlights: Vec<usize>,
+    pub from_selection: Vec<usize>,
+    pub to_selection: Vec<usize>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -67,7 +67,7 @@ pub struct CodeValue {
     pub text: String,
     pub tokens: Vec<Token>,
     pub transition: Option<CodeTransition>,
-    pub highlighted_lines: Vec<usize>,
+    pub selection: Vec<usize>,
 }
 
 impl CodeValue {
@@ -78,7 +78,7 @@ impl CodeValue {
             text,
             tokens,
             transition: None,
-            highlighted_lines: Vec::new(),
+            selection: Vec::new(),
         }
     }
 }
@@ -113,14 +113,18 @@ impl Default for CodeValue {
             text: String::new(),
             tokens: Vec::new(),
             transition: None,
-            highlighted_lines: Vec::new(),
+            selection: Vec::new(),
         }
     }
 }
 
 impl Tweenable for CodeValue {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
-        if a.text == b.text {
+        if t <= 0.0 { return a.clone(); }
+        if t >= 1.0 { return b.clone(); }
+
+        // If both text and highlights are identical, no need to transition
+        if a.text == b.text && a.selection == b.selection {
             return b.clone();
         }
 
@@ -157,10 +161,10 @@ impl Tweenable for CodeValue {
                 to_tokens: b.tokens.clone(),
                 progress: t,
                 matches,
-                from_highlights: a.highlighted_lines.clone(),
-                to_highlights: b.highlighted_lines.clone(),
+                from_selection: a.selection.clone(),
+                to_selection: b.selection.clone(),
             }),
-            highlighted_lines: b.highlighted_lines.clone(),
+            selection: b.selection.clone(),
         }
     }
 }
@@ -257,7 +261,7 @@ impl CodeNode {
         // Re-tokenize current code with new size to avoid "spazzing"
         let current_text = self.code.get().text;
         let mut val = CodeValue::new(current_text, &self);
-        val.highlighted_lines = self.code.get().highlighted_lines;
+        val.selection = self.code.get().selection;
         self.code.set(val);
         self
     }
@@ -272,7 +276,7 @@ impl CodeNode {
         let node = self.clone();
         self.code.to_lazy(move |current| {
             let mut next_value = CodeValue::new(code, &node);
-            next_value.highlighted_lines = current.highlighted_lines.clone();
+            next_value.selection = current.selection.clone();
             next_value
         }, duration)
     }
@@ -283,7 +287,7 @@ impl CodeNode {
         self.code.to_lazy(move |current| {
             let next_text = format!("{}{}", current.text, text);
             let mut next_val = CodeValue::new(next_text, &node);
-            next_val.highlighted_lines = current.highlighted_lines.clone();
+            next_val.selection = current.selection.clone();
             next_val
         }, duration)
     }
@@ -294,25 +298,25 @@ impl CodeNode {
         self.code.to_lazy(move |current| {
             let next_text = format!("{}{}", text, current.text);
             let mut next_val = CodeValue::new(next_text, &node);
-            next_val.highlighted_lines = current.highlighted_lines.clone();
+            next_val.selection = current.selection.clone();
             next_val
         }, duration)
     }
 
-    pub fn highlight(&self, lines: Vec<usize>, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+    pub fn select_lines(&self, lines: Vec<usize>, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
         self.code.to_lazy(move |current| {
             let mut next_value = current.clone();
             next_value.transition = None; // Reset transition for the target
-            next_value.highlighted_lines = lines;
+            next_value.selection = lines;
             next_value
         }, duration)
     }
 
-    /// Highlight lines using a printer-style selection string (e.g., "1-3, 5").
+    /// Select lines using a printer-style selection string (e.g., "1-3, 5").
     /// Uses 1-based indexing for user convenience.
-    pub fn highlight_lines(&self, selection: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+    pub fn select_string(&self, selection: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
         let lines = self.parse_selection(selection);
-        self.highlight(lines, duration)
+        self.select_lines(lines, duration)
     }
 
     fn parse_selection(&self, selection: &str) -> Vec<usize> {
@@ -470,8 +474,8 @@ impl Node for CodeNode {
                     1.0
                 };
 
-                let from_is_dimmed = !trans.from_highlights.is_empty() && !trans.from_highlights.contains(&from.line_index);
-                let to_is_dimmed = !trans.to_highlights.is_empty() && !trans.to_highlights.contains(&to.line_index);
+                let from_is_dimmed = !trans.from_selection.is_empty() && !trans.from_selection.contains(&from.line_index);
+                let to_is_dimmed = !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
                 
                 let from_dim = if from_is_dimmed { dim_factor } else { 1.0 };
                 let to_dim = if to_is_dimmed { dim_factor } else { 1.0 };
@@ -483,29 +487,32 @@ impl Node for CodeNode {
                 matched_to[to_idx] = true;
             }
             
-            // 2. Fade out deletions
-            for (i, from) in trans.from_tokens.iter().enumerate() {
-                if !matched_from[i] {
-                    let is_dimmed = !trans.from_highlights.is_empty() && !trans.from_highlights.contains(&from.line_index);
+            // Draw unmatched from-tokens (vanishing)
+            for (i, matched) in matched_from.iter().enumerate() {
+                if !*matched {
+                    let from = &trans.from_tokens[i];
+                    let is_dimmed = !trans.from_selection.is_empty() && !trans.from_selection.contains(&from.line_index);
                     let dim = if is_dimmed { dim_factor } else { 1.0 };
-                    draw_token(scene, root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)), from, from.color, (1.0 - p) * combined_opacity * dim);
+                    draw_token(scene, root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)), from, from.color, combined_opacity * dim * (1.0 - p));
                 }
             }
             
-            // 3. Fade in additions
-            for (i, to) in trans.to_tokens.iter().enumerate() {
-                if !matched_to[i] {
-                    let is_dimmed = !trans.to_highlights.is_empty() && !trans.to_highlights.contains(&to.line_index);
+            // Draw unmatched to-tokens (appearing)
+            for (i, matched) in matched_to.iter().enumerate() {
+                if !*matched {
+                    let to = &trans.to_tokens[i];
+                    let is_dimmed = !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
                     let dim = if is_dimmed { dim_factor } else { 1.0 };
-                    draw_token(scene, root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)), to, to.color, p * combined_opacity * dim);
+                    draw_token(scene, root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)), to, to.color, combined_opacity * dim * p);
                 }
             }
         } else {
             // Static render
-            let has_highlights = !code_val.highlighted_lines.is_empty();
+            let has_selection = !code_val.selection.is_empty();
+            let dim_factor = self.dim_opacity.get();
             for token in &code_val.tokens {
-                let is_highlighted = !has_highlights || code_val.highlighted_lines.contains(&token.line_index);
-                let dim = if is_highlighted { 1.0 } else { dim_factor };
+                let is_selected = !has_selection || code_val.selection.contains(&token.line_index);
+                let dim = if is_selected { 1.0 } else { dim_factor };
                 draw_token(scene, root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)), token, token.color, combined_opacity * dim);
             }
         }
