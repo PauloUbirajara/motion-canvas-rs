@@ -2,6 +2,19 @@
 name = "motion-canvas-rs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Paulo Ubirajara"]
+description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/PauloUbirajara/motion-canvas-rs"
+repository = "https://github.com/PauloUbirajara/motion-canvas-rs"
+keywords = ["animation", "graphics", "vello", "typst", "vector"]
+categories = ["graphics", "rendering", "multimedia"]
+exclude = [".github/*", "media/*"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 vello = "0.2.1"
