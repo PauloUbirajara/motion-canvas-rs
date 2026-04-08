@@ -1,9 +1,9 @@
-use crate::engine::animation::{Signal, Node};
+use crate::engine::animation::{Node, Signal};
+use glam::Vec2;
+use std::time::Duration;
+use vello::kurbo::{Affine, Line as KurboLine, Stroke};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
-use glam::Vec2;
-use vello::kurbo::{Affine, Stroke, Line as KurboLine};
-use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Line {
@@ -69,34 +69,37 @@ impl Node for Line {
         let width = self.width.get();
         let local_transform = self.transform.get();
         let opacity = self.opacity.get();
-        
+
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
         let mut final_color = color;
         final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-        
+
         let brush = Brush::Solid(final_color);
-        
+
         scene.stroke(
             &Stroke::new(width as f64),
             combined_transform,
             &brush,
             None,
-            &KurboLine::new((start.x as f64, start.y as f64), (end.x as f64, end.y as f64)),
+            &KurboLine::new(
+                (start.x as f64, start.y as f64),
+                (end.x as f64, end.y as f64),
+            ),
         );
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
-        
+
         self.start.get().x.to_bits().hash(&mut s);
         self.start.get().y.to_bits().hash(&mut s);
         self.end.get().x.to_bits().hash(&mut s);

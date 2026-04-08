@@ -53,6 +53,7 @@ pub mod prelude {
     pub use crate::engine::animation::flow::*;
     pub use crate::engine::easings::*;
     pub use crate::engine::nodes::*;
+    pub use crate::engine::nodes::Polygon;
     pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing};
 
     pub use crate::Result;

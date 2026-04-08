@@ -10,6 +10,7 @@ pub mod math;
 pub mod image;
 pub mod path;
 pub mod group;
+pub mod polygon;
 
 pub use circle::*;
 pub use rect::*;
@@ -23,3 +24,4 @@ pub use math::*;
 pub use image::*;
 pub use path::*;
 pub use group::*;
+pub use polygon::Polygon;

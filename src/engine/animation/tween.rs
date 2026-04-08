@@ -28,6 +28,20 @@ impl Tweenable for Vec2 {
     }
 }
 
+impl Tweenable for Vec<Vec2> {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        if a.len() == b.len() {
+            a.iter().zip(b.iter())
+                .map(|(v1, v2)| Vec2::interpolate(v1, v2, t))
+                .collect()
+        } else if t >= 1.0 {
+            b.clone()
+        } else {
+            a.clone()
+        }
+    }
+}
+
 impl Tweenable for String {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         if t >= 1.0 {
