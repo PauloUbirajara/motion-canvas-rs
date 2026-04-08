@@ -149,6 +149,14 @@ https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
 </details>
 
 <details>
+<summary><b>Code Animation</b> - "Magic Move" token-based code transitions.</summary>
+
+```bash
+cargo run --example code_animation
+```
+</details>
+
+<details>
 <summary><b>Export</b> - Video export with color and font-size animations.</summary>
 
 ```bash

@@ -201,9 +201,17 @@ impl CodeNode {
         let mut tokens = Vec::new();
         let syntax = SYNTAX_SET.find_syntax_by_extension(&self.language)
             .or_else(|| SYNTAX_SET.find_syntax_by_name(&self.language))
+            .or_else(|| SYNTAX_SET.find_syntax_by_name(&self.language.to_lowercase()))
+            .or_else(|| SYNTAX_SET.find_syntax_by_name(&format!("{}{}", (&self.language[..1]).to_uppercase(), &self.language[1..])))
             .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text());
         
-        let mut h = HighlightLines::new(syntax, &THEME_SET.themes[&self.theme]);
+        let theme_name = if THEME_SET.themes.contains_key(&self.theme) {
+            &self.theme
+        } else {
+            DEFAULT_THEME
+        };
+        let theme = &THEME_SET.themes[theme_name];
+        let mut h = HighlightLines::new(syntax, theme);
         let mut y_offset = 0.0;
 
         if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Fira Code", "Courier New", "monospace"]) {
@@ -217,7 +225,7 @@ impl CodeNode {
                 for (style, text) in ranges {
                     let fg = style.foreground;
                     let color = Color::rgba8(fg.r, fg.g, fg.b, fg.a);
-                    
+
                     let mut token_text = String::new();
                     let mut glyphs = Vec::new();
                     let mut token_width = 0.0;
