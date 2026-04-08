@@ -49,6 +49,7 @@ pub struct Token {
     pub size: f32,
     pub glyphs: Vec<(Affine, BezPath)>,
     pub width: f32,
+    pub line_index: usize,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -57,6 +58,8 @@ pub struct CodeTransition {
     pub to_tokens: Vec<Token>,
     pub progress: f32,
     pub matches: Vec<(usize, usize)>, // (from_idx, to_idx)
+    pub from_highlights: Vec<usize>,
+    pub to_highlights: Vec<usize>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -64,17 +67,44 @@ pub struct CodeValue {
     pub text: String,
     pub tokens: Vec<Token>,
     pub transition: Option<CodeTransition>,
+    pub highlighted_lines: Vec<usize>,
 }
 
 impl CodeValue {
     pub fn new(text: String, node: &CodeNode) -> Self {
+        let text = strip_common_indent(&text);
         let tokens = node.tokenize(&text);
-        Self {
+        CodeValue {
             text,
             tokens,
             transition: None,
+            highlighted_lines: Vec::new(),
         }
     }
+}
+
+fn strip_common_indent(text: &str) -> String {
+    let lines: Vec<&str> = text.lines().collect();
+    if lines.is_empty() { return text.to_string(); }
+
+    let min_indent = lines.iter()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| l.chars().take_while(|c| c.is_whitespace()).count())
+        .min()
+        .unwrap_or(0);
+
+    if min_indent == 0 { return text.to_string(); }
+
+    lines.iter()
+        .map(|l| {
+            if l.trim().is_empty() {
+                ""
+            } else {
+                &l[min_indent..]
+            }
+        })
+        .collect::<Vec<&str>>()
+        .join("\n")
 }
 
 impl Default for CodeValue {
@@ -83,6 +113,7 @@ impl Default for CodeValue {
             text: String::new(),
             tokens: Vec::new(),
             transition: None,
+            highlighted_lines: Vec::new(),
         }
     }
 }
@@ -126,7 +157,10 @@ impl Tweenable for CodeValue {
                 to_tokens: b.tokens.clone(),
                 progress: t,
                 matches,
+                from_highlights: a.highlighted_lines.clone(),
+                to_highlights: b.highlighted_lines.clone(),
             }),
+            highlighted_lines: b.highlighted_lines.clone(),
         }
     }
 }
@@ -136,6 +170,7 @@ pub struct CodeNode {
     pub code: Signal<CodeValue>,
     pub font_size: Signal<f32>,
     pub opacity: Signal<f32>,
+    pub dim_opacity: Signal<f32>,
     pub language: String,
     pub theme: String,
     pub font_family: String,
@@ -148,6 +183,7 @@ impl Clone for CodeNode {
             code: self.code.clone(),
             font_size: self.font_size.clone(),
             opacity: self.opacity.clone(),
+            dim_opacity: self.dim_opacity.clone(),
             language: self.language.clone(),
             theme: self.theme.clone(),
             font_family: self.font_family.clone(),
@@ -162,6 +198,7 @@ impl CodeNode {
             code: Signal::new(CodeValue::default()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
             opacity: Signal::new(1.0),
+            dim_opacity: Signal::new(0.2), // Default dimming factor
             language: lang.to_string(),
             theme: DEFAULT_THEME.to_string(),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
@@ -217,12 +254,91 @@ impl CodeNode {
 
     pub fn with_font_size(mut self, size: f32) -> Self {
         self.font_size = Signal::new(size);
+        // Re-tokenize current code with new size to avoid "spazzing"
+        let current_text = self.code.get().text;
+        let mut val = CodeValue::new(current_text, &self);
+        val.highlighted_lines = self.code.get().highlighted_lines;
+        self.code.set(val);
+        self
+    }
+
+    pub fn with_dim_opacity(mut self, dim: f32) -> Self {
+        self.dim_opacity = Signal::new(dim);
         self
     }
 
     pub fn edit(&self, code: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
-        let next_value = CodeValue::new(code.to_string(), self);
-        self.code.to(next_value, duration)
+        let code = code.to_string();
+        let node = self.clone();
+        self.code.to_lazy(move |current| {
+            let mut next_value = CodeValue::new(code, &node);
+            next_value.highlighted_lines = current.highlighted_lines.clone();
+            next_value
+        }, duration)
+    }
+
+    pub fn append(&self, text: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+        let text = text.to_string();
+        let node = self.clone();
+        self.code.to_lazy(move |current| {
+            let next_text = format!("{}{}", current.text, text);
+            let mut next_val = CodeValue::new(next_text, &node);
+            next_val.highlighted_lines = current.highlighted_lines.clone();
+            next_val
+        }, duration)
+    }
+
+    pub fn prepend(&self, text: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+        let text = text.to_string();
+        let node = self.clone();
+        self.code.to_lazy(move |current| {
+            let next_text = format!("{}{}", text, current.text);
+            let mut next_val = CodeValue::new(next_text, &node);
+            next_val.highlighted_lines = current.highlighted_lines.clone();
+            next_val
+        }, duration)
+    }
+
+    pub fn highlight(&self, lines: Vec<usize>, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+        self.code.to_lazy(move |current| {
+            let mut next_value = current.clone();
+            next_value.transition = None; // Reset transition for the target
+            next_value.highlighted_lines = lines;
+            next_value
+        }, duration)
+    }
+
+    /// Highlight lines using a printer-style selection string (e.g., "1-3, 5").
+    /// Uses 1-based indexing for user convenience.
+    pub fn highlight_lines(&self, selection: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+        let lines = self.parse_selection(selection);
+        self.highlight(lines, duration)
+    }
+
+    fn parse_selection(&self, selection: &str) -> Vec<usize> {
+        let mut lines = Vec::new();
+        for part in selection.split(',') {
+            let part = part.trim();
+            if part.contains('-') {
+                let mut bounds = part.split('-');
+                if let (Some(start_str), Some(end_str)) = (bounds.next(), bounds.next()) {
+                    if let (Ok(start), Ok(end)) = (start_str.parse::<usize>(), end_str.parse::<usize>()) {
+                        for i in start..=end {
+                            if i > 0 {
+                                lines.push(i - 1);
+                            }
+                        }
+                    }
+                }
+            } else if let Ok(line) = part.parse::<usize>() {
+                if line > 0 {
+                    lines.push(line - 1);
+                }
+            }
+        }
+        lines.sort_unstable();
+        lines.dedup();
+        lines
     }
 
     fn tokenize(&self, code: &str) -> Vec<Token> {
@@ -260,7 +376,7 @@ impl CodeNode {
             let charmap = font_ref.charmap();
             let outlines = font_ref.outline_glyphs();
 
-            for line in code.lines() {
+            for (line_idx, line) in code.lines().enumerate() {
                 let ranges = h.highlight_line(line, &SYNTAX_SET).unwrap();
                 let mut x_offset = 0.0;
                 for (style, text) in ranges {
@@ -299,6 +415,7 @@ impl CodeNode {
                         size,
                         glyphs,
                         width: token_width as f32,
+                        line_index: line_idx,
                     });
                     
                     x_offset += token_width;
@@ -331,6 +448,8 @@ impl Node for CodeNode {
         let root_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
+        let dim_factor = self.dim_opacity.get();
+
         if let Some(trans) = &code_val.transition {
             let p = trans.progress;
             
@@ -345,7 +464,20 @@ impl Node for CodeNode {
                 let current_pos = from.pos.lerp(to.pos, p);
                 let current_color = Color::interpolate(&from.color, &to.color, p);
                 
-                draw_token(scene, root_transform * Affine::translate((current_pos.x as f64, current_pos.y as f64)), to, current_color, combined_opacity);
+                let scale = if from.size != to.size {
+                    (from.size + (to.size - from.size) * p) / to.size
+                } else {
+                    1.0
+                };
+
+                let from_is_dimmed = !trans.from_highlights.is_empty() && !trans.from_highlights.contains(&from.line_index);
+                let to_is_dimmed = !trans.to_highlights.is_empty() && !trans.to_highlights.contains(&to.line_index);
+                
+                let from_dim = if from_is_dimmed { dim_factor } else { 1.0 };
+                let to_dim = if to_is_dimmed { dim_factor } else { 1.0 };
+                let current_dim = from_dim + (to_dim - from_dim) * p;
+
+                draw_token(scene, root_transform * Affine::translate((current_pos.x as f64, current_pos.y as f64)) * Affine::scale(scale as f64), to, current_color, combined_opacity * current_dim);
                 
                 matched_from[from_idx] = true;
                 matched_to[to_idx] = true;
@@ -354,20 +486,27 @@ impl Node for CodeNode {
             // 2. Fade out deletions
             for (i, from) in trans.from_tokens.iter().enumerate() {
                 if !matched_from[i] {
-                    draw_token(scene, root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)), from, from.color, (1.0 - p) * combined_opacity);
+                    let is_dimmed = !trans.from_highlights.is_empty() && !trans.from_highlights.contains(&from.line_index);
+                    let dim = if is_dimmed { dim_factor } else { 1.0 };
+                    draw_token(scene, root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)), from, from.color, (1.0 - p) * combined_opacity * dim);
                 }
             }
             
             // 3. Fade in additions
             for (i, to) in trans.to_tokens.iter().enumerate() {
                 if !matched_to[i] {
-                    draw_token(scene, root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)), to, to.color, p * combined_opacity);
+                    let is_dimmed = !trans.to_highlights.is_empty() && !trans.to_highlights.contains(&to.line_index);
+                    let dim = if is_dimmed { dim_factor } else { 1.0 };
+                    draw_token(scene, root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)), to, to.color, p * combined_opacity * dim);
                 }
             }
         } else {
             // Static render
+            let has_highlights = !code_val.highlighted_lines.is_empty();
             for token in &code_val.tokens {
-                draw_token(scene, root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)), token, token.color, combined_opacity);
+                let is_highlighted = !has_highlights || code_val.highlighted_lines.contains(&token.line_index);
+                let dim = if is_highlighted { 1.0 } else { dim_factor };
+                draw_token(scene, root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)), token, token.color, combined_opacity * dim);
             }
         }
     }
