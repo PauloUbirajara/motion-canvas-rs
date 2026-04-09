@@ -1,6 +1,6 @@
 # Motion Canvas in Rust
 
-![example](examples/images/motion-canvas-rs.svg)
+![Motion Canvas Banner](https://github.com/user-attachments/assets/e951737f-36ed-4a5a-829a-9643c7c1a3d8)
 
 A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst.
 
@@ -109,8 +109,7 @@ The project includes 13+ formal examples. Detailed documentation for each can be
 ```bash
 cargo run --example getting_started
 ```
-https://github.com/user-attachments/assets/7590c3da-8917-4ac4-8832-425211fab67b
-
+https://github.com/user-attachments/assets/0ce19049-7d85-4d3a-befe-5bc7c9dc33be
 </details>
 
 <details>
@@ -128,6 +127,7 @@ cargo run --example shapes
 ```bash
 cargo run --example polygon
 ```
+https://github.com/user-attachments/assets/304d86fa-22c5-4aa4-83ab-35c199260c31
 </details>
 
 <details>
@@ -136,7 +136,7 @@ cargo run --example polygon
 ```bash
 cargo run --example math_code
 ```
-https://github.com/user-attachments/assets/97050ee4-0a67-4c4c-ba5d-737d7d0c101d
+https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
 </details>
 
 <details>
@@ -163,7 +163,7 @@ https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
 ```bash
 cargo run --example easing_scope
 ```
-https://github.com/user-attachments/assets/097e5b01-cdf4-4c9d-90a5-4cc4fc12e3ea
+https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
 </details>
 
 <details>
@@ -190,6 +190,7 @@ https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
 ```bash
 cargo run --example code_animation
 ```
+https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
 </details>
 
 <details>
@@ -198,6 +199,7 @@ cargo run --example code_animation
 ```bash
 cargo run --example code_advanced
 ```
+https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
 </details>
 
 <details>
@@ -206,6 +208,7 @@ cargo run --example code_advanced
 ```bash
 cargo run --example group_animation
 ```
+https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
 </details>
 
 <details>
