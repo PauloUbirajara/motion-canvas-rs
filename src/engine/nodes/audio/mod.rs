@@ -65,6 +65,7 @@ pub struct AudioAnimation {
     pub elapsed: Duration,
     pub started: bool,
     pub total_duration: Duration,
+    pub recorded: bool,
 }
 
 impl AudioAnimation {
@@ -77,6 +78,7 @@ impl AudioAnimation {
             elapsed: Duration::ZERO,
             started: false,
             total_duration,
+            recorded: false,
         }
     }
 }
@@ -155,6 +157,23 @@ impl Animation for AudioAnimation {
             .checked_sub(self.node.start_crop)
             .and_then(|d| d.checked_sub(self.node.end_crop))
             .unwrap_or(Duration::ZERO)
+    }
+
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        if self.started && !self.recorded {
+            self.recorded = true;
+            events.push(crate::engine::animation::base::AudioEvent {
+                path: self.node.path.clone(),
+                volume: self.node.volume,
+                start_crop: self.node.start_crop,
+                end_crop: self.node.end_crop,
+                start_time: if current_time > self.elapsed {
+                    current_time - self.elapsed
+                } else {
+                    Duration::ZERO
+                },
+            });
+        }
     }
 }
 

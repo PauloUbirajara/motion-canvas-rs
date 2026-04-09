@@ -11,6 +11,7 @@ use std::io::{self, Write};
 #[cfg(feature = "export")]
 use std::path::Path;
 use std::path::PathBuf;
+use std::time::Duration;
 use vello::peniko::Color;
 
 const DEFAULT_FPS: u32 = 60;
@@ -146,6 +147,9 @@ impl Project {
             let total_duration = self.scene.video_timeline.duration();
             let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
 
+            #[cfg(feature = "audio")]
+            let mut audio_events = Vec::new();
+
             // Use rayon for background PNG saving
             let (tx, rx) = std::sync::mpsc::channel::<(Vec<u8>, PathBuf)>();
             let width = self.width;
@@ -157,6 +161,11 @@ impl Project {
             // Initialize FFmpeg if requested
             let mut ffmpeg_process: Option<std::process::ChildStdin> = if self.use_ffmpeg {
                 use std::process::{Command, Stdio};
+                let output_file = if cfg!(feature = "audio") {
+                    format!("{}_temp.mkv", self.sanitize_title())
+                } else {
+                    format!("{}.mkv", self.sanitize_title())
+                };
                 let child = Command::new("ffmpeg")
                     .args([
                         "-y",
@@ -172,7 +181,7 @@ impl Project {
                         "-",
                         "-c:v",
                         "libx264rgb",
-                        &format!("{}.mkv", self.sanitize_title()),
+                        &output_file,
                     ])
                     .stdin(Stdio::piped())
                     .stdout(Stdio::null())
@@ -259,6 +268,13 @@ impl Project {
                 if self.scene.video_timeline.finished() {
                     break;
                 }
+
+                #[cfg(feature = "audio")]
+                {
+                    let current_time = std::time::Duration::from_secs_f32(frame_count as f32 / self.fps as f32);
+                    self.scene.collect_audio_events(current_time, &mut audio_events);
+                }
+
                 self.scene.update(dt);
                 frame_count += 1;
             }
@@ -309,6 +325,66 @@ impl Project {
                 "\nExport finished: {} frames rendered, {} skipped.",
                 rendered_count, skipped_count
             );
+
+            #[cfg(feature = "audio")]
+            if self.use_ffmpeg && !audio_events.is_empty() {
+                println!("Merging audio with FFmpeg...");
+                use std::process::Command;
+                let sanitized_title = self.sanitize_title();
+                let temp_video = format!("{}_temp.mkv", sanitized_title);
+                let final_output = format!("{}.mkv", sanitized_title);
+
+                let mut cmd = Command::new("ffmpeg");
+                cmd.arg("-y").arg("-i").arg(&temp_video);
+
+                // Add all audio inputs
+                for event in &audio_events {
+                    cmd.arg("-i").arg(&event.path);
+                }
+
+                // Filter complex building
+                let mut inputs = String::new();
+                let mut filter = String::new();
+                for (i, event) in audio_events.iter().enumerate() {
+                    let input_idx = i + 1;
+                    let delay_ms = (event.start_time.as_secs_f64() * 1000.0) as i64;
+                    let node_dur = (event.start_time + Duration::from_secs(1)).as_secs_f64(); // Placeholder if not known
+
+                    //ss: start_crop, t: duration
+                    //ADELAY=delays:all=1 (wait, rodio doesn't have duration easily here, but we can use atrim)
+                    
+                    // Filter: [input_idx:a] atrim=start=ss, adelay=delay|delay [aN]
+                    filter.push_str(&format!(
+                        "[{}:a]atrim=start_sample={},adelay={}|{}[a{}];",
+                        input_idx,
+                        (event.start_crop.as_secs_f64() * 44100.0) as i64, // Assume 44.1kHz for safety or just use time
+                        delay_ms, delay_ms,
+                        input_idx
+                    ));
+                    inputs.push_str(&format!("[a{}]", input_idx));
+                }
+                filter.push_str(&format!("{}amix=inputs={}[a]", inputs, audio_events.len()));
+
+                cmd.args(["-filter_complex", &filter, "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", &final_output]);
+
+                match cmd.status() {
+                    Ok(status) if status.success() => {
+                        fs::remove_file(temp_video).ok();
+                        println!("Audio successfully merged: {}.mkv", sanitized_title);
+                    }
+                    Ok(status) => eprintln!("FFmpeg audio merge failed with status: {}", status),
+                    Err(e) => eprintln!("Failed to run FFmpeg merge: {}", e),
+                }
+            } else if self.use_ffmpeg && cfg!(feature = "audio") {
+                // If it was temp but no audio, rename back
+                let sanitized_title = self.sanitize_title();
+                let temp_video = format!("{}_temp.mkv", sanitized_title);
+                let final_output = format!("{}.mkv", sanitized_title);
+                if Path::new(&temp_video).exists() {
+                    fs::rename(temp_video, final_output).ok();
+                }
+            }
+
             Ok(())
         }
         #[cfg(not(feature = "export"))]

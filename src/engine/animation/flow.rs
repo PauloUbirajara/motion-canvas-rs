@@ -58,6 +58,12 @@ impl Animation for All {
             anim.set_easing(easing);
         }
     }
+
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        for anim in &mut self.animations {
+            anim.collect_audio_events(current_time, events);
+        }
+    }
 }
 
 // --- Any (Race) ---
@@ -105,6 +111,12 @@ impl Animation for Any {
     fn set_easing(&mut self, easing: fn(f32) -> f32) {
         for anim in &mut self.animations {
             anim.set_easing(easing);
+        }
+    }
+
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        for anim in &mut self.animations {
+            anim.collect_audio_events(current_time, events);
         }
     }
 }
@@ -155,6 +167,12 @@ impl Animation for Chain {
             anim.set_easing(easing);
         }
     }
+
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        if self.index < self.animations.len() {
+            self.animations[self.index].collect_audio_events(current_time, events);
+        }
+    }
 }
 
 // --- Delay ---
@@ -195,6 +213,12 @@ impl Animation for Delay {
 
     fn set_easing(&mut self, easing: fn(f32) -> f32) {
         self.inner.set_easing(easing);
+    }
+
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        if self.elapsed >= self.duration {
+            self.inner.collect_audio_events(current_time, events);
+        }
     }
 }
 
@@ -282,6 +306,14 @@ impl Animation for Sequence {
             anim.set_easing(easing);
         }
     }
+
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        for (start, anim) in &mut self.items {
+            if self.elapsed >= *start {
+                anim.collect_audio_events(current_time, events);
+            }
+        }
+    }
 }
 
 // --- Loop ---
@@ -337,6 +369,10 @@ impl Animation for LoopAnim {
             Some(count) => self.current.duration() * count as u32,
             None => Duration::from_secs(3600), // Cap infinite at 1 hour for progress bar
         }
+    }
+
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        self.current.collect_audio_events(current_time, events);
     }
 }
 

@@ -27,6 +27,11 @@ impl BaseScene {
     pub fn add(&mut self, node: Box<dyn Node>) {
         self.nodes.push(node);
     }
+
+    #[cfg(feature = "audio")]
+    pub fn collect_audio_events(&mut self, current_time: std::time::Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+        self.audio_timeline.collect_audio_events(current_time, events);
+    }
 }
 
 impl Scene2D for BaseScene {

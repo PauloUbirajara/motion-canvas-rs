@@ -12,21 +12,26 @@ fn main() {
     project.scene.add(Box::new(rect.clone()));
 
     project.scene.video_timeline.add(chain!(
-        rect.size
-            .to(Vec2::new(400.0, 400.0), Duration::from_secs(1)),
-        rect.color.to(Color::BLUE, Duration::from_secs(1)),
-        rect.size
-            .to(Vec2::new(200.0, 200.0), Duration::from_secs(1)),
+        all![
+            rect.transform.to(
+                Affine::rotate(360.0_f32.to_radians().into()),
+                Duration::from_secs(2)
+            ),
+            rect.color.to(Color::BLUE, Duration::from_secs(1)),
+        ],
+        all![
+            rect.size
+                .to(Vec2::new(200.0, 200.0), Duration::from_secs(1)),
+            rect.color.to(Color::RED, Duration::from_secs(1)),
+        ]
     ));
 
     // Setup Audio Timeline using new macros and builder
-    let combo1 = AudioNode::new("./examples/audios/combo-1.mp3").with_volume(0.5);
-    let combo2 = AudioNode::new("./examples/audios/combo-2.mp3").with_volume(1.0);
-
-    project
-        .scene
-        .audio_timeline
-        .add(chain!(play!(combo1), audio_wait!(1.0), play!(combo2)));
+    project.scene.audio_timeline.add(chain!(
+        play!(AudioNode::new("./examples/audios/combo-1.mp3").with_volume(0.5)),
+        audio_wait!(1.0),
+        play!(AudioNode::new("./examples/audios/combo-2.mp3").with_volume(1.0))
+    ));
 
     println!("Project configured with separate video and audio timelines.");
     println!(
