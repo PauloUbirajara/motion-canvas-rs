@@ -2,7 +2,9 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::default().with_title("Advanced Code Node Demo");
+    let mut project = Project::default()
+        .with_title("Advanced Code Node Demo")
+        .close_on_finish();
 
     let code = CodeNode::default()
         .with_position(Vec2::new(50.0, 50.0))

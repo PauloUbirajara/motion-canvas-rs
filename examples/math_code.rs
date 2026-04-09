@@ -2,7 +2,7 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::default().with_fps(120);
+    let mut project = Project::default().with_fps(120).close_on_finish();
 
     let triangle = Polygon::default()
         .with_position(Vec2::ZERO)

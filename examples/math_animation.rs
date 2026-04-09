@@ -5,7 +5,8 @@ fn main() {
     // 1. Initialize Project
     let mut project = Project::default()
         .with_fps(60)
-        .with_title("Typst Math Animation");
+        .with_title("Typst Math Animation")
+        .close_on_finish();
 
     // 2. Create MathNode (Typst syntax)
     let tex = MathNode::default()

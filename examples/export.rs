@@ -6,7 +6,8 @@ fn main() {
     let mut project = Project::default()
         .with_fps(30)
         .with_ffmpeg(true)
-        .with_output_path("output");
+        .with_output_path("output")
+        .close_on_finish();
 
     // 2. Setup Nodes
     let circle = Circle::default()

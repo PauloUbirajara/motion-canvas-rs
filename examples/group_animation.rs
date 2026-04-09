@@ -2,9 +2,10 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::default().with_title("Group Animation");
+    let mut project = Project::default()
+        .with_title("Group Animation")
+        .close_on_finish();
 
-    // Create some child nodes
     // Create some child nodes
     let rect = Rect::default()
         .with_position(Vec2::new(-50.0, -50.0))

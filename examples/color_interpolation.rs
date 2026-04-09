@@ -6,7 +6,8 @@ fn main() {
         .with_dimensions(400, 400)
         .with_fps(60)
         .with_title("Color Interpolation")
-        .with_cache(true); // Ensure cache is active for test
+        .with_cache(true)
+        .close_on_finish(); // Ensure cache is active for test
 
     let start_y = 150.0;
     let spacing = 180.0;
