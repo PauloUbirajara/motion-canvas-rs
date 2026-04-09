@@ -1,3 +1,7 @@
+//! Easing functions library.
+//!
+//! Credits: The easing functions are based on the equations from [easings.net](https://easings.net/).
+
 use std::f32::consts::PI;
 
 pub fn linear(t: f32) -> f32 {

@@ -25,8 +25,7 @@ cargo add motion-canvas-rs --features math,image
 |:---|:---|:---|
 | `math` | Typst-powered LaTeX math rendering. | `MathNode` |
 | `code` | Syntax-highlighted code blocks via Syntect. | `CodeNode` |
-| `image` | Bitmap image support (PNG, JPEG, etc.). | `ImageNode` |
-| `svg` | Vector graphics support using `resvg`. | `SvgNode` |
+| `image` | Bitmap (PNG, JPEG) and Vector (SVG) support. | `ImageNode` |
 | `export` | Headless frame rendering and video generation. | `project.export()` |
 | `full` | Meta-feature that enables all of the above. | Everything |
 
@@ -36,6 +35,22 @@ cargo add motion-canvas-rs --features math,image
 - **Easing Library**: 30+ standardized easing functions.
 - **FFmpeg Integration**: Direct streaming of animation frames to video.
 - **Clean API**: Streamlined prelude for high-speed prototyping.
+- **Node Primitives**: Built-in support for Circles, Rects, Polygons, Lines, and Groups.
+
+## Supported Nodes
+
+| Node | Description | Features |
+|:---|:---|:---|
+| `Circle` | Basic circle primitive. | `radius`, `color`, `transform` |
+| `Rect` | Rectangle with optional corner radius. | `size`, `radius`, `color` |
+| `Polygon` | Regular and custom polygon shapes. | `points`, `fill`, `stroke` |
+| `Line` | Simple line between two points. | `start`, `end`, `width` |
+| `PathNode` | Complex path sampling and animation. | `arc-length`, `sample` |
+| `TextNode` | High-quality text rendering (skrifa). | `text`, `font_size`, `family` |
+| `MathNode` | Typst-powered mathematical formulas. | `LaTeX`, `smooth-transitions` |
+| `CodeNode` | Syntax-highlighted code with transitions. | `syntect`, `magic-move` |
+| `ImageNode` | Bitmap and SVG image display. | `png`, `jpeg`, `svg` |
+| `GroupNode` | Hierarchical grouping of any nodes. | `children`, `inherited-opacity` |
 
 ## Project Structure
 
@@ -213,4 +228,5 @@ https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
 This project is heavily inspired by the original [Motion Canvas](https://github.com/motion-canvas/motion-canvas) by [aarthificial](https://github.com/aarthificial).
 
 Special thanks to:
+- [easings.net](https://easings.net/) for the standardized easing function library.
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
