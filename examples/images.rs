@@ -2,7 +2,9 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(600, 600);
+    let mut project = Project::default()
+        .with_dimensions(600, 600)
+        .close_on_finish();
 
     // Using the sample logo path from the project
     let png = ImageNode::default()
@@ -15,7 +17,7 @@ fn main() {
         .with_path("./examples/images/motion-canvas-rs.svg")
         .with_size(Vec2::new(200.0, 200.0));
 
-    project.scene.timeline.add(chain!(
+    project.scene.video_timeline.add(chain!(
         all!(
             png.transform
                 .to(Affine::translate((50.0, 350.0)), Duration::from_secs(1)),

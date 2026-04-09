@@ -12,7 +12,9 @@ const ANIM_DURATION_RETURN: Duration = Duration::from_secs(2);
 const WAIT_DURATION: Duration = Duration::from_secs(1);
 
 fn main() {
-    let mut project = Project::new(CANVAS_WIDTH, CANVAS_HEIGHT);
+    let mut project = Project::default()
+        .with_dimensions(CANVAS_WIDTH, CANVAS_HEIGHT)
+        .close_on_finish();
 
     let easing_configs = vec![
         ("Linear", easings::linear as fn(f32) -> f32),
@@ -61,7 +63,7 @@ fn main() {
     let configs_clone = easing_configs.clone();
 
     // Loop animation factory
-    project.scene.timeline.add(flows::loop_anim(
+    project.scene.video_timeline.add(flows::loop_anim(
         move || {
             let balls = &balls_clone;
             let configs = &configs_clone;

@@ -2,7 +2,7 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(800, 600).with_fps(120);
+    let mut project = Project::default().with_fps(120).close_on_finish();
 
     let triangle = Polygon::default()
         .with_position(Vec2::ZERO)
@@ -51,7 +51,7 @@ fn main() {
     project.scene.add(Box::new(triangle_line_group.clone()));
     project.scene.add(Box::new(pytagorean_theorem.clone()));
 
-    project.scene.timeline.add(all![
+    project.scene.video_timeline.add(all![
         triangle_line_group.transform.to(
             Affine::translate((50.0, 200.0)) * Affine::scale(1.0),
             Duration::from_secs(1),

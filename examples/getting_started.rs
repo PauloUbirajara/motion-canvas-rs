@@ -3,7 +3,10 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize the Project
-    let mut project = Project::new(800, 600).with_fps(60).with_cache(true);
+    let mut project = Project::default()
+        .with_fps(60)
+        .with_cache(true)
+        .close_on_finish();
 
     // 2. Define Nodes
     let circle = Circle::default()
@@ -22,7 +25,7 @@ fn main() {
     project.scene.add(Box::new(text.clone()));
 
     // 4. Add Animations to the Timeline
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         circle.radius.to(100.0, Duration::from_secs(1)),
         text.transform
             .to(Affine::translate((400.0, 500.0)), Duration::from_secs(1)),

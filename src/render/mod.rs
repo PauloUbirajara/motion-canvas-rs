@@ -144,17 +144,14 @@ impl AnimationWindow {
                         return;
                     }
 
-                    let now = Instant::now();
-                    let elapsed = now.duration_since(last_update);
-
-                    if elapsed < dt {
+                    if last_update.elapsed() < dt {
                         elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
                         return;
                     }
 
                     // Process update
                     self.project.scene.update(dt);
-                    last_update = now;
+                    last_update = Instant::now();
 
                     let current_hash = self.project.scene.state_hash();
                     if current_hash != last_hash {
@@ -162,14 +159,23 @@ impl AnimationWindow {
                         last_hash = current_hash;
                     }
 
-                    if self.project.scene.timeline.finished() {
+                    let is_video_finished = self.project.scene.video_timeline.finished();
+                    let is_audio_finished = self.project.scene.audio_timeline.finished();
+
+                    if is_video_finished && is_audio_finished {
                         println!("Animation finished.");
                         finished = true;
+
+                        if self.project.close_on_finish {
+                            elwt.exit();
+                            return;
+                        }
+
                         elwt.set_control_flow(ControlFlow::Wait);
                         return;
                     }
 
-                    elwt.set_control_flow(ControlFlow::WaitUntil(now + dt));
+                    elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
                 }
 
                 Event::Resumed => {

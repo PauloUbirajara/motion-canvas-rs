@@ -15,6 +15,12 @@ const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;
 const DEFAULT_OPACITY: f32 = 1.0;
 
+const TYPST_MATH_TEMPLATE: &str = r#"
+#set text(size: {size}pt)
+#show math.equation: set text(font: "{font}")
+$ {equation} $
+"#;
+
 #[derive(Hash, Eq, PartialEq)]
 struct MathCacheKey {
     equation: String,
@@ -175,10 +181,10 @@ impl MathNode {
         // 3. Compile
         let mut paths_with_color = Vec::new();
         let (font_name, _) = crate::engine::font::FontManager::get_math_font();
-        let typst_code = format!(
-            "#set text(size: {}pt)\n#show math.equation: set text(font: \"{}\")\n$ {} $",
-            size, font_name, eq
-        );
+        let typst_code = TYPST_MATH_TEMPLATE
+            .replace("{size}", &size.to_string())
+            .replace("{font}", &font_name)
+            .replace("{equation}", &eq);
         let world = crate::engine::typst_support::TypstWorld::new(&typst_code);
         let output = typst::compile::<typst::layout::PagedDocument>(&world).output;
 
@@ -244,7 +250,8 @@ impl Node for MathNode {
 
         // 1. Draw previous equation if transitioning
         if progress < 1.0 {
-            if let Some(prev) = self.prev_cache.lock().unwrap().as_ref() {
+            let prev_cache = self.prev_cache.lock().unwrap();
+            if let Some(prev) = prev_cache.as_ref() {
                 let mut prev_color = color;
                 prev_color.a = (color.a as f32 * base_opacity * (1.0 - progress) * parent_opacity)
                     .clamp(0.0, 255.0) as u8;

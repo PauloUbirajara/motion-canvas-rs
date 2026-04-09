@@ -18,7 +18,6 @@ const DEFAULT_WIDTH: u32 = 800;
 const DEFAULT_HEIGHT: u32 = 600;
 const DEFAULT_TITLE: &str = "motion-canvas-rs";
 const DEFAULT_OUTPUT_PATH: &str = "output";
-const DEFAULT_FRAME_TEMPLATE: &str = "{:04}.png";
 const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
@@ -36,11 +35,11 @@ pub struct Project {
     pub title: String,
     pub scene: BaseScene,
     pub output_path: PathBuf,
-    pub frame_template: String,
     pub use_cache: bool,
     pub use_ffmpeg: bool,
     pub use_gpu: bool,
     pub background_color: Color,
+    pub close_on_finish: bool,
 }
 
 impl Project {
@@ -52,11 +51,11 @@ impl Project {
             title: DEFAULT_TITLE.to_string(),
             scene: BaseScene::new(),
             output_path: PathBuf::from(DEFAULT_OUTPUT_PATH),
-            frame_template: DEFAULT_FRAME_TEMPLATE.to_string(),
             use_cache: DEFAULT_USE_CACHE,
             use_ffmpeg: DEFAULT_USE_FFMPEG,
             use_gpu: DEFAULT_USE_GPU,
             background_color: DEFAULT_BACKGROUND_COLOR,
+            close_on_finish: false,
         }
     }
 }
@@ -94,11 +93,6 @@ impl Project {
         self
     }
 
-    pub fn with_frame_template(mut self, template: &str) -> Self {
-        self.frame_template = template.to_string();
-        self
-    }
-
     pub fn with_ffmpeg(mut self, use_ffmpeg: bool) -> Self {
         self.use_ffmpeg = use_ffmpeg;
         self
@@ -114,19 +108,30 @@ impl Project {
         self
     }
 
+    pub fn with_close_on_finish(mut self, close: bool) -> Self {
+        self.close_on_finish = close;
+        self
+    }
+
+    pub fn close_on_finish(self) -> Self {
+        self.with_close_on_finish(true)
+    }
+
     pub fn export(&mut self) -> crate::Result<()> {
+        #[cfg(not(feature = "export"))]
+        return Err("Export failed: 'export' feature is disabled.".into());
+
         #[cfg(feature = "export")]
         {
             println!("Exporting project: {}", self.title);
             fs::create_dir_all(&self.output_path)?;
 
             let cache_file = Path::new(".motion_canvas_cache");
-            let mut manifest = if self.use_cache && cache_file.exists() {
-                let content = fs::read_to_string(cache_file)?;
-                serde_json::from_str(&content).unwrap_or_default()
-            } else {
-                CacheManifest::default()
-            };
+            let mut manifest: CacheManifest = (self.use_cache && cache_file.exists())
+                .then(|| fs::read_to_string(cache_file).ok())
+                .flatten()
+                .and_then(|c| serde_json::from_str(&c).ok())
+                .unwrap_or_default();
 
             let mut exporter = crate::render::export::Exporter::new(
                 self.width,
@@ -139,7 +144,10 @@ impl Project {
             let mut rendered_count = 0;
             let mut skipped_count = 0;
 
-            let total_duration = self.scene.timeline.duration();
+            let mut audio_events = Vec::new();
+            let video_duration = self.scene.video_timeline.duration();
+            let audio_duration = self.scene.audio_timeline.duration();
+            let total_duration = video_duration.max(audio_duration);
             let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
 
             // Use rayon for background PNG saving
@@ -151,40 +159,18 @@ impl Project {
             let saved_count_clone = saved_count.clone();
 
             // Initialize FFmpeg if requested
-            let mut ffmpeg_process: Option<std::process::ChildStdin> = if self.use_ffmpeg {
-                use std::process::{Command, Stdio};
-                let child = Command::new("ffmpeg")
-                    .args([
-                        "-y",
-                        "-f",
-                        "rawvideo",
-                        "-pixel_format",
-                        "rgba",
-                        "-video_size",
-                        &format!("{}x{}", width, height),
-                        "-framerate",
-                        &self.fps.to_string(),
-                        "-i",
-                        "-",
-                        "-c:v",
-                        "libx264rgb",
-                        "out.mkv",
-                    ])
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .spawn();
-
-                match child {
-                    Ok(mut c) => Some(c.stdin.take().unwrap()),
-                    Err(e) => {
-                        eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
-                        None
-                    }
-                }
-            } else {
-                None
-            };
+            let mut ffmpeg_process = self.use_ffmpeg.then(|| {
+                crate::engine::util::export::start_ffmpeg(
+                    &self.title,
+                    width,
+                    height,
+                    self.fps,
+                    cfg!(feature = "audio")
+                ).map_err(|e| {
+                    eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
+                    e
+                }).ok().flatten()
+            }).flatten();
 
             let saving_thread = std::thread::spawn(move || {
                 while let Ok((pixels, path)) = rx.recv() {
@@ -198,15 +184,15 @@ impl Project {
             // Export until all animations are finished
             loop {
                 let hash = self.scene.state_hash();
-                let frame_path = self
-                    .output_path
-                    .join(format!("frame_{:04}.png", frame_count));
+                let frame_name = self.get_frame_name(frame_count);
+                let frame_path = self.output_path.join(frame_name);
 
                 // Check cache
-                if self.use_cache
+                let is_cached = self.use_cache
                     && manifest.frames.get(&frame_count) == Some(&hash)
-                    && frame_path.exists()
-                {
+                    && frame_path.exists();
+
+                if is_cached {
                     skipped_count += 1;
                     saved_count.fetch_add(1, Ordering::SeqCst);
                     // If we are skipping, we still need to feed FFmpeg the frame if it's open
@@ -253,9 +239,21 @@ impl Project {
                 );
                 io::stdout().flush()?;
 
-                if self.scene.timeline.finished() {
+                let is_video_finished = self.scene.video_timeline.finished();
+                let is_audio_finished = self.scene.audio_timeline.finished();
+
+                if is_video_finished && is_audio_finished {
                     break;
                 }
+
+                #[cfg(feature = "audio")]
+                {
+                    let current_time =
+                        std::time::Duration::from_secs_f32(frame_count as f32 / self.fps as f32);
+                    self.scene
+                        .collect_audio_events(current_time, &mut audio_events);
+                }
+
                 self.scene.update(dt);
                 frame_count += 1;
             }
@@ -306,16 +304,27 @@ impl Project {
                 "\nExport finished: {} frames rendered, {} skipped.",
                 rendered_count, skipped_count
             );
+
+            #[cfg(feature = "audio")]
+            if self.use_ffmpeg {
+                crate::engine::util::export::merge_audio(&self.title, &audio_events)?;
+            }
+
             Ok(())
-        }
-        #[cfg(not(feature = "export"))]
-        {
-            Err("Export failed: 'export' feature is disabled.".into())
         }
     }
 
     pub fn show(self) -> crate::Result<()> {
         let window = AnimationWindow::new(self)?;
         window.run()
+    }
+
+    fn sanitize_title(&self) -> String {
+        crate::engine::util::export::sanitize_title(&self.title)
+    }
+
+    pub fn get_frame_name(&self, frame_count: u32) -> String {
+        let sanitized = self.sanitize_title();
+        format!("{}_{:04}.png", sanitized, frame_count)
     }
 }

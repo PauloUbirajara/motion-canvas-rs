@@ -8,7 +8,8 @@ fn test_project_builder() {
         .with_dimensions(1280, 720)
         .with_fps(30)
         .with_title("Test Project")
-        .with_background(Color::BLUE);
+        .with_background(Color::BLUE)
+        .close_on_finish();
 
     assert_eq!(project.width, 1280);
     assert_eq!(project.height, 720);
@@ -112,10 +113,27 @@ fn test_group_builder() {
 }
 
 #[test]
+#[cfg(feature = "image")]
 fn test_image_builder() {
     let image = ImageNode::default()
         .with_path("nonexistent.png") // This won't load anything but we can check size
         .with_size(Vec2::new(100.0, 100.0));
 
     assert_eq!(image.size.get(), Vec2::new(100.0, 100.0));
+}
+
+#[test]
+fn test_project_frame_naming() {
+    let project = Project::default()
+        .with_title(" My Project (Demo) ");
+    
+    let name = project.get_frame_name(42);
+    assert_eq!(name, "my_project_demo_0042.png");
+    
+    // Test default behavior with complex title
+    let project_default = Project::default()
+        .with_title("New  Project")
+        .close_on_finish();
+    let name_default = project_default.get_frame_name(0);
+    assert_eq!(name_default, "new_project_0000.png");
 }

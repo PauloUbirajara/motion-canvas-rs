@@ -11,6 +11,19 @@ pub struct FontData {
     pub data: Vec<u8>,
 }
 
+const KNOWN_MATH_FONTS: &[&str] = &[
+    "DejaVu Math TeX Gyre",
+    "Noto Sans Math",
+    "New Computer Modern Math",
+    "STIX Two Math",
+];
+
+const GENERIC_FALLBACKS: &[(FamilyName, &str)] = &[
+    (FamilyName::SansSerif, "Sans-Serif"),
+    (FamilyName::Monospace, "Monospace"),
+    (FamilyName::Serif, "Serif"),
+];
+
 lazy_static! {
     static ref FONT_CACHE: Mutex<HashMap<String, Arc<FontData>>> = Mutex::new(HashMap::new());
     static ref FONT_WARNINGS: Mutex<HashMap<String, bool>> = Mutex::new(HashMap::new());
@@ -46,16 +59,19 @@ impl FontManager {
         // Search system fonts
         let source = SystemSource::new();
         let family_names = [FamilyName::Title(family.to_string())];
-        if let Ok(handle) = source.select_best_match(&family_names, &Properties::new()) {
-            if let Ok(font) = handle.load() {
-                if let Some(data) = font.copy_font_data() {
-                    let font_data = Arc::new(FontData {
-                        name: family.to_string(),
-                        data: (*data).clone(),
-                    });
-                    cache.insert(family.to_string(), font_data.clone());
-                    return Some(font_data);
-                }
+        let handle = match source.select_best_match(&family_names, &Properties::new()) {
+            Ok(h) => h,
+            Err(_) => return None,
+        };
+
+        if let Ok(font) = handle.load() {
+            if let Some(data) = font.copy_font_data() {
+                let font_data = Arc::new(FontData {
+                    name: family.to_string(),
+                    data: (*data).clone(),
+                });
+                cache.insert(family.to_string(), font_data.clone());
+                return Some(font_data);
             }
         }
 
@@ -100,30 +116,31 @@ impl FontManager {
 
         // Final attempt at generic sans-serif
         let source = SystemSource::new();
-        let generic_fallbacks = [
-            (FamilyName::SansSerif, "Sans-Serif"),
-            (FamilyName::Monospace, "Monospace"),
-            (FamilyName::Serif, "Serif"),
-        ];
 
-        for (generic, name) in generic_fallbacks {
-            if let Ok(handle) = source.select_best_match(&[generic], &Properties::new()) {
-                if let Ok(font) = handle.load() {
-                    if let Some(data) = font.copy_font_data() {
-                        let mut warnings = FONT_WARNINGS.lock().unwrap();
-                        if !warnings.contains_key(&primary) {
-                            eprintln!(
-                                "Warning: Font '{}' not found. Falling back to system '{}'.",
-                                primary, name
-                            );
-                            warnings.insert(primary.clone(), true);
-                        }
-                        return Some(Arc::new(FontData {
-                            name: name.to_string(),
-                            data: (*data).clone(),
-                        }));
-                    }
+        for (generic, name) in GENERIC_FALLBACKS {
+            let handle = match source.select_best_match(&[generic.clone()], &Properties::new()) {
+                Ok(h) => h,
+                Err(_) => continue,
+            };
+
+            let font = match handle.load() {
+                Ok(f) => f,
+                Err(_) => continue,
+            };
+
+            if let Some(data) = font.copy_font_data() {
+                let mut warnings = FONT_WARNINGS.lock().unwrap();
+                if !warnings.contains_key(&primary) {
+                    eprintln!(
+                        "Warning: Font '{}' not found. Falling back to system '{}'.",
+                        primary, name
+                    );
+                    warnings.insert(primary.clone(), true);
                 }
+                return Some(Arc::new(FontData {
+                    name: name.to_string(),
+                    data: (*data).clone(),
+                }));
             }
         }
 
@@ -135,13 +152,7 @@ impl FontManager {
         MATH_CACHE
             .get_or_init(|| {
                 // First try specific known math fonts
-                let known_math = [
-                    "DejaVu Math TeX Gyre",
-                    "Noto Sans Math",
-                    "New Computer Modern Math",
-                    "STIX Two Math",
-                ];
-                for family in known_math {
+                for &family in KNOWN_MATH_FONTS {
                     if let Some(font) = Self::get_font(family) {
                         return (family.to_string(), Some(font));
                     }
@@ -149,22 +160,33 @@ impl FontManager {
 
                 // Search all system fonts for anything with "Math" in the name
                 let source = SystemSource::new();
-                if let Ok(fonts) = source.all_fonts() {
-                    for handle in fonts {
-                        if let Ok(font) = handle.load() {
-                            let name = font.full_name();
-                            if name.contains("Math") {
-                                if let Some(data) = font.copy_font_data() {
-                                    return (
-                                        name.clone(),
-                                        Some(Arc::new(FontData {
-                                            name,
-                                            data: (*data).clone(),
-                                        })),
-                                    );
-                                }
-                            }
-                        }
+                let fonts = match source.all_fonts() {
+                    Ok(f) => f,
+                    Err(_) => {
+                        return (
+                            "serif".to_string(),
+                            Self::get_font_with_fallback(&["serif"]),
+                        )
+                    }
+                };
+
+                for handle in fonts {
+                    let font = match handle.load() {
+                        Ok(f) => f,
+                        Err(_) => continue,
+                    };
+                    let name = font.full_name();
+                    if !name.contains("Math") {
+                        continue;
+                    }
+                    if let Some(data) = font.copy_font_data() {
+                        return (
+                            name.clone(),
+                            Some(Arc::new(FontData {
+                                name,
+                                data: (*data).clone(),
+                            })),
+                        );
                     }
                 }
 

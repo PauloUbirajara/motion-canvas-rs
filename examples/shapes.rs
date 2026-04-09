@@ -1,7 +1,9 @@
 use motion_canvas_rs::prelude::*;
 
 fn main() {
-    let mut project = Project::new(400, 200);
+    let mut project = Project::default()
+        .with_dimensions(400, 200)
+        .close_on_finish();
 
     // Red
     let circle = Circle::default()

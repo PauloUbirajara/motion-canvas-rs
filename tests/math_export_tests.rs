@@ -1,13 +1,15 @@
+#![cfg(all(feature = "math", feature = "export"))]
 use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 #[test]
 fn test_math_animation_export() {
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(60)
         .with_title("Test Math Animation Export")
         .with_gpu(false)
-        .with_background(Color::rgb8(40, 44, 52));
+        .with_background(Color::rgb8(40, 44, 52))
+        .close_on_finish();
 
     let tex = MathNode::new(
         Vec2::new(100.0, 300.0),
@@ -17,7 +19,7 @@ fn test_math_animation_export() {
     );
     project.scene.add(Box::new(tex.clone()));
 
-    project.scene.timeline.add(flows::chain![
+    project.scene.video_timeline.add(flows::chain![
         flows::wait(Duration::from_millis(100)),
         tex.tex("y = a x^2 + b x", Duration::from_millis(200)),
         flows::wait(Duration::from_millis(100)),

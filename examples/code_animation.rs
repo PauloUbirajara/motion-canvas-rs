@@ -2,7 +2,9 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::default().with_dimensions(800, 800);
+    let mut project = Project::default()
+        .with_dimensions(800, 800)
+        .close_on_finish();
 
     let code = CodeNode::default()
         .with_position(Vec2::new(50.0, 50.0))
@@ -15,7 +17,7 @@ fn main() {
 
     let interval = Duration::from_secs(4);
     let code_duration = Duration::from_secs(1);
-    project.scene.timeline.add(sequence!(
+    project.scene.video_timeline.add(sequence!(
         interval,
         code.edit(
             r#"use motion_canvas_rs::prelude::*;       
@@ -76,7 +78,7 @@ fn main() {
     // 2. Define Nodes
     // 3. Add Nodes to the Scene
     // 4. Add Animations to the Timeline
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         circle.radius.to(100.0, Duration::from_secs(1)),
         text.transform.to(
             Affine::translate((400.0, 500.0)),

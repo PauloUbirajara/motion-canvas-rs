@@ -16,7 +16,7 @@ pub use glam::Vec2;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Font management and local font registration
-pub use engine::font::FontManager;
+pub use engine::util::font_manager::FontManager;
 
 /// Individual node types (Circle, Rect, TextNode, etc.)
 pub mod nodes {
@@ -28,6 +28,8 @@ pub mod flows {
     pub use crate::engine::animation::flow::*;
     // Re-export macros at the module level as well
     pub use crate::{all, any, chain, delay, loop_anim, sequence};
+    #[cfg(feature = "audio")]
+    pub use crate::{audio_wait, play};
 }
 
 /// Easing functions (cubic_in, elastic_out, etc.)
@@ -53,8 +55,16 @@ pub mod prelude {
     pub use crate::engine::animation::flow::*;
     pub use crate::engine::easings::*;
     pub use crate::engine::nodes::Polygon;
+    #[cfg(feature = "math")]
+    pub use crate::engine::nodes::MathNode;
+    #[cfg(feature = "code")]
+    pub use crate::engine::nodes::CodeNode;
+    #[cfg(feature = "image")]
+    pub use crate::engine::nodes::ImageNode;
     pub use crate::engine::nodes::*;
     pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing};
+    #[cfg(feature = "audio")]
+    pub use crate::{audio_wait, play};
 
     pub use crate::FontManager;
     pub use crate::Result;

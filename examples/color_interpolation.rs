@@ -2,10 +2,12 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(400, 400)
+    let mut project = Project::default()
+        .with_dimensions(400, 400)
         .with_fps(60)
         .with_title("Color Interpolation")
-        .with_cache(true); // Ensure cache is active for test
+        .with_cache(true)
+        .close_on_finish(); // Ensure cache is active for test
 
     let start_y = 150.0;
     let spacing = 180.0;
@@ -27,7 +29,7 @@ fn main() {
     let target_color = Color::rgb8(0xf2, 0xf2, 0xf2); // White-ish
     let duration = Duration::from_secs(1);
 
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         circle.color.to(target_color, duration),
         rect.color.to(target_color, duration),
     ]);

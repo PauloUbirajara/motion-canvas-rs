@@ -37,25 +37,25 @@ fn test_any_macro_duration() {
 
 #[test]
 fn test_timeline_sequential_behavior() {
-    let mut project = Project::new(800, 600);
+    let mut project = Project::default().close_on_finish();
     let circle = Circle::new(Vec2::new(0.0, 0.0), 10.0, Color::RED);
 
     // Adding to timeline without macro should be sequential
     project
         .scene
-        .timeline
+        .video_timeline
         .add(circle.radius.to(20.0, Duration::from_secs(1)));
     project
         .scene
-        .timeline
+        .video_timeline
         .add(circle.radius.to(30.0, Duration::from_secs(1)));
     project
         .scene
-        .timeline
+        .video_timeline
         .add(circle.radius.to(40.0, Duration::from_secs(1)));
 
     // Expected total duration: 3s
-    assert_eq!(project.scene.timeline.duration(), Duration::from_secs(3));
+    assert_eq!(project.scene.video_timeline.duration(), Duration::from_secs(3));
 
     // After 1.5s, only the second animation should be halfway done, or the first should be finished
     // If it's sequential:
@@ -63,7 +63,7 @@ fn test_timeline_sequential_behavior() {
     // 1-2s: anim 2
     // 2-3s: anim 3
 
-    project.scene.timeline.update(Duration::from_millis(1500));
+    project.scene.video_timeline.update(Duration::from_millis(1500));
 
     // First anim should be gone, second anim should have had 0.5s of progress
     // circle.radius started at 10.0

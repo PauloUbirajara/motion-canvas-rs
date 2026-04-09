@@ -1,3 +1,4 @@
+#![cfg(feature = "math")]
 use motion_canvas_rs::engine::nodes::MathNode;
 use motion_canvas_rs::render::Color;
 use std::time::Duration;

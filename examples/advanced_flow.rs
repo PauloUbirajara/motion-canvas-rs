@@ -3,14 +3,14 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize Project with full API coverage
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(120)
         .with_gpu(true)
         .with_cache(true)
         .with_ffmpeg(true)
         .with_output_path("output")
-        .with_frame_template("frame_{:04}.png")
-        .with_title("Motion Canvas Rust - Demo");
+        .with_title("Motion Canvas Rust - Demo")
+        .close_on_finish();
 
     // 2. Setup Nodes
     let mut path = BezPath::new();
@@ -68,7 +68,7 @@ fn main() {
     let text_transform = title_text.transform.clone();
 
     // 3. Define the Animation "Super Sequence"
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         // Background loop pulse
         flows::loop_anim![
             bg_size

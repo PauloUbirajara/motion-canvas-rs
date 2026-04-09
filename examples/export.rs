@@ -3,10 +3,11 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize for Export
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(30)
         .with_ffmpeg(true)
-        .with_output_path("output");
+        .with_output_path("output")
+        .close_on_finish();
 
     // 2. Setup Nodes
     let circle = Circle::default()
@@ -31,7 +32,7 @@ fn main() {
     project.scene.add(Box::new(math.clone()));
 
     // 3. Define Animations (Color and Font Size)
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         // Circle color and size
         circle
             .color

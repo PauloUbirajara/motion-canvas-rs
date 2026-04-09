@@ -3,9 +3,10 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize Project
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(60)
-        .with_title("Typst Math Animation");
+        .with_title("Typst Math Animation")
+        .close_on_finish();
 
     // 2. Create MathNode (Typst syntax)
     let tex = MathNode::default()
@@ -16,7 +17,7 @@ fn main() {
     project.scene.add(Box::new(tex.clone()));
 
     // 3. Define Animation Sequence
-    project.scene.timeline.add(flows::chain![
+    project.scene.video_timeline.add(flows::chain![
         flows::wait(Duration::from_millis(500)),
         tex.tex("y = a x^2 + b x", Duration::from_secs(1)),
         flows::wait(Duration::from_millis(500)),

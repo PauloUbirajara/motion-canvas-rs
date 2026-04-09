@@ -2,7 +2,9 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(800, 600).with_title("Advanced Code Node Demo");
+    let mut project = Project::default()
+        .with_title("Advanced Code Node Demo")
+        .close_on_finish();
 
     let code = CodeNode::default()
         .with_position(Vec2::new(50.0, 50.0))
@@ -17,7 +19,7 @@ fn main() {
 
     project.scene.add(Box::new(code.clone()));
 
-    project.scene.timeline.add(flows::sequence![
+    project.scene.video_timeline.add(flows::sequence![
         Duration::from_secs(1),
         // 1. Select line 2 (println) - using 1-based index string
         code.select_string("2", Duration::from_millis(300)),
