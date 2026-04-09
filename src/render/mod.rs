@@ -160,7 +160,16 @@ impl AnimationWindow {
                     }
 
                     let is_video_finished = self.project.scene.video_timeline.finished();
-                    let is_audio_finished = self.project.scene.audio_timeline.finished();
+                    let is_audio_finished = {
+                        #[cfg(feature = "audio")]
+                        {
+                            self.project.scene.audio_timeline.finished()
+                        }
+                        #[cfg(not(feature = "audio"))]
+                        {
+                            true
+                        }
+                    };
 
                     if is_video_finished && is_audio_finished {
                         println!("Animation finished.");
