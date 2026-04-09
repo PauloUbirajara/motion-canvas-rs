@@ -307,54 +307,7 @@ impl Project {
 
             #[cfg(feature = "audio")]
             if self.use_ffmpeg {
-                let sanitized_title = crate::engine::util::export::sanitize_title(&self.title);
-                let temp_video = format!("{}_temp.mkv", sanitized_title);
-                let final_output = format!("{}.mkv", sanitized_title);
-
-                if !audio_events.is_empty() {
-                    println!("Merging audio with FFmpeg...");
-                    use std::process::Command;
-
-                    let mut cmd = Command::new("ffmpeg");
-                    cmd.arg("-y").arg("-i").arg(&temp_video);
-
-                    for event in &audio_events {
-                        cmd.arg("-i").arg(&event.path);
-                    }
-
-                    let mut inputs = String::new();
-                    let mut filter = String::new();
-                    for (i, event) in audio_events.iter().enumerate() {
-                        let input_idx = i + 1;
-                        let delay_ms = (event.start_time.as_secs_f64() * 1000.0) as i64;
-
-                        filter.push_str(&format!(
-                            "[{}:a]atrim=start_sample={},adelay={}|{}[a{}];",
-                            input_idx,
-                            (event.start_crop.as_secs_f64() * 44100.0) as i64,
-                            delay_ms, delay_ms,
-                            input_idx
-                        ));
-                        inputs.push_str(&format!("[a{}]", input_idx));
-                    }
-                    filter.push_str(&format!("{}amix=inputs={}[a]", inputs, audio_events.len()));
-
-                    cmd.args([
-                        "-filter_complex", &filter, "-map", "0:v", "-map", "[a]",
-                        "-c:v", "copy", "-c:a", "aac", &final_output,
-                    ]);
-
-                    match cmd.status() {
-                        Ok(status) if status.success() => {
-                            fs::remove_file(temp_video).ok();
-                            println!("Audio successfully merged: {}.mkv", sanitized_title);
-                        }
-                        Ok(status) => eprintln!("FFmpeg audio merge failed with status: {}", status),
-                        Err(e) => eprintln!("Failed to run FFmpeg merge: {}", e),
-                    }
-                } else if Path::new(&temp_video).exists() {
-                    fs::rename(temp_video, final_output).ok();
-                }
+                crate::engine::util::export::merge_audio(&self.title, &audio_events)?;
             }
 
             Ok(())
