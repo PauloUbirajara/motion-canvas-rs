@@ -15,8 +15,8 @@ Add the library to your `Cargo.toml`. To enable all features (math, code blocks,
 # Enable everything
 cargo add motion-canvas-rs --features full
 
-# Or pick only what you need (e.g., just math and images)
-cargo add motion-canvas-rs --features math,image
+# Or pick only what you need (e.g., just math, images, and audio)
+cargo add motion-canvas-rs --features math,image,audio
 ```
 
 ## Features
@@ -26,6 +26,7 @@ cargo add motion-canvas-rs --features math,image
 | `math` | Typst-powered LaTeX math rendering. | `MathNode` |
 | `code` | Syntax-highlighted code blocks via Syntect. | `CodeNode` |
 | `image` | Bitmap (PNG, JPEG) and Vector (SVG) support. | `ImageNode` |
+| `audio` | Independent audio timeline and MP3 playback. | `play!`, `AudioNode` |
 | `export` | Headless frame rendering and video generation. | `project.export()` |
 | `full` | Meta-feature that enables all of the above. | Everything |
 
@@ -33,7 +34,8 @@ cargo add motion-canvas-rs --features math,image
 - **High-performance**: GPU-accelerated vector rendering via Vello.
 - **Arc-length Sampling**: Accurate path animations and offsets.
 - **Easing Library**: 30+ standardized easing functions.
-- **FFmpeg Integration**: Direct streaming of animation frames to video.
+- **FFmpeg Integration**: Direct streaming of animation frames or merging with audio.
+- **Audio Support**: Synchronized MP3 playback and independent audio timelines.
 - **Clean API**: Streamlined prelude for high-speed prototyping.
 - **Node Primitives**: Built-in support for Circles, Rects, Polygons, Lines, and Groups.
 
@@ -50,6 +52,7 @@ cargo add motion-canvas-rs --features math,image
 | `MathNode` | Typst-powered mathematical formulas. | `LaTeX`, `smooth-transitions` |
 | `CodeNode` | Syntax-highlighted code with transitions. | `syntect`, `magic-move` |
 | `ImageNode` | Bitmap and SVG image display. | `png`, `jpeg`, `svg` |
+| `AudioNode` | Independent audio clip playback. | `mp3`, `volume`, `crop` |
 | `GroupNode` | Hierarchical grouping of any nodes. | `children`, `inherited-opacity` |
 
 ## Project Structure
@@ -102,7 +105,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 13+ formal examples that can be found in the [examples directory](./examples).
+The project includes 14 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Getting Started</b> - Basic node creation and animation.</summary>
