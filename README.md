@@ -113,7 +113,7 @@ The project includes 14 examples that can be found in the [examples directory](.
 ```bash
 cargo run --example getting_started
 ```
-https://github.com/user-attachments/assets/0ce19049-7d85-4d3a-befe-5bc7c9dc33be
+https://github.com/user-attachments/assets/510d8aac-67ba-42d8-882a-b3c0ad969437
 </details>
 
 <details>
@@ -131,7 +131,7 @@ cargo run --example shapes
 ```bash
 cargo run --example polygon
 ```
-https://github.com/user-attachments/assets/304d86fa-22c5-4aa4-83ab-35c199260c31
+https://github.com/user-attachments/assets/efc1e214-4297-47a2-b6e4-1eae0840b0c9
 </details>
 
 <details>
@@ -145,6 +145,10 @@ https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
 
 <details>
 <summary><b>Images</b> - Bitmap image support and transformations.</summary>
+
+
+https://github.com/user-attachments/assets/7b1fa63a-8500-41e9-a611-0a4ca0a90967
+
 
 ```bash
 cargo run --example images
@@ -230,6 +234,7 @@ https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
 ```bash
 cargo run --example audio_demo --features audio
 ```
+https://github.com/user-attachments/assets/02670f39-8499-4202-8b22-c160d35f9031
 </details>
 
 ## Requirements
