@@ -29,7 +29,7 @@ fn main() {
     project.scene.add(Box::new(triangle.clone()));
 
     // Animate rotation and opacity
-    project.scene.timeline.add(all![
+    project.scene.video_timeline.add(all![
         pentagon.transform.to(
             pentagon.transform.get() * Affine::rotate(std::f64::consts::PI),
             Duration::from_secs(2)

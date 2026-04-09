@@ -89,7 +89,7 @@ fn main() {
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(text.clone()));
 
-    project.scene.timeline.add(all![
+    project.scene.video_timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
         text.transform
             .to(Affine::translate((400.0, 500.0)), Duration::from_secs(1)),
@@ -218,6 +218,14 @@ https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
 cargo run --example export
 ```
 https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
+</details>
+
+<details>
+<summary><b>Audio Demo</b> - Independent audio and video timelines with cropping.</summary>
+
+```bash
+cargo run --example audio_demo --features audio
+```
 </details>
 
 ## Requirements

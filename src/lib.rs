@@ -28,6 +28,8 @@ pub mod flows {
     pub use crate::engine::animation::flow::*;
     // Re-export macros at the module level as well
     pub use crate::{all, any, chain, delay, loop_anim, sequence};
+    #[cfg(feature = "audio")]
+    pub use crate::{audio_wait, play};
 }
 
 /// Easing functions (cubic_in, elastic_out, etc.)
@@ -61,6 +63,8 @@ pub mod prelude {
     pub use crate::engine::nodes::ImageNode;
     pub use crate::engine::nodes::*;
     pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing};
+    #[cfg(feature = "audio")]
+    pub use crate::{audio_wait, play};
 
     pub use crate::FontManager;
     pub use crate::Result;

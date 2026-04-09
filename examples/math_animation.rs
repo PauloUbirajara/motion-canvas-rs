@@ -17,7 +17,7 @@ fn main() {
     project.scene.add(Box::new(tex.clone()));
 
     // 3. Define Animation Sequence
-    project.scene.timeline.add(flows::chain![
+    project.scene.video_timeline.add(flows::chain![
         flows::wait(Duration::from_millis(500)),
         tex.tex("y = a x^2 + b x", Duration::from_secs(1)),
         flows::wait(Duration::from_millis(500)),

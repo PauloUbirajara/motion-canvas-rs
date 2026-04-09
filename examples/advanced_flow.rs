@@ -68,7 +68,7 @@ fn main() {
     let text_transform = title_text.transform.clone();
 
     // 3. Define the Animation "Super Sequence"
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         // Background loop pulse
         flows::loop_anim![
             bg_size

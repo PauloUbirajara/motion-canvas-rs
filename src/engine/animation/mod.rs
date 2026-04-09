@@ -110,3 +110,21 @@ macro_rules! with_easing {
         $crate::engine::animation::flow::with_easing($easing, vec![$(Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($x)),*])
     };
 }
+
+/// Play an audio node.
+#[cfg(feature = "audio")]
+#[macro_export]
+macro_rules! play {
+    ($audio:expr) => {
+        Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($audio)
+    };
+}
+
+/// Wait on the audio timeline.
+#[cfg(feature = "audio")]
+#[macro_export]
+macro_rules! audio_wait {
+    ($dur:expr) => {
+        $crate::engine::animation::flow::wait(std::time::Duration::from_secs_f32($dur as f32))
+    };
+}

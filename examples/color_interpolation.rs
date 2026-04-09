@@ -29,7 +29,7 @@ fn main() {
     let target_color = Color::rgb8(0xf2, 0xf2, 0xf2); // White-ish
     let duration = Duration::from_secs(1);
 
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         circle.color.to(target_color, duration),
         rect.color.to(target_color, duration),
     ]);

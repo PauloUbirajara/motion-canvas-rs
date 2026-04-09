@@ -17,7 +17,7 @@ fn main() {
         .with_path("./examples/images/motion-canvas-rs.svg")
         .with_size(Vec2::new(200.0, 200.0));
 
-    project.scene.timeline.add(chain!(
+    project.scene.video_timeline.add(chain!(
         all!(
             png.transform
                 .to(Affine::translate((50.0, 350.0)), Duration::from_secs(1)),

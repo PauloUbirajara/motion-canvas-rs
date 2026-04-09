@@ -162,7 +162,7 @@ impl AnimationWindow {
                         last_hash = current_hash;
                     }
 
-                    if self.project.scene.timeline.finished() {
+                    if self.project.scene.video_timeline.finished() {
                         println!("Animation finished.");
                         finished = true;
 

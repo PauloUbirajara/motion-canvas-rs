@@ -32,7 +32,7 @@ fn main() {
     project.scene.add(Box::new(math.clone()));
 
     // 3. Define Animations (Color and Font Size)
-    project.scene.timeline.add(flows::all![
+    project.scene.video_timeline.add(flows::all![
         // Circle color and size
         circle
             .color

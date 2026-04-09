@@ -63,7 +63,7 @@ fn main() {
     let configs_clone = easing_configs.clone();
 
     // Loop animation factory
-    project.scene.timeline.add(flows::loop_anim(
+    project.scene.video_timeline.add(flows::loop_anim(
         move || {
             let balls = &balls_clone;
             let configs = &configs_clone;

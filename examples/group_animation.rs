@@ -36,7 +36,7 @@ fn main() {
     project.scene.add(Box::new(group.clone()));
 
     // Define animations and add them to the timeline
-    project.scene.timeline.add(chain![
+    project.scene.video_timeline.add(chain![
         // 1. Move the whole group using a matrix
         group
             .transform

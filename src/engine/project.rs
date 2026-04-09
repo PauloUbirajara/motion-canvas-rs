@@ -143,7 +143,7 @@ impl Project {
             let mut rendered_count = 0;
             let mut skipped_count = 0;
 
-            let total_duration = self.scene.timeline.duration();
+            let total_duration = self.scene.video_timeline.duration();
             let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
 
             // Use rayon for background PNG saving
@@ -256,7 +256,7 @@ impl Project {
                 );
                 io::stdout().flush()?;
 
-                if self.scene.timeline.finished() {
+                if self.scene.video_timeline.finished() {
                     break;
                 }
                 self.scene.update(dt);

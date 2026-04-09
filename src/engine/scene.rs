@@ -9,14 +9,18 @@ pub trait Scene2D {
 
 pub struct BaseScene {
     pub nodes: Vec<Box<dyn Node>>,
-    pub timeline: crate::engine::animation::Timeline,
+    pub video_timeline: crate::engine::animation::Timeline,
+    #[cfg(feature = "audio")]
+    pub audio_timeline: crate::engine::animation::Timeline,
 }
 
 impl BaseScene {
     pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
-            timeline: crate::engine::animation::Timeline::new(),
+            video_timeline: crate::engine::animation::Timeline::new(),
+            #[cfg(feature = "audio")]
+            audio_timeline: crate::engine::animation::Timeline::new(),
         }
     }
 
@@ -33,7 +37,9 @@ impl Scene2D for BaseScene {
     }
 
     fn update(&mut self, dt: std::time::Duration) {
-        self.timeline.update(dt);
+        self.video_timeline.update(dt);
+        #[cfg(feature = "audio")]
+        self.audio_timeline.update(dt);
         for node in &mut self.nodes {
             node.update(dt);
         }
