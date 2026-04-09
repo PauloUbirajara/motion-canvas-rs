@@ -146,7 +146,16 @@ impl Project {
 
             let mut audio_events = Vec::new();
             let video_duration = self.scene.video_timeline.duration();
-            let audio_duration = self.scene.audio_timeline.duration();
+            let audio_duration = {
+                #[cfg(feature = "audio")]
+                {
+                    self.scene.audio_timeline.duration()
+                }
+                #[cfg(not(feature = "audio"))]
+                {
+                    std::time::Duration::ZERO
+                }
+            };
             let total_duration = video_duration.max(audio_duration);
             let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
 
@@ -240,7 +249,16 @@ impl Project {
                 io::stdout().flush()?;
 
                 let is_video_finished = self.scene.video_timeline.finished();
-                let is_audio_finished = self.scene.audio_timeline.finished();
+                let is_audio_finished = {
+                    #[cfg(feature = "audio")]
+                    {
+                        self.scene.audio_timeline.finished()
+                    }
+                    #[cfg(not(feature = "audio"))]
+                    {
+                        true
+                    }
+                };
 
                 if is_video_finished && is_audio_finished {
                     break;
