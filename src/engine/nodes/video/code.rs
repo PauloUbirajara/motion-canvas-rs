@@ -4,28 +4,15 @@
 //! [shiki-magic-move](https://github.com/shikijs/shiki-magic-move).
 
 use crate::engine::animation::{Node, Signal, Tweenable};
-use crate::engine::font::FontManager;
+use crate::engine::util::code_tokenizer::{
+    strip_common_indent, tokenize_code, Token, FONT_FALLBACKS,
+};
 use glam::Vec2;
-use lazy_static::lazy_static;
 use similar::TextDiff;
-use skrifa::instance::{LocationRef, Size};
-use skrifa::MetadataProvider;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use syntect::easy::HighlightLines;
-use syntect::highlighting::ThemeSet;
-use syntect::parsing::SyntaxSet;
-use vello::kurbo::{Affine, BezPath};
+use vello::kurbo::Affine;
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
-
-lazy_static! {
-    static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
-    static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
-    static ref GLOBAL_CODE_CACHE: Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>> =
-        Mutex::new(HashMap::new());
-}
 
 const DEFAULT_FONT_SIZE: f32 = 24.0;
 const DEFAULT_THEME: &str = "base16-ocean.dark";
@@ -33,29 +20,6 @@ const DEFAULT_FONT_FAMILY: &str = "Fira Code";
 const DEFAULT_LANGUAGE: &str = "rust";
 const DEFAULT_OPACITY: f32 = 1.0;
 const DEFAULT_DIM_OPACITY: f32 = 0.2;
-const LINE_HEIGHT_MULTIPLIER: f32 = 1.5;
-const FONT_FALLBACKS: &[&str] = &["Fira Code", "Courier New", "monospace"];
-const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
-
-#[derive(Hash, Eq, PartialEq, Clone)]
-struct CodeCacheKey {
-    code: String,
-    font_size_bits: u32,
-    language: String,
-    theme: String,
-    font_family: String,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Token {
-    pub text: String,
-    pub color: Color,
-    pub pos: Vec2,
-    pub size: f32,
-    pub glyphs: Vec<(Affine, BezPath)>,
-    pub width: f32,
-    pub line_index: usize,
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CodeTransition {
@@ -78,7 +42,14 @@ pub struct CodeValue {
 impl CodeValue {
     pub fn new(text: String, node: &CodeNode) -> Self {
         let text = strip_common_indent(&text);
-        let tokens = node.tokenize(&text);
+        let tokens = tokenize_code(
+            &text,
+            node.font_size.get(),
+            &node.language,
+            &node.theme,
+            &node.font_family,
+            FONT_FALLBACKS,
+        );
         CodeValue {
             text,
             tokens,
@@ -86,36 +57,6 @@ impl CodeValue {
             selection: Vec::new(),
         }
     }
-}
-
-fn strip_common_indent(text: &str) -> String {
-    let lines: Vec<&str> = text.lines().collect();
-    if lines.is_empty() {
-        return text.to_string();
-    }
-
-    let min_indent = lines
-        .iter()
-        .filter(|l| !l.trim().is_empty())
-        .map(|l| l.chars().take_while(|c| c.is_whitespace()).count())
-        .min()
-        .unwrap_or(0);
-
-    if min_indent == 0 {
-        return text.to_string();
-    }
-
-    lines
-        .iter()
-        .map(|l| {
-            if l.trim().is_empty() {
-                ""
-            } else {
-                &l[min_indent..]
-            }
-        })
-        .collect::<Vec<&str>>()
-        .join("\n")
 }
 
 impl Default for CodeValue {
@@ -429,133 +370,6 @@ impl CodeNode {
         lines.dedup();
         lines
     }
-
-    fn tokenize(&self, code: &str) -> Vec<Token> {
-        let size = self.font_size.get();
-        let key = CodeCacheKey {
-            code: code.to_string(),
-            font_size_bits: size.to_bits(),
-            language: self.language.clone(),
-            theme: self.theme.clone(),
-            font_family: self.font_family.clone(),
-        };
-
-        if let Some(cached) = GLOBAL_CODE_CACHE.lock().unwrap().get(&key) {
-            return (**cached).clone();
-        }
-
-        let mut tokens = Vec::new();
-        let syntax = SYNTAX_SET
-            .find_syntax_by_extension(&self.language)
-            .or_else(|| SYNTAX_SET.find_syntax_by_name(&self.language))
-            .or_else(|| SYNTAX_SET.find_syntax_by_name(&self.language.to_lowercase()))
-            .or_else(|| {
-                SYNTAX_SET.find_syntax_by_name(&format!(
-                    "{}{}",
-                    (&self.language[..1]).to_uppercase(),
-                    &self.language[1..]
-                ))
-            })
-            .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text());
-
-        let theme_name = if THEME_SET.themes.contains_key(&self.theme) {
-            &self.theme
-        } else {
-            DEFAULT_THEME
-        };
-        let theme = &THEME_SET.themes[theme_name];
-        let mut h = HighlightLines::new(syntax, theme);
-        let mut y_offset = 0.0;
-
-        let mut fallback_list = vec![self.font_family.as_str()];
-        fallback_list.extend_from_slice(FONT_FALLBACKS);
-
-        if let Some(font_data) = FontManager::get_font_with_fallback(&fallback_list) {
-            let font_ref = FontManager::get_font_ref(&font_data);
-            let charmap = font_ref.charmap();
-            let outlines = font_ref.outline_glyphs();
-
-            for (line_idx, line) in code.lines().enumerate() {
-                let ranges = h.highlight_line(line, &SYNTAX_SET).unwrap();
-                let mut x_offset = 0.0;
-                for (style, text) in ranges {
-                    let fg = style.foreground;
-                    let color = Color::rgba8(fg.r, fg.g, fg.b, fg.a);
-
-                    let mut token_text = String::new();
-                    let mut glyphs = Vec::new();
-                    let mut token_width = 0.0;
-
-                    for c in text.chars() {
-                        let glyph_id = charmap.map(c).unwrap_or_default();
-                        let mut pb = BezPath::new();
-                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
-
-                        if let Some(glyph) = outlines.get(glyph_id) {
-                            let mut sink = PathSink(&mut pb);
-                            let font_size = Size::new(size);
-                            let _ = glyph.draw(font_size, &mut sink);
-
-                            if let Some(metrics) = font_ref
-                                .glyph_metrics(font_size, LocationRef::default())
-                                .advance_width(glyph_id)
-                            {
-                                advance = metrics as f64;
-                            }
-                        }
-
-                        let base_transform = Affine::translate((token_width, size as f64))
-                            * Affine::scale_non_uniform(1.0, -1.0);
-                        glyphs.push((base_transform, pb));
-                        token_width += advance;
-                        token_text.push(c);
-                    }
-
-                    tokens.push(Token {
-                        text: token_text,
-                        color,
-                        pos: Vec2::new(x_offset as f32, y_offset as f32),
-                        size,
-                        glyphs,
-                        width: token_width as f32,
-                        line_index: line_idx,
-                    });
-
-                    x_offset += token_width;
-                }
-                y_offset += (size * LINE_HEIGHT_MULTIPLIER) as f64;
-            }
-        }
-
-        let arc_tokens = Arc::new(tokens.clone());
-        GLOBAL_CODE_CACHE.lock().unwrap().insert(key, arc_tokens);
-        tokens
-    }
-}
-
-struct PathSink<'a>(&'a mut BezPath);
-
-impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
-    fn move_to(&mut self, x: f32, y: f32) {
-        self.0.move_to((x as f64, y as f64));
-    }
-    fn line_to(&mut self, x: f32, y: f32) {
-        self.0.line_to((x as f64, y as f64));
-    }
-    fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) {
-        self.0
-            .quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
-    }
-    fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
-        self.0.curve_to(
-            (cx0 as f64, cy0 as f64),
-            (cx1 as f64, cy1 as f64),
-            (x as f64, y as f64),
-        );
-    }
-    fn close(&mut self) {
-        self.0.close_path();
-    }
 }
 
 impl Node for CodeNode {
@@ -574,11 +388,13 @@ impl Node for CodeNode {
                 // Static render
                 let has_selection = !code_val.selection.is_empty();
                 for token in &code_val.tokens {
-                    let is_selected = !has_selection || code_val.selection.contains(&token.line_index);
+                    let is_selected =
+                        !has_selection || code_val.selection.contains(&token.line_index);
                     let dim = if is_selected { 1.0 } else { dim_factor };
                     draw_token(
                         scene,
-                        root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)),
+                        root_transform
+                            * Affine::translate((token.pos.x as f64, token.pos.y as f64)),
                         token,
                         token.color,
                         combined_opacity * dim,
@@ -650,8 +466,8 @@ impl Node for CodeNode {
         for (i, matched) in matched_to.iter().enumerate() {
             if !*matched {
                 let to = &trans.to_tokens[i];
-                let is_dimmed = !trans.to_selection.is_empty()
-                    && !trans.to_selection.contains(&to.line_index);
+                let is_dimmed =
+                    !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
                 let dim = if is_dimmed { dim_factor } else { 1.0 };
                 draw_token(
                     scene,

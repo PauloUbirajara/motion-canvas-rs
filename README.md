@@ -72,7 +72,8 @@ fn main() {
     // Project::default() uses default values (800x600, 60fps)
     let mut project = Project::default()
         .with_title("Quick Start")
-        .with_background(Color::rgb8(0x1a, 0x1a, 0x1a));
+        .with_background(Color::rgb8(0x1a, 0x1a, 0x1a))
+        .close_on_finish();
 
     // Nodes support a builder pattern and Default traits
     let circle = Circle::default()
@@ -81,7 +82,7 @@ fn main() {
         .with_color(Color::RED);
 
     let text = TextNode::default()
-        .with_position(Vec2::new(400.0, 300.0))
+        .with_position(Vec2::new(200.0, 300.0))
         .with_text("Hello Motion Canvas!")
         .with_font_size(48.0)
         .with_color(Color::WHITE);
@@ -92,7 +93,7 @@ fn main() {
     project.scene.video_timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
         text.transform
-            .to(Affine::translate((400.0, 500.0)), Duration::from_secs(1)),
+            .to(Affine::translate((200.0, 400.0)), Duration::from_secs(1)),
     ]);
 
     project.show().expect("Failed to render");

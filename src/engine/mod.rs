@@ -6,6 +6,7 @@ pub mod project;
 pub mod scene;
 #[cfg(feature = "math")]
 pub mod typst_support;
+pub mod util;
 
 pub use animation::*;
 pub use easings::*;

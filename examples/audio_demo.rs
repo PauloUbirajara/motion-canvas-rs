@@ -5,7 +5,8 @@ fn main() {
     let mut project = Project::default()
         .with_dimensions(800, 450)
         .with_title("Audio Demo")
-        .with_background(Color::rgb8(20, 20, 25));
+        .with_background(Color::rgb8(20, 20, 25))
+        .close_on_finish();
 
     // Setup Video Timeline
     let rect = Rect::new(Vec2::new(100.0, 100.0), Vec2::new(200.0, 200.0), Color::RED);

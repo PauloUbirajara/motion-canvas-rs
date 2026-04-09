@@ -18,6 +18,21 @@ pub trait Animation: Send + Sync + 'static {
     fn collect_audio_events(&mut self, _current_time: Duration, _events: &mut Vec<AudioEvent>) {}
 }
 
+impl<T: ?Sized + Animation> Animation for Box<T> {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
+        (**self).update(dt)
+    }
+    fn duration(&self) -> Duration {
+        (**self).duration()
+    }
+    fn set_easing(&mut self, easing: fn(f32) -> f32) {
+        (**self).set_easing(easing)
+    }
+    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<AudioEvent>) {
+        (**self).collect_audio_events(current_time, events)
+    }
+}
+
 pub trait Node: Send + Sync + 'static {
     fn render(
         &self,
