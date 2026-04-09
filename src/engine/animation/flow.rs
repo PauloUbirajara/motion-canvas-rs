@@ -1,6 +1,8 @@
 use crate::engine::animation::base::Animation;
 use std::time::Duration;
 
+const INFINITE_DURATION_CAP: Duration = Duration::from_secs(3600); // 1 hour cap for infinite loops
+
 // --- All (Parallel) ---
 pub struct All {
     animations: Vec<Box<dyn Animation>>,
@@ -21,28 +23,22 @@ impl Animation for All {
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         let mut all_finished = true;
         let mut min_leftover = dt;
-        for i in 0..self.animations.len() {
+
+        for (i, anim) in self.animations.iter_mut().enumerate() {
             if self.finished[i] {
                 continue;
             }
-            let (finished, leftover) = self.animations[i].update(dt);
+
+            let (finished, leftover) = anim.update(dt);
             if finished {
                 self.finished[i] = true;
-                if leftover < min_leftover {
-                    min_leftover = leftover;
-                }
+                min_leftover = min_leftover.min(leftover);
             } else {
                 all_finished = false;
             }
         }
-        (
-            all_finished,
-            if all_finished {
-                min_leftover
-            } else {
-                Duration::ZERO
-            },
-        )
+
+        (all_finished, if all_finished { min_leftover } else { Duration::ZERO })
     }
 
     fn duration(&self) -> Duration {
@@ -81,23 +77,16 @@ impl Animation for Any {
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         let mut any_finished = false;
         let mut max_leftover = Duration::ZERO;
+
         for anim in &mut self.animations {
             let (finished, leftover) = anim.update(dt);
             if finished {
                 any_finished = true;
-                if leftover > max_leftover {
-                    max_leftover = leftover;
-                }
+                max_leftover = max_leftover.max(leftover);
             }
         }
-        (
-            any_finished,
-            if any_finished {
-                max_leftover
-            } else {
-                Duration::ZERO
-            },
-        )
+
+        (any_finished, if any_finished { max_leftover } else { Duration::ZERO })
     }
 
     fn duration(&self) -> Duration {
@@ -138,17 +127,18 @@ impl Chain {
 
 impl Animation for Chain {
     fn update(&mut self, mut dt: Duration) -> (bool, Duration) {
-        while self.index < self.animations.len() {
-            let (finished, leftover) = self.animations[self.index].update(dt);
-            if finished {
-                self.index += 1;
-                dt = leftover;
-                if dt == Duration::ZERO && self.index < self.animations.len() {
-                    // Even if dt is zero, we might want to move to the next one if it's zero-duration
-                    // but usually we just stop here for the frame.
-                    return (false, Duration::ZERO);
-                }
-            } else {
+        while let Some(anim) = self.animations.get_mut(self.index) {
+            let (finished, leftover) = anim.update(dt);
+            if !finished {
+                return (false, Duration::ZERO);
+            }
+
+            self.index += 1;
+            dt = leftover;
+
+            // If we have time left but no more animations, we're done.
+            // If we have no time left, we stop for this frame, even if more animations remain.
+            if dt == Duration::ZERO && self.index < self.animations.len() {
                 return (false, Duration::ZERO);
             }
         }
@@ -250,26 +240,20 @@ impl Animation for Sequence {
         self.elapsed += dt;
         let mut all_finished = true;
         let mut min_leftover = dt;
-        for i in 0..self.items.len() {
+
+        for (i, (start_time, anim)) in self.items.iter_mut().enumerate() {
             if self.finished[i] {
                 continue;
             }
-            let (start_time, anim) = &mut self.items[i];
+
             if self.elapsed >= *start_time {
                 // Calculate how much dt actually applied to this animation
-                // if it just started in this frame
-                let effective_dt = if self.elapsed - dt < *start_time {
-                    self.elapsed - *start_time
-                } else {
-                    dt
-                };
+                let effective_dt = (self.elapsed - *start_time).min(dt);
 
                 let (finished, leftover) = anim.update(effective_dt);
                 if finished {
                     self.finished[i] = true;
-                    if leftover < min_leftover {
-                        min_leftover = leftover;
-                    }
+                    min_leftover = min_leftover.min(leftover);
                 } else {
                     all_finished = false;
                 }
@@ -280,12 +264,7 @@ impl Animation for Sequence {
 
         let total_finished = all_finished && self.elapsed >= self.duration();
         let final_leftover = if total_finished {
-            let dur = self.duration();
-            if self.elapsed > dur {
-                self.elapsed - dur
-            } else {
-                Duration::ZERO
-            }
+            self.elapsed.saturating_sub(self.duration())
         } else {
             Duration::ZERO
         };
@@ -367,7 +346,7 @@ impl Animation for LoopAnim {
     fn duration(&self) -> Duration {
         match self.repeat_count {
             Some(count) => self.current.duration() * count as u32,
-            None => Duration::from_secs(3600), // Cap infinite at 1 hour for progress bar
+            None => INFINITE_DURATION_CAP,
         }
     }
 

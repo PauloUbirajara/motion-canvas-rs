@@ -20,6 +20,7 @@ const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;
 const DEFAULT_OPACITY: f32 = 1.0;
 const DEFAULT_FONT_FAMILY: &str = "Inter";
+const FONT_FALLBACKS: &[&str] = &["Arial", "sans-serif"];
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
 #[derive(Hash, Eq, PartialEq)]
@@ -177,12 +178,10 @@ impl Node for TextNode {
         } else {
             // 3. Rebuild
             let mut paths = Vec::new();
-            if let Some(font_data) = FontManager::get_font_with_fallback(&[
-                &self.font_family,
-                DEFAULT_FONT_FAMILY,
-                "Arial",
-                "sans-serif",
-            ]) {
+            let mut fallback_list = vec![self.font_family.as_str(), DEFAULT_FONT_FAMILY];
+            fallback_list.extend_from_slice(FONT_FALLBACKS);
+
+            if let Some(font_data) = FontManager::get_font_with_fallback(&fallback_list) {
                 let font_ref = FontManager::get_font_ref(&font_data);
                 let charmap = font_ref.charmap();
                 let outlines = font_ref.outline_glyphs();

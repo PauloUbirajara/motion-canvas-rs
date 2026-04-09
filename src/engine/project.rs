@@ -11,7 +11,6 @@ use std::io::{self, Write};
 #[cfg(feature = "export")]
 use std::path::Path;
 use std::path::PathBuf;
-use std::time::Duration;
 use vello::peniko::Color;
 
 const DEFAULT_FPS: u32 = 60;
@@ -94,7 +93,6 @@ impl Project {
         self
     }
 
-
     pub fn with_ffmpeg(mut self, use_ffmpeg: bool) -> Self {
         self.use_ffmpeg = use_ffmpeg;
         self
@@ -109,7 +107,7 @@ impl Project {
         self.background_color = color;
         self
     }
-    
+
     pub fn with_close_on_finish(mut self, close: bool) -> Self {
         self.close_on_finish = close;
         self
@@ -120,18 +118,20 @@ impl Project {
     }
 
     pub fn export(&mut self) -> crate::Result<()> {
+        #[cfg(not(feature = "export"))]
+        return Err("Export failed: 'export' feature is disabled.".into());
+
         #[cfg(feature = "export")]
         {
             println!("Exporting project: {}", self.title);
             fs::create_dir_all(&self.output_path)?;
 
             let cache_file = Path::new(".motion_canvas_cache");
-            let mut manifest = if self.use_cache && cache_file.exists() {
-                let content = fs::read_to_string(cache_file)?;
-                serde_json::from_str(&content).unwrap_or_default()
-            } else {
-                CacheManifest::default()
-            };
+            let mut manifest: CacheManifest = (self.use_cache && cache_file.exists())
+                .then(|| fs::read_to_string(cache_file).ok())
+                .flatten()
+                .and_then(|c| serde_json::from_str(&c).ok())
+                .unwrap_or_default();
 
             let mut exporter = crate::render::export::Exporter::new(
                 self.width,
@@ -159,14 +159,13 @@ impl Project {
             let saved_count_clone = saved_count.clone();
 
             // Initialize FFmpeg if requested
-            let mut ffmpeg_process: Option<std::process::ChildStdin> = if self.use_ffmpeg {
+            let mut ffmpeg_process = self.use_ffmpeg.then(|| {
                 use std::process::{Command, Stdio};
-                let output_file = if cfg!(feature = "audio") {
-                    format!("{}_temp.mkv", self.sanitize_title())
-                } else {
-                    format!("{}.mkv", self.sanitize_title())
+                let output_file = match cfg!(feature = "audio") {
+                    true => format!("{}_temp.mkv", self.sanitize_title()),
+                    false => format!("{}.mkv", self.sanitize_title()),
                 };
-                let child = Command::new("ffmpeg")
+                Command::new("ffmpeg")
                     .args([
                         "-y",
                         "-f",
@@ -186,18 +185,14 @@ impl Project {
                     .stdin(Stdio::piped())
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
-                    .spawn();
-
-                match child {
-                    Ok(mut c) => Some(c.stdin.take().unwrap()),
-                    Err(e) => {
+                    .spawn()
+                    .map_err(|e| {
                         eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
-                        None
-                    }
-                }
-            } else {
-                None
-            };
+                        e
+                    })
+                    .ok()
+                    .and_then(|mut c| c.stdin.take())
+            }).flatten();
 
             let saving_thread = std::thread::spawn(move || {
                 while let Ok((pixels, path)) = rx.recv() {
@@ -215,10 +210,11 @@ impl Project {
                 let frame_path = self.output_path.join(frame_name);
 
                 // Check cache
-                if self.use_cache
+                let is_cached = self.use_cache
                     && manifest.frames.get(&frame_count) == Some(&hash)
-                    && frame_path.exists()
-                {
+                    && frame_path.exists();
+
+                if is_cached {
                     skipped_count += 1;
                     saved_count.fetch_add(1, Ordering::SeqCst);
                     // If we are skipping, we still need to feed FFmpeg the frame if it's open
@@ -271,8 +267,10 @@ impl Project {
 
                 #[cfg(feature = "audio")]
                 {
-                    let current_time = std::time::Duration::from_secs_f32(frame_count as f32 / self.fps as f32);
-                    self.scene.collect_audio_events(current_time, &mut audio_events);
+                    let current_time =
+                        std::time::Duration::from_secs_f32(frame_count as f32 / self.fps as f32);
+                    self.scene
+                        .collect_audio_events(current_time, &mut audio_events);
                 }
 
                 self.scene.update(dt);
@@ -327,69 +325,58 @@ impl Project {
             );
 
             #[cfg(feature = "audio")]
-            if self.use_ffmpeg && !audio_events.is_empty() {
-                println!("Merging audio with FFmpeg...");
-                use std::process::Command;
+            if self.use_ffmpeg {
                 let sanitized_title = self.sanitize_title();
                 let temp_video = format!("{}_temp.mkv", sanitized_title);
                 let final_output = format!("{}.mkv", sanitized_title);
 
-                let mut cmd = Command::new("ffmpeg");
-                cmd.arg("-y").arg("-i").arg(&temp_video);
+                if !audio_events.is_empty() {
+                    println!("Merging audio with FFmpeg...");
+                    use std::process::Command;
 
-                // Add all audio inputs
-                for event in &audio_events {
-                    cmd.arg("-i").arg(&event.path);
-                }
+                    let mut cmd = Command::new("ffmpeg");
+                    cmd.arg("-y").arg("-i").arg(&temp_video);
 
-                // Filter complex building
-                let mut inputs = String::new();
-                let mut filter = String::new();
-                for (i, event) in audio_events.iter().enumerate() {
-                    let input_idx = i + 1;
-                    let delay_ms = (event.start_time.as_secs_f64() * 1000.0) as i64;
-                    let node_dur = (event.start_time + Duration::from_secs(1)).as_secs_f64(); // Placeholder if not known
-
-                    //ss: start_crop, t: duration
-                    //ADELAY=delays:all=1 (wait, rodio doesn't have duration easily here, but we can use atrim)
-                    
-                    // Filter: [input_idx:a] atrim=start=ss, adelay=delay|delay [aN]
-                    filter.push_str(&format!(
-                        "[{}:a]atrim=start_sample={},adelay={}|{}[a{}];",
-                        input_idx,
-                        (event.start_crop.as_secs_f64() * 44100.0) as i64, // Assume 44.1kHz for safety or just use time
-                        delay_ms, delay_ms,
-                        input_idx
-                    ));
-                    inputs.push_str(&format!("[a{}]", input_idx));
-                }
-                filter.push_str(&format!("{}amix=inputs={}[a]", inputs, audio_events.len()));
-
-                cmd.args(["-filter_complex", &filter, "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", &final_output]);
-
-                match cmd.status() {
-                    Ok(status) if status.success() => {
-                        fs::remove_file(temp_video).ok();
-                        println!("Audio successfully merged: {}.mkv", sanitized_title);
+                    for event in &audio_events {
+                        cmd.arg("-i").arg(&event.path);
                     }
-                    Ok(status) => eprintln!("FFmpeg audio merge failed with status: {}", status),
-                    Err(e) => eprintln!("Failed to run FFmpeg merge: {}", e),
-                }
-            } else if self.use_ffmpeg && cfg!(feature = "audio") {
-                // If it was temp but no audio, rename back
-                let sanitized_title = self.sanitize_title();
-                let temp_video = format!("{}_temp.mkv", sanitized_title);
-                let final_output = format!("{}.mkv", sanitized_title);
-                if Path::new(&temp_video).exists() {
+
+                    let mut inputs = String::new();
+                    let mut filter = String::new();
+                    for (i, event) in audio_events.iter().enumerate() {
+                        let input_idx = i + 1;
+                        let delay_ms = (event.start_time.as_secs_f64() * 1000.0) as i64;
+
+                        filter.push_str(&format!(
+                            "[{}:a]atrim=start_sample={},adelay={}|{}[a{}];",
+                            input_idx,
+                            (event.start_crop.as_secs_f64() * 44100.0) as i64,
+                            delay_ms, delay_ms,
+                            input_idx
+                        ));
+                        inputs.push_str(&format!("[a{}]", input_idx));
+                    }
+                    filter.push_str(&format!("{}amix=inputs={}[a]", inputs, audio_events.len()));
+
+                    cmd.args([
+                        "-filter_complex", &filter, "-map", "0:v", "-map", "[a]",
+                        "-c:v", "copy", "-c:a", "aac", &final_output,
+                    ]);
+
+                    match cmd.status() {
+                        Ok(status) if status.success() => {
+                            fs::remove_file(temp_video).ok();
+                            println!("Audio successfully merged: {}.mkv", sanitized_title);
+                        }
+                        Ok(status) => eprintln!("FFmpeg audio merge failed with status: {}", status),
+                        Err(e) => eprintln!("Failed to run FFmpeg merge: {}", e),
+                    }
+                } else if Path::new(&temp_video).exists() {
                     fs::rename(temp_video, final_output).ok();
                 }
             }
 
             Ok(())
-        }
-        #[cfg(not(feature = "export"))]
-        {
-            Err("Export failed: 'export' feature is disabled.".into())
         }
     }
 

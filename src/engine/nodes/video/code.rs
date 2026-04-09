@@ -34,6 +34,7 @@ const DEFAULT_LANGUAGE: &str = "rust";
 const DEFAULT_OPACITY: f32 = 1.0;
 const DEFAULT_DIM_OPACITY: f32 = 0.2;
 const LINE_HEIGHT_MULTIPLIER: f32 = 1.5;
+const FONT_FALLBACKS: &[&str] = &["Fira Code", "Courier New", "monospace"];
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
 #[derive(Hash, Eq, PartialEq, Clone)]
@@ -466,12 +467,10 @@ impl CodeNode {
         let mut h = HighlightLines::new(syntax, theme);
         let mut y_offset = 0.0;
 
-        if let Some(font_data) = FontManager::get_font_with_fallback(&[
-            &self.font_family,
-            "Fira Code",
-            "Courier New",
-            "monospace",
-        ]) {
+        let mut fallback_list = vec![self.font_family.as_str()];
+        fallback_list.extend_from_slice(FONT_FALLBACKS);
+
+        if let Some(font_data) = FontManager::get_font_with_fallback(&fallback_list) {
             let font_ref = FontManager::get_font_ref(&font_data);
             let charmap = font_ref.charmap();
             let outlines = font_ref.outline_glyphs();

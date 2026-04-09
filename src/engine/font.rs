@@ -11,6 +11,19 @@ pub struct FontData {
     pub data: Vec<u8>,
 }
 
+const KNOWN_MATH_FONTS: &[&str] = &[
+    "DejaVu Math TeX Gyre",
+    "Noto Sans Math",
+    "New Computer Modern Math",
+    "STIX Two Math",
+];
+
+const GENERIC_FALLBACKS: &[(FamilyName, &str)] = &[
+    (FamilyName::SansSerif, "Sans-Serif"),
+    (FamilyName::Monospace, "Monospace"),
+    (FamilyName::Serif, "Serif"),
+];
+
 lazy_static! {
     static ref FONT_CACHE: Mutex<HashMap<String, Arc<FontData>>> = Mutex::new(HashMap::new());
     static ref FONT_WARNINGS: Mutex<HashMap<String, bool>> = Mutex::new(HashMap::new());
@@ -100,14 +113,9 @@ impl FontManager {
 
         // Final attempt at generic sans-serif
         let source = SystemSource::new();
-        let generic_fallbacks = [
-            (FamilyName::SansSerif, "Sans-Serif"),
-            (FamilyName::Monospace, "Monospace"),
-            (FamilyName::Serif, "Serif"),
-        ];
 
-        for (generic, name) in generic_fallbacks {
-            if let Ok(handle) = source.select_best_match(&[generic], &Properties::new()) {
+        for (generic, name) in GENERIC_FALLBACKS {
+            if let Ok(handle) = source.select_best_match(&[generic.clone()], &Properties::new()) {
                 if let Ok(font) = handle.load() {
                     if let Some(data) = font.copy_font_data() {
                         let mut warnings = FONT_WARNINGS.lock().unwrap();
@@ -135,13 +143,7 @@ impl FontManager {
         MATH_CACHE
             .get_or_init(|| {
                 // First try specific known math fonts
-                let known_math = [
-                    "DejaVu Math TeX Gyre",
-                    "Noto Sans Math",
-                    "New Computer Modern Math",
-                    "STIX Two Math",
-                ];
-                for family in known_math {
+                for &family in KNOWN_MATH_FONTS {
                     if let Some(font) = Self::get_font(family) {
                         return (family.to_string(), Some(font));
                     }
