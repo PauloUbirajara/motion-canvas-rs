@@ -172,7 +172,7 @@ impl Project {
                         "-",
                         "-c:v",
                         "libx264rgb",
-                        "out.mkv",
+                        &format!("{}.mkv", self.sanitize_title()),
                     ])
                     .stdin(Stdio::piped())
                     .stdout(Stdio::null())
