@@ -2,7 +2,7 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(800, 800);
+    let mut project = Project::default().with_dimensions(800, 800);
 
     let code = CodeNode::default()
         .with_position(Vec2::new(50.0, 50.0))
@@ -28,9 +28,9 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize the Project
-    let mut project = Project::new(800, 600)
-        .with_fps(60)
-        .with_cache(true);
+    let mut project = Project::default()
+        .with_dimensions(800, 600)
+        .with_fps(60);
 }"#,
             code_duration,
         ),
@@ -41,17 +41,16 @@ use std::time::Duration;
 fn main() {
     // 1. Initialize the Project
     // 2. Define Nodes
-    let circle = Circle::new(
-        Vec2::new(400.0, 300.0), // Position
-        50.0, // Radius
-        Color::rgb8(0xe1, 0x32, 0x38) // Color
-    ); // Red
-    let text = TextNode::new(
-        Vec2::new(400.0, 450.0), // Position
-        "Hello Rust", // Text
-        40.0, // Font Size
-        Color::rgb8(0xf2, 0xf2, 0xf2), // Color
-    ); // White-ish
+    let circle = Circle::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_radius(50.0)
+        .with_color(Color::rgb8(0xe1, 0x32, 0x38)); // Red
+
+    let text = TextNode::default()
+        .with_position(Vec2::new(400.0, 450.0))
+        .with_text("Hello Rust")
+        .with_font_size(40.0)
+        .with_color(Color::rgb8(0xf2, 0xf2, 0xf2)); // White-ish
 }"#,
             code_duration,
         ),
@@ -78,16 +77,11 @@ fn main() {
     // 3. Add Nodes to the Scene
     // 4. Add Animations to the Timeline
     project.scene.timeline.add(flows::all![
-        circle.radius
-            .to(
-                100.0,
-                Duration::from_secs(1)
-            ),
-        text.transform
-            .to(
-                Affine::translate((400.0, 500.0)),
-                Duration::from_secs(1)
-            ),
+        circle.radius.to(100.0, Duration::from_secs(1)),
+        text.transform.to(
+            Affine::translate((400.0, 500.0)),
+            Duration::from_secs(1)
+        ),
     ]);
 }"#,
             code_duration,
