@@ -21,6 +21,7 @@ impl ImageManager {
             return Some(img.clone());
         }
 
+        #[cfg(feature = "svg")]
         if path.ends_with(".svg") {
             let svg_data = std::fs::read(path).ok()?;
             let opt = usvg::Options::default();
@@ -45,6 +46,12 @@ impl ImageManager {
             });
             cache.insert(path.to_string(), peniko_img.clone());
             return Some(peniko_img);
+        }
+
+        #[cfg(not(feature = "svg"))]
+        if path.ends_with(".svg") {
+            eprintln!("Error: SVG support is disabled. Enable the 'svg' feature to load '{}'", path);
+            return None;
         }
 
         // Load raster image from disk

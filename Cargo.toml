@@ -74,3 +74,17 @@ name = "easing_scope"
 
 [[example]]
 name = "shapes"
+
+[[example]]
+name = "code_advanced"
+required-features = ["code"]
+
+[[example]]
+name = "code_animation"
+required-features = ["code"]
+
+[[example]]
+name = "group_animation"
+
+[[example]]
+name = "polygon"
