@@ -217,20 +217,23 @@ impl Node for TextNode {
             *local = Some(arc_paths);
         }
 
-        if let Some(c) = self.cache.lock().unwrap().as_ref() {
-            let root_transform = parent_transform * local_transform;
-            let mut render_color = color;
-            render_color.a = (color.a as f32 * opacity * parent_opacity).clamp(0.0, 255.0) as u8;
-            let brush = Brush::Solid(render_color);
-            for (glyph_transform, pb) in c.as_ref() {
-                scene.fill(
-                    Fill::NonZero,
-                    root_transform * *glyph_transform,
-                    &brush,
-                    None,
-                    pb,
-                );
-            }
+        let cache_guard = self.cache.lock().unwrap();
+        let Some(c) = cache_guard.as_ref() else {
+            return;
+        };
+
+        let root_transform = parent_transform * local_transform;
+        let mut render_color = color;
+        render_color.a = (color.a as f32 * opacity * parent_opacity).clamp(0.0, 255.0) as u8;
+        let brush = Brush::Solid(render_color);
+        for (glyph_transform, pb) in c.as_ref() {
+            scene.fill(
+                Fill::NonZero,
+                root_transform * *glyph_transform,
+                &brush,
+                None,
+                pb,
+            );
         }
     }
     fn update(&mut self, _dt: Duration) {}

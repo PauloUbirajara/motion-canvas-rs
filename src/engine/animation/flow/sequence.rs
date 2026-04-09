@@ -35,19 +35,20 @@ impl Animation for Sequence {
                 continue;
             }
 
-            if self.elapsed >= *start_time {
-                let effective_dt = (self.elapsed - *start_time).min(dt);
-
-                let (finished, leftover) = anim.update(effective_dt);
-                if finished {
-                    self.finished[i] = true;
-                    min_leftover = min_leftover.min(leftover);
-                } else {
-                    all_finished = false;
-                }
-            } else {
+            if self.elapsed < *start_time {
                 all_finished = false;
+                continue;
             }
+
+            let effective_dt = (self.elapsed - *start_time).min(dt);
+            let (finished, leftover) = anim.update(effective_dt);
+            if !finished {
+                all_finished = false;
+                continue;
+            }
+
+            self.finished[i] = true;
+            min_leftover = min_leftover.min(leftover);
         }
 
         let total_finished = all_finished && self.elapsed >= self.duration();

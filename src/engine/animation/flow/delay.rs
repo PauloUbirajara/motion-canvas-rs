@@ -20,17 +20,17 @@ impl Delay {
 
 impl Animation for Delay {
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
-        if self.elapsed < self.duration {
-            self.elapsed += dt;
-            if self.elapsed >= self.duration {
-                let leftover = self.elapsed - self.duration;
-                self.inner.update(leftover)
-            } else {
-                (false, Duration::ZERO)
-            }
-        } else {
-            self.inner.update(dt)
+        if self.elapsed >= self.duration {
+            return self.inner.update(dt);
         }
+
+        self.elapsed += dt;
+        if self.elapsed < self.duration {
+            return (false, Duration::ZERO);
+        }
+
+        let leftover = self.elapsed - self.duration;
+        self.inner.update(leftover)
     }
 
     fn duration(&self) -> Duration {

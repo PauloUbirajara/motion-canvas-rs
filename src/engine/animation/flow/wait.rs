@@ -13,11 +13,7 @@ impl Animation for Wait {
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.elapsed += dt;
         let finished = self.elapsed >= self.duration;
-        let leftover = if finished {
-            self.elapsed - self.duration
-        } else {
-            Duration::ZERO
-        };
+        let leftover = self.elapsed.saturating_sub(self.duration);
         (finished, leftover)
     }
 

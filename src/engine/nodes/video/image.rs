@@ -152,36 +152,39 @@ impl ImageNode {
 
 impl Node for ImageNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        if let Some(ref img) = self.image {
-            let size = self.size.get();
-            let local_transform = self.transform.get();
-            let opacity = self.opacity.get();
-            let final_opacity = opacity * parent_opacity;
+        let Some(ref img) = self.image else {
+            return;
+        };
 
-            if final_opacity <= 0.0 {
-                return;
-            }
+        let size = self.size.get();
+        let local_transform = self.transform.get();
+        let opacity = self.opacity.get();
+        let final_opacity = opacity * parent_opacity;
 
-            let transform = parent_transform
-                * local_transform
-                * Affine::scale_non_uniform(
-                    size.x as f64 / img.width as f64,
-                    size.y as f64 / img.height as f64,
-                );
-
-            if final_opacity < 1.0 {
-                scene.push_layer(
-                    vello::peniko::Mix::Normal,
-                    final_opacity,
-                    transform,
-                    &vello::kurbo::Rect::new(0.0, 0.0, img.width as f64, img.height as f64),
-                );
-                scene.draw_image(img, Affine::IDENTITY);
-                scene.pop_layer();
-            } else {
-                scene.draw_image(img, transform);
-            }
+        if final_opacity <= 0.0 {
+            return;
         }
+
+        let transform = parent_transform
+            * local_transform
+            * Affine::scale_non_uniform(
+                size.x as f64 / img.width as f64,
+                size.y as f64 / img.height as f64,
+            );
+
+        if final_opacity < 1.0 {
+            scene.push_layer(
+                vello::peniko::Mix::Normal,
+                final_opacity,
+                transform,
+                &vello::kurbo::Rect::new(0.0, 0.0, img.width as f64, img.height as f64),
+            );
+            scene.draw_image(img, Affine::IDENTITY);
+            scene.pop_layer();
+            return;
+        }
+
+        scene.draw_image(img, transform);
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
