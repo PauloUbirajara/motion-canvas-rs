@@ -18,7 +18,7 @@ const DEFAULT_WIDTH: u32 = 800;
 const DEFAULT_HEIGHT: u32 = 600;
 const DEFAULT_TITLE: &str = "motion-canvas-rs";
 const DEFAULT_OUTPUT_PATH: &str = "output";
-const DEFAULT_FRAME_TEMPLATE: &str = "{:04}.png";
+const DEFAULT_FRAME_TEMPLATE: &str = "{title}_{:04}.png";
 const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
@@ -209,9 +209,8 @@ impl Project {
             // Export until all animations are finished
             loop {
                 let hash = self.scene.state_hash();
-                let frame_path = self
-                    .output_path
-                    .join(format!("frame_{:04}.png", frame_count));
+                let frame_name = self.get_frame_name(frame_count);
+                let frame_path = self.output_path.join(frame_name);
 
                 // Check cache
                 if self.use_cache
@@ -328,5 +327,39 @@ impl Project {
     pub fn show(self) -> crate::Result<()> {
         let window = AnimationWindow::new(self)?;
         window.run()
+    }
+
+    fn sanitize_title(&self) -> String {
+        self.title
+            .trim()
+            .to_lowercase()
+            .chars()
+            .map(|c| if c.is_alphanumeric() { c } else { '_' })
+            .collect::<String>()
+            .split('_')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("_")
+    }
+
+    pub fn get_frame_name(&self, frame_count: u32) -> String {
+        let sanitized = self.sanitize_title();
+        let template = self.frame_template.replace("{title}", &sanitized);
+
+        if template.contains("{:04}") {
+            return template.replace("{:04}", &format!("{:04}", frame_count));
+        }
+
+        if template.contains(&format!("{:04}", frame_count)) {
+            return template;
+        }
+
+        // Fallback: If no placeholder exists and no frame count is present, append it before extension
+        if let Some(pos) = template.rfind('.') {
+            let (base, ext) = template.split_at(pos);
+            return format!("{}_{:04}{}", base, frame_count, ext);
+        }
+
+        format!("{}_{:04}", template, frame_count)
     }
 }

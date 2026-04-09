@@ -569,95 +569,97 @@ impl Node for CodeNode {
 
         let dim_factor = self.dim_opacity.get();
 
-        if let Some(trans) = &code_val.transition {
-            let p = trans.progress;
+        let trans = match &code_val.transition {
+            Some(t) => t,
+            None => {
+                // Static render
+                let has_selection = !code_val.selection.is_empty();
+                for token in &code_val.tokens {
+                    let is_selected = !has_selection || code_val.selection.contains(&token.line_index);
+                    let dim = if is_selected { 1.0 } else { dim_factor };
+                    draw_token(
+                        scene,
+                        root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)),
+                        token,
+                        token.color,
+                        combined_opacity * dim,
+                    );
+                }
+                return;
+            }
+        };
 
-            let mut matched_from = vec![false; trans.from_tokens.len()];
-            let mut matched_to = vec![false; trans.to_tokens.len()];
+        let p = trans.progress;
+        let mut matched_from = vec![false; trans.from_tokens.len()];
+        let mut matched_to = vec![false; trans.to_tokens.len()];
 
-            // 1. Draw moving matches
-            for &(from_idx, to_idx) in &trans.matches {
-                let from = &trans.from_tokens[from_idx];
-                let to = &trans.to_tokens[to_idx];
+        // 1. Draw moving matches
+        for &(from_idx, to_idx) in &trans.matches {
+            let from = &trans.from_tokens[from_idx];
+            let to = &trans.to_tokens[to_idx];
 
-                let current_pos = from.pos.lerp(to.pos, p);
-                let current_color = Color::interpolate(&from.color, &to.color, p);
+            let current_pos = from.pos.lerp(to.pos, p);
+            let current_color = Color::interpolate(&from.color, &to.color, p);
 
-                let scale = if from.size != to.size {
-                    (from.size + (to.size - from.size) * p) / to.size
-                } else {
-                    1.0
-                };
+            let scale = if from.size != to.size {
+                (from.size + (to.size - from.size) * p) / to.size
+            } else {
+                1.0
+            };
 
-                let from_is_dimmed = !trans.from_selection.is_empty()
+            let from_is_dimmed = !trans.from_selection.is_empty()
+                && !trans.from_selection.contains(&from.line_index);
+            let to_is_dimmed =
+                !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
+
+            let from_dim = if from_is_dimmed { dim_factor } else { 1.0 };
+            let to_dim = if to_is_dimmed { dim_factor } else { 1.0 };
+            let current_dim = from_dim + (to_dim - from_dim) * p;
+
+            draw_token(
+                scene,
+                root_transform
+                    * Affine::translate((current_pos.x as f64, current_pos.y as f64))
+                    * Affine::scale(scale as f64),
+                to,
+                current_color,
+                combined_opacity * current_dim,
+            );
+
+            matched_from[from_idx] = true;
+            matched_to[to_idx] = true;
+        }
+
+        // Draw unmatched from-tokens (vanishing)
+        for (i, matched) in matched_from.iter().enumerate() {
+            if !*matched {
+                let from = &trans.from_tokens[i];
+                let is_dimmed = !trans.from_selection.is_empty()
                     && !trans.from_selection.contains(&from.line_index);
-                let to_is_dimmed =
-                    !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
-
-                let from_dim = if from_is_dimmed { dim_factor } else { 1.0 };
-                let to_dim = if to_is_dimmed { dim_factor } else { 1.0 };
-                let current_dim = from_dim + (to_dim - from_dim) * p;
-
+                let dim = if is_dimmed { dim_factor } else { 1.0 };
                 draw_token(
                     scene,
-                    root_transform
-                        * Affine::translate((current_pos.x as f64, current_pos.y as f64))
-                        * Affine::scale(scale as f64),
-                    to,
-                    current_color,
-                    combined_opacity * current_dim,
+                    root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)),
+                    from,
+                    from.color,
+                    combined_opacity * dim * (1.0 - p),
                 );
-
-                matched_from[from_idx] = true;
-                matched_to[to_idx] = true;
             }
+        }
 
-            // Draw unmatched from-tokens (vanishing)
-            for (i, matched) in matched_from.iter().enumerate() {
-                if !*matched {
-                    let from = &trans.from_tokens[i];
-                    let is_dimmed = !trans.from_selection.is_empty()
-                        && !trans.from_selection.contains(&from.line_index);
-                    let dim = if is_dimmed { dim_factor } else { 1.0 };
-                    draw_token(
-                        scene,
-                        root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)),
-                        from,
-                        from.color,
-                        combined_opacity * dim * (1.0 - p),
-                    );
-                }
-            }
-
-            // Draw unmatched to-tokens (appearing)
-            for (i, matched) in matched_to.iter().enumerate() {
-                if !*matched {
-                    let to = &trans.to_tokens[i];
-                    let is_dimmed = !trans.to_selection.is_empty()
-                        && !trans.to_selection.contains(&to.line_index);
-                    let dim = if is_dimmed { dim_factor } else { 1.0 };
-                    draw_token(
-                        scene,
-                        root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)),
-                        to,
-                        to.color,
-                        combined_opacity * dim * p,
-                    );
-                }
-            }
-        } else {
-            // Static render
-            let has_selection = !code_val.selection.is_empty();
-            let dim_factor = self.dim_opacity.get();
-            for token in &code_val.tokens {
-                let is_selected = !has_selection || code_val.selection.contains(&token.line_index);
-                let dim = if is_selected { 1.0 } else { dim_factor };
+        // Draw unmatched to-tokens (appearing)
+        for (i, matched) in matched_to.iter().enumerate() {
+            if !*matched {
+                let to = &trans.to_tokens[i];
+                let is_dimmed = !trans.to_selection.is_empty()
+                    && !trans.to_selection.contains(&to.line_index);
+                let dim = if is_dimmed { dim_factor } else { 1.0 };
                 draw_token(
                     scene,
-                    root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)),
-                    token,
-                    token.color,
-                    combined_opacity * dim,
+                    root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)),
+                    to,
+                    to.color,
+                    combined_opacity * dim * p,
                 );
             }
         }

@@ -165,12 +165,13 @@ impl AnimationWindow {
                     if self.project.scene.timeline.finished() {
                         println!("Animation finished.");
                         finished = true;
-                        
+
                         if self.project.close_on_finish {
                             elwt.exit();
-                        } else {
-                            elwt.set_control_flow(ControlFlow::Wait);
+                            return;
                         }
+
+                        elwt.set_control_flow(ControlFlow::Wait);
                         return;
                     }
 
