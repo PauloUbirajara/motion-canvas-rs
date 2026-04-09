@@ -1,3 +1,4 @@
+#![cfg(all(feature = "math", feature = "export"))]
 use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 

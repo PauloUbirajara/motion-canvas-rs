@@ -101,7 +101,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 13+ formal examples. Detailed documentation for each can be found in the [examples directory](./examples/README.md).
+The project includes 13+ formal examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Getting Started</b> - Basic node creation and animation.</summary>

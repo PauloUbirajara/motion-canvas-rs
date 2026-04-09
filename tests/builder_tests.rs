@@ -112,6 +112,7 @@ fn test_group_builder() {
 }
 
 #[test]
+#[cfg(feature = "image")]
 fn test_image_builder() {
     let image = ImageNode::default()
         .with_path("nonexistent.png") // This won't load anything but we can check size
