@@ -8,7 +8,8 @@ fn test_project_builder() {
         .with_dimensions(1280, 720)
         .with_fps(30)
         .with_title("Test Project")
-        .with_background(Color::BLUE);
+        .with_background(Color::BLUE)
+        .close_on_finish();
 
     assert_eq!(project.width, 1280);
     assert_eq!(project.height, 720);

@@ -2,7 +2,7 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(800, 600).with_title("Group Animation");
+    let mut project = Project::default().with_title("Group Animation");
 
     // Create some child nodes
     // Create some child nodes

@@ -2,7 +2,7 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(800, 600).with_title("Polygon Demo");
+    let mut project = Project::default().with_title("Polygon Demo");
 
     // Create a regular pentagon
     let pentagon = Polygon::regular(

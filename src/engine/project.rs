@@ -41,6 +41,7 @@ pub struct Project {
     pub use_ffmpeg: bool,
     pub use_gpu: bool,
     pub background_color: Color,
+    pub close_on_finish: bool,
 }
 
 impl Project {
@@ -57,6 +58,7 @@ impl Project {
             use_ffmpeg: DEFAULT_USE_FFMPEG,
             use_gpu: DEFAULT_USE_GPU,
             background_color: DEFAULT_BACKGROUND_COLOR,
+            close_on_finish: false,
         }
     }
 }
@@ -112,6 +114,15 @@ impl Project {
     pub fn with_background(mut self, color: Color) -> Self {
         self.background_color = color;
         self
+    }
+    
+    pub fn with_close_on_finish(mut self, close: bool) -> Self {
+        self.close_on_finish = close;
+        self
+    }
+
+    pub fn close_on_finish(self) -> Self {
+        self.with_close_on_finish(true)
     }
 
     pub fn export(&mut self) -> crate::Result<()> {

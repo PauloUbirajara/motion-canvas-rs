@@ -3,7 +3,7 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize Project
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(60)
         .with_title("Typst Math Animation");
 

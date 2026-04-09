@@ -37,7 +37,7 @@ fn test_any_macro_duration() {
 
 #[test]
 fn test_timeline_sequential_behavior() {
-    let mut project = Project::new(800, 600);
+    let mut project = Project::default().close_on_finish();
     let circle = Circle::new(Vec2::new(0.0, 0.0), 10.0, Color::RED);
 
     // Adding to timeline without macro should be sequential

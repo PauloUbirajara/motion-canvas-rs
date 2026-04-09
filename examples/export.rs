@@ -3,7 +3,7 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize for Export
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(30)
         .with_ffmpeg(true)
         .with_output_path("output");

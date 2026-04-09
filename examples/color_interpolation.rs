@@ -2,7 +2,8 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(400, 400)
+    let mut project = Project::default()
+        .with_dimensions(400, 400)
         .with_fps(60)
         .with_title("Color Interpolation")
         .with_cache(true); // Ensure cache is active for test

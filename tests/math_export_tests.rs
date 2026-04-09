@@ -4,11 +4,12 @@ use std::time::Duration;
 
 #[test]
 fn test_math_animation_export() {
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(60)
         .with_title("Test Math Animation Export")
         .with_gpu(false)
-        .with_background(Color::rgb8(40, 44, 52));
+        .with_background(Color::rgb8(40, 44, 52))
+        .close_on_finish();
 
     let tex = MathNode::new(
         Vec2::new(100.0, 300.0),

@@ -3,7 +3,7 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize Project with full API coverage
-    let mut project = Project::new(800, 600)
+    let mut project = Project::default()
         .with_fps(120)
         .with_gpu(true)
         .with_cache(true)

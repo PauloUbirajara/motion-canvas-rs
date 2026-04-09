@@ -12,7 +12,7 @@ const ANIM_DURATION_RETURN: Duration = Duration::from_secs(2);
 const WAIT_DURATION: Duration = Duration::from_secs(1);
 
 fn main() {
-    let mut project = Project::new(CANVAS_WIDTH, CANVAS_HEIGHT);
+    let mut project = Project::default().with_dimensions(CANVAS_WIDTH, CANVAS_HEIGHT);
 
     let easing_configs = vec![
         ("Linear", easings::linear as fn(f32) -> f32),

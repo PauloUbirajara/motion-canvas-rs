@@ -3,7 +3,7 @@ use std::time::Duration;
 
 fn main() {
     // 1. Initialize the Project
-    let mut project = Project::new(800, 600).with_fps(60).with_cache(true);
+    let mut project = Project::default().with_fps(60).with_cache(true);
 
     // 2. Define Nodes
     let circle = Circle::default()
