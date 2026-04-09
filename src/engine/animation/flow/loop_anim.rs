@@ -30,21 +30,21 @@ impl Animation for LoopAnim {
     fn update(&mut self, mut dt: Duration) -> (bool, Duration) {
         loop {
             let (finished, leftover) = self.current.update(dt);
-            if finished {
-                self.finished_count += 1;
+            if !finished {
+                return (false, Duration::ZERO);
+            }
 
-                if let Some(max) = self.repeat_count {
-                    if self.finished_count >= max {
-                        return (true, leftover);
-                    }
-                }
+            self.finished_count += 1;
 
-                self.current = (self.factory)();
-                dt = leftover;
-                if dt == Duration::ZERO {
-                    return (false, Duration::ZERO);
+            if let Some(max) = self.repeat_count {
+                if self.finished_count >= max {
+                    return (true, leftover);
                 }
-            } else {
+            }
+
+            self.current = (self.factory)();
+            dt = leftover;
+            if dt == Duration::ZERO {
                 return (false, Duration::ZERO);
             }
         }

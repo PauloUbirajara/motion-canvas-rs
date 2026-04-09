@@ -139,17 +139,8 @@ impl Animation for AudioAnimation {
             .unwrap_or(Duration::ZERO);
 
         let finished = self.elapsed >= play_duration;
-
-        if finished {
-            let leftover = if self.elapsed > play_duration {
-                self.elapsed - play_duration
-            } else {
-                Duration::ZERO
-            };
-            (true, leftover)
-        } else {
-            (false, Duration::ZERO)
-        }
+        let leftover = self.elapsed.saturating_sub(play_duration);
+        (finished, leftover)
     }
 
     fn duration(&self) -> Duration {

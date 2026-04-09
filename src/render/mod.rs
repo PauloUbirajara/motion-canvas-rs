@@ -144,17 +144,14 @@ impl AnimationWindow {
                         return;
                     }
 
-                    let now = Instant::now();
-                    let elapsed = now.duration_since(last_update);
-
-                    if elapsed < dt {
+                    if last_update.elapsed() < dt {
                         elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
                         return;
                     }
 
                     // Process update
                     self.project.scene.update(dt);
-                    last_update = now;
+                    last_update = Instant::now();
 
                     let current_hash = self.project.scene.state_hash();
                     if current_hash != last_hash {
@@ -178,7 +175,7 @@ impl AnimationWindow {
                         return;
                     }
 
-                    elwt.set_control_flow(ControlFlow::WaitUntil(now + dt));
+                    elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
                 }
 
                 Event::Resumed => {

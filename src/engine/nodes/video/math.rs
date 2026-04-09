@@ -250,7 +250,8 @@ impl Node for MathNode {
 
         // 1. Draw previous equation if transitioning
         if progress < 1.0 {
-            if let Some(prev) = self.prev_cache.lock().unwrap().as_ref() {
+            let prev_cache = self.prev_cache.lock().unwrap();
+            if let Some(prev) = prev_cache.as_ref() {
                 let mut prev_color = color;
                 prev_color.a = (color.a as f32 * base_opacity * (1.0 - progress) * parent_opacity)
                     .clamp(0.0, 255.0) as u8;
