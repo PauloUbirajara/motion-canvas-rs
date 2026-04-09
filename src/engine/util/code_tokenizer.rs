@@ -10,7 +10,10 @@ use syntect::easy::HighlightLines;
 use syntect::highlighting::ThemeSet;
 use syntect::parsing::SyntaxSet;
 use vello::kurbo::{Affine, BezPath};
-use vello::peniko::Color;
+use vello::peniko::{Brush, Color};
+use vello::Scene;
+use similar::TextDiff;
+use crate::engine::animation::Tweenable;
 
 lazy_static! {
     pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
@@ -23,6 +26,11 @@ pub const DEFAULT_THEME: &str = "base16-ocean.dark";
 pub const FONT_FALLBACKS: &[&str] = &["Fira Code", "Courier New", "monospace"];
 pub const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 pub const LINE_HEIGHT_MULTIPLIER: f32 = 1.5;
+pub const DEFAULT_FONT_SIZE: f32 = 24.0;
+pub const DEFAULT_FONT_FAMILY: &str = "Fira Code";
+pub const DEFAULT_LANGUAGE: &str = "rust";
+pub const DEFAULT_OPACITY: f32 = 1.0;
+pub const DEFAULT_DIM_OPACITY: f32 = 0.2;
 
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub struct CodeCacheKey {
@@ -42,6 +50,126 @@ pub struct Token {
     pub glyphs: Vec<(Affine, BezPath)>,
     pub width: f32,
     pub line_index: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct CodeTransition {
+    pub from_tokens: Vec<Token>,
+    pub to_tokens: Vec<Token>,
+    pub progress: f32,
+    pub matches: Vec<(usize, usize)>, // (from_idx, to_idx)
+    pub from_selection: Vec<usize>,
+    pub to_selection: Vec<usize>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct CodeValue {
+    pub text: String,
+    pub tokens: Vec<Token>,
+    pub transition: Option<CodeTransition>,
+    pub selection: Vec<usize>,
+}
+
+impl CodeValue {
+    pub fn new(
+        text: String,
+        font_size: f32,
+        language: &str,
+        theme: &str,
+        font_family: &str,
+    ) -> Self {
+        let text = strip_common_indent(&text);
+        let tokens = tokenize_code(
+            &text,
+            font_size,
+            language,
+            theme,
+            font_family,
+            FONT_FALLBACKS,
+        );
+        CodeValue {
+            text,
+            tokens,
+            transition: None,
+            selection: Vec::new(),
+        }
+    }
+}
+
+impl Default for CodeValue {
+    fn default() -> Self {
+        Self {
+            text: String::new(),
+            tokens: Vec::new(),
+            transition: None,
+            selection: Vec::new(),
+        }
+    }
+}
+
+impl Tweenable for CodeValue {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        if t <= 0.0 {
+            return a.clone();
+        }
+        if t >= 1.0 {
+            return b.clone();
+        }
+
+        // If both text and highlights are identical, no need to transition
+        if a.text == b.text && a.selection == b.selection {
+            return b.clone();
+        }
+
+        // Find matches between a and b tokens using similar crate
+        let a_toks: Vec<String> = a
+            .tokens
+            .iter()
+            .map(|t| format!("{}{:?}", t.text, t.color))
+            .collect();
+        let b_toks: Vec<String> = b
+            .tokens
+            .iter()
+            .map(|t| format!("{}{:?}", t.text, t.color))
+            .collect();
+
+        let a_tok_refs: Vec<&str> = a_toks.iter().map(|s| s.as_str()).collect();
+        let b_tok_refs: Vec<&str> = b_toks.iter().map(|s| s.as_str()).collect();
+
+        let diff = TextDiff::configure()
+            .algorithm(similar::Algorithm::Patience)
+            .diff_slices(&a_tok_refs, &b_tok_refs);
+        let mut matches = Vec::new();
+
+        for op in diff.ops() {
+            match *op {
+                similar::DiffOp::Equal {
+                    old_index,
+                    new_index,
+                    len,
+                } => {
+                    for i in 0..len {
+                        matches.push((old_index + i, new_index + i));
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        CodeValue {
+            text: b.text.clone(),
+            tokens: b.tokens.clone(),
+            transition: Some(CodeTransition {
+                from_tokens: a.tokens.clone(),
+                to_tokens: b.tokens.clone(),
+                progress: t,
+                matches,
+                from_selection: a.selection.clone(),
+                to_selection: b.selection.clone(),
+            }),
+            selection: b.selection.clone(),
+        }
+    }
 }
 
 pub fn strip_common_indent(text: &str) -> String {
@@ -205,4 +333,57 @@ pub fn tokenize_code(
     let arc_tokens: Arc<Vec<Token>> = Arc::new(tokens.clone());
     GLOBAL_CODE_CACHE.lock().unwrap().insert(key, arc_tokens);
     tokens
+}
+
+pub fn parse_selection(selection: &str) -> Vec<usize> {
+    let mut lines = Vec::new();
+    for part in selection.split(',') {
+        let part = part.trim();
+        if part.contains('-') {
+            let mut bounds = part.split('-');
+            if let (Some(start_str), Some(end_str)) = (bounds.next(), bounds.next()) {
+                if let (Ok(start), Ok(end)) =
+                    (start_str.parse::<usize>(), end_str.parse::<usize>())
+                {
+                    for i in start..=end {
+                        if i > 0 {
+                            lines.push(i - 1);
+                        }
+                    }
+                }
+            }
+        } else if let Ok(line) = part.parse::<usize>() {
+            if line > 0 {
+                lines.push(line - 1);
+            }
+        }
+    }
+    lines.sort_unstable();
+    lines.dedup();
+    lines
+}
+
+pub fn draw_token(
+    scene: &mut Scene,
+    transform: Affine,
+    token: &Token,
+    color: Color,
+    opacity: f32,
+) {
+    if opacity <= 0.0 {
+        return;
+    }
+    let mut c = color;
+    let alpha = (color.a as f32 * opacity).clamp(0.0, 255.0) as u8;
+    c.a = alpha;
+    let brush = Brush::Solid(c);
+    for (glyph_transform, pb) in &token.glyphs {
+        scene.fill(
+            vello::peniko::Fill::NonZero,
+            transform * *glyph_transform,
+            &brush,
+            None,
+            pb,
+        );
+    }
 }

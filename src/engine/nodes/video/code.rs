@@ -4,138 +4,12 @@
 //! [shiki-magic-move](https://github.com/shikijs/shiki-magic-move).
 
 use crate::engine::animation::{Node, Signal, Tweenable};
-use crate::engine::util::code_tokenizer::{
-    strip_common_indent, tokenize_code, Token, FONT_FALLBACKS,
-};
+use crate::engine::util::code_tokenizer::{draw_token, parse_selection, CodeValue};
 use glam::Vec2;
-use similar::TextDiff;
 use std::time::Duration;
 use vello::kurbo::Affine;
-use vello::peniko::{Brush, Color, Fill};
+use vello::peniko::Color;
 use vello::Scene;
-
-const DEFAULT_FONT_SIZE: f32 = 24.0;
-const DEFAULT_THEME: &str = "base16-ocean.dark";
-const DEFAULT_FONT_FAMILY: &str = "Fira Code";
-const DEFAULT_LANGUAGE: &str = "rust";
-const DEFAULT_OPACITY: f32 = 1.0;
-const DEFAULT_DIM_OPACITY: f32 = 0.2;
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct CodeTransition {
-    pub from_tokens: Vec<Token>,
-    pub to_tokens: Vec<Token>,
-    pub progress: f32,
-    pub matches: Vec<(usize, usize)>, // (from_idx, to_idx)
-    pub from_selection: Vec<usize>,
-    pub to_selection: Vec<usize>,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct CodeValue {
-    pub text: String,
-    pub tokens: Vec<Token>,
-    pub transition: Option<CodeTransition>,
-    pub selection: Vec<usize>,
-}
-
-impl CodeValue {
-    pub fn new(text: String, node: &CodeNode) -> Self {
-        let text = strip_common_indent(&text);
-        let tokens = tokenize_code(
-            &text,
-            node.font_size.get(),
-            &node.language,
-            &node.theme,
-            &node.font_family,
-            FONT_FALLBACKS,
-        );
-        CodeValue {
-            text,
-            tokens,
-            transition: None,
-            selection: Vec::new(),
-        }
-    }
-}
-
-impl Default for CodeValue {
-    fn default() -> Self {
-        Self {
-            text: String::new(),
-            tokens: Vec::new(),
-            transition: None,
-            selection: Vec::new(),
-        }
-    }
-}
-
-impl Tweenable for CodeValue {
-    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
-        if t <= 0.0 {
-            return a.clone();
-        }
-        if t >= 1.0 {
-            return b.clone();
-        }
-
-        // If both text and highlights are identical, no need to transition
-        if a.text == b.text && a.selection == b.selection {
-            return b.clone();
-        }
-
-        // Find matches between a and b tokens using similar crate
-        // We include color in the key to distinguish tokens better
-        let a_toks: Vec<String> = a
-            .tokens
-            .iter()
-            .map(|t| format!("{}{:?}", t.text, t.color))
-            .collect();
-        let b_toks: Vec<String> = b
-            .tokens
-            .iter()
-            .map(|t| format!("{}{:?}", t.text, t.color))
-            .collect();
-
-        // similar::diff_slices works best with &[&str]
-        let a_tok_refs: Vec<&str> = a_toks.iter().map(|s| s.as_str()).collect();
-        let b_tok_refs: Vec<&str> = b_toks.iter().map(|s| s.as_str()).collect();
-
-        let diff = TextDiff::configure()
-            .algorithm(similar::Algorithm::Patience)
-            .diff_slices(&a_tok_refs, &b_tok_refs);
-        let mut matches = Vec::new();
-
-        for op in diff.ops() {
-            match *op {
-                similar::DiffOp::Equal {
-                    old_index,
-                    new_index,
-                    len,
-                } => {
-                    for i in 0..len {
-                        matches.push((old_index + i, new_index + i));
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        CodeValue {
-            text: b.text.clone(),
-            tokens: b.tokens.clone(),
-            transition: Some(CodeTransition {
-                from_tokens: a.tokens.clone(),
-                to_tokens: b.tokens.clone(),
-                progress: t,
-                matches,
-                from_selection: a.selection.clone(),
-                to_selection: b.selection.clone(),
-            }),
-            selection: b.selection.clone(),
-        }
-    }
-}
 
 pub struct CodeNode {
     pub transform: Signal<Affine>,
@@ -153,15 +27,21 @@ impl Default for CodeNode {
         let node = Self {
             transform: Signal::new(Affine::IDENTITY),
             code: Signal::new(CodeValue::default()),
-            font_size: Signal::new(DEFAULT_FONT_SIZE),
-            opacity: Signal::new(DEFAULT_OPACITY),
-            dim_opacity: Signal::new(DEFAULT_DIM_OPACITY),
-            language: DEFAULT_LANGUAGE.to_string(),
-            theme: DEFAULT_THEME.to_string(),
-            font_family: DEFAULT_FONT_FAMILY.to_string(),
+            font_size: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_FONT_SIZE),
+            opacity: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_OPACITY),
+            dim_opacity: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_DIM_OPACITY),
+            language: crate::engine::util::code_tokenizer::DEFAULT_LANGUAGE.to_string(),
+            theme: crate::engine::util::code_tokenizer::DEFAULT_THEME.to_string(),
+            font_family: crate::engine::util::code_tokenizer::DEFAULT_FONT_FAMILY.to_string(),
         };
         // Initialize with empty code
-        let val = CodeValue::new("".to_string(), &node);
+        let val = CodeValue::new(
+            "".to_string(),
+            node.font_size.get(),
+            &node.language,
+            &node.theme,
+            &node.font_family,
+        );
         node.code.set(val);
         node
     }
@@ -224,7 +104,13 @@ impl CodeNode {
     }
 
     pub fn with_code(self, code: &str) -> Self {
-        let val = CodeValue::new(code.to_string(), &self);
+        let val = CodeValue::new(
+            code.to_string(),
+            self.font_size.get(),
+            &self.language,
+            &self.theme,
+            &self.font_family,
+        );
         self.code.set(val);
         self
     }
@@ -233,7 +119,13 @@ impl CodeNode {
         self.language = lang.to_string();
         // Re-tokenize if code exists
         let current_text = self.code.get().text;
-        let val = CodeValue::new(current_text, &self);
+        let val = CodeValue::new(
+            current_text,
+            self.font_size.get(),
+            &self.language,
+            &self.theme,
+            &self.font_family,
+        );
         self.code.set(val);
         self
     }
@@ -252,7 +144,13 @@ impl CodeNode {
         self.font_size = Signal::new(size);
         // Re-tokenize current code with new size to avoid "spazzing"
         let current_text = self.code.get().text;
-        let mut val = CodeValue::new(current_text, &self);
+        let mut val = CodeValue::new(
+            current_text,
+            self.font_size.get(),
+            &self.language,
+            &self.theme,
+            &self.font_family,
+        );
         val.selection = self.code.get().selection;
         self.code.set(val);
         self
@@ -269,10 +167,13 @@ impl CodeNode {
         duration: Duration,
     ) -> crate::engine::animation::SignalTween<CodeValue> {
         let code = code.to_string();
-        let node = self.clone();
+        let font_size = self.font_size.get();
+        let lang = self.language.clone();
+        let theme = self.theme.clone();
+        let font = self.font_family.clone();
         self.code.to_lazy(
             move |current| {
-                let mut next_value = CodeValue::new(code, &node);
+                let mut next_value = CodeValue::new(code, font_size, &lang, &theme, &font);
                 next_value.selection = current.selection.clone();
                 next_value
             },
@@ -286,11 +187,14 @@ impl CodeNode {
         duration: Duration,
     ) -> crate::engine::animation::SignalTween<CodeValue> {
         let text = text.to_string();
-        let node = self.clone();
+        let font_size = self.font_size.get();
+        let lang = self.language.clone();
+        let theme = self.theme.clone();
+        let font = self.font_family.clone();
         self.code.to_lazy(
             move |current| {
                 let next_text = format!("{}{}", current.text, text);
-                let mut next_val = CodeValue::new(next_text, &node);
+                let mut next_val = CodeValue::new(next_text, font_size, &lang, &theme, &font);
                 next_val.selection = current.selection.clone();
                 next_val
             },
@@ -304,11 +208,14 @@ impl CodeNode {
         duration: Duration,
     ) -> crate::engine::animation::SignalTween<CodeValue> {
         let text = text.to_string();
-        let node = self.clone();
+        let font_size = self.font_size.get();
+        let lang = self.language.clone();
+        let theme = self.theme.clone();
+        let font = self.font_family.clone();
         self.code.to_lazy(
             move |current| {
                 let next_text = format!("{}{}", text, current.text);
-                let mut next_val = CodeValue::new(next_text, &node);
+                let mut next_val = CodeValue::new(next_text, font_size, &lang, &theme, &font);
                 next_val.selection = current.selection.clone();
                 next_val
             },
@@ -339,36 +246,8 @@ impl CodeNode {
         selection: &str,
         duration: Duration,
     ) -> crate::engine::animation::SignalTween<CodeValue> {
-        let lines = self.parse_selection(selection);
+        let lines = parse_selection(selection);
         self.select_lines(lines, duration)
-    }
-
-    fn parse_selection(&self, selection: &str) -> Vec<usize> {
-        let mut lines = Vec::new();
-        for part in selection.split(',') {
-            let part = part.trim();
-            if part.contains('-') {
-                let mut bounds = part.split('-');
-                if let (Some(start_str), Some(end_str)) = (bounds.next(), bounds.next()) {
-                    if let (Ok(start), Ok(end)) =
-                        (start_str.parse::<usize>(), end_str.parse::<usize>())
-                    {
-                        for i in start..=end {
-                            if i > 0 {
-                                lines.push(i - 1);
-                            }
-                        }
-                    }
-                }
-            } else if let Ok(line) = part.parse::<usize>() {
-                if line > 0 {
-                    lines.push(line - 1);
-                }
-            }
-        }
-        lines.sort_unstable();
-        lines.dedup();
-        lines
     }
 }
 
@@ -507,26 +386,5 @@ impl Node for CodeNode {
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
-    }
-}
-
-fn draw_token(scene: &mut Scene, transform: Affine, token: &Token, color: Color, opacity: f32) {
-    if opacity <= 0.0 {
-        return;
-    }
-    let mut c = color;
-    // We need to be careful with alpha.
-    // Multiply the token's original alpha by the transition opacity.
-    let alpha = (color.a as f32 * opacity).clamp(0.0, 255.0) as u8;
-    c.a = alpha;
-    let brush = Brush::Solid(c);
-    for (glyph_transform, pb) in &token.glyphs {
-        scene.fill(
-            Fill::NonZero,
-            transform * *glyph_transform,
-            &brush,
-            None,
-            pb,
-        );
     }
 }

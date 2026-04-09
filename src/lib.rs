@@ -16,7 +16,7 @@ pub use glam::Vec2;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Font management and local font registration
-pub use engine::font::FontManager;
+pub use engine::util::font_manager::FontManager;
 
 /// Individual node types (Circle, Rect, TextNode, etc.)
 pub mod nodes {

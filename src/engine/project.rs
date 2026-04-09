@@ -144,11 +144,11 @@ impl Project {
             let mut rendered_count = 0;
             let mut skipped_count = 0;
 
-            let total_duration = self.scene.video_timeline.duration();
-            let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
-
-            #[cfg(feature = "audio")]
             let mut audio_events = Vec::new();
+            let video_duration = self.scene.video_timeline.duration();
+            let audio_duration = self.scene.audio_timeline.duration();
+            let total_duration = video_duration.max(audio_duration);
+            let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
 
             // Use rayon for background PNG saving
             let (tx, rx) = std::sync::mpsc::channel::<(Vec<u8>, PathBuf)>();
@@ -160,38 +160,16 @@ impl Project {
 
             // Initialize FFmpeg if requested
             let mut ffmpeg_process = self.use_ffmpeg.then(|| {
-                use std::process::{Command, Stdio};
-                let output_file = match cfg!(feature = "audio") {
-                    true => format!("{}_temp.mkv", self.sanitize_title()),
-                    false => format!("{}.mkv", self.sanitize_title()),
-                };
-                Command::new("ffmpeg")
-                    .args([
-                        "-y",
-                        "-f",
-                        "rawvideo",
-                        "-pixel_format",
-                        "rgba",
-                        "-video_size",
-                        &format!("{}x{}", width, height),
-                        "-framerate",
-                        &self.fps.to_string(),
-                        "-i",
-                        "-",
-                        "-c:v",
-                        "libx264rgb",
-                        &output_file,
-                    ])
-                    .stdin(Stdio::piped())
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .spawn()
-                    .map_err(|e| {
-                        eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
-                        e
-                    })
-                    .ok()
-                    .and_then(|mut c| c.stdin.take())
+                crate::engine::util::export::start_ffmpeg(
+                    &self.title,
+                    width,
+                    height,
+                    self.fps,
+                    cfg!(feature = "audio")
+                ).map_err(|e| {
+                    eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
+                    e
+                }).ok().flatten()
             }).flatten();
 
             let saving_thread = std::thread::spawn(move || {
@@ -261,7 +239,10 @@ impl Project {
                 );
                 io::stdout().flush()?;
 
-                if self.scene.video_timeline.finished() {
+                let is_video_finished = self.scene.video_timeline.finished();
+                let is_audio_finished = self.scene.audio_timeline.finished();
+
+                if is_video_finished && is_audio_finished {
                     break;
                 }
 
@@ -326,7 +307,7 @@ impl Project {
 
             #[cfg(feature = "audio")]
             if self.use_ffmpeg {
-                let sanitized_title = self.sanitize_title();
+                let sanitized_title = crate::engine::util::export::sanitize_title(&self.title);
                 let temp_video = format!("{}_temp.mkv", sanitized_title);
                 let final_output = format!("{}.mkv", sanitized_title);
 
@@ -386,16 +367,7 @@ impl Project {
     }
 
     fn sanitize_title(&self) -> String {
-        self.title
-            .trim()
-            .to_lowercase()
-            .chars()
-            .map(|c| if c.is_alphanumeric() { c } else { '_' })
-            .collect::<String>()
-            .split('_')
-            .filter(|s| !s.is_empty())
-            .collect::<Vec<_>>()
-            .join("_")
+        crate::engine::util::export::sanitize_title(&self.title)
     }
 
     pub fn get_frame_name(&self, frame_count: u32) -> String {

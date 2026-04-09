@@ -1,6 +1,8 @@
 pub mod animation;
 pub mod easings;
-pub mod font;
+pub mod font {
+    pub use crate::engine::util::font_manager::*;
+}
 pub mod nodes;
 pub mod project;
 pub mod scene;
