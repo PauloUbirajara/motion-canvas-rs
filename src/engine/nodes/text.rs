@@ -1,18 +1,19 @@
-use crate::engine::animation::{Signal, Node};
+use crate::engine::animation::{Node, Signal};
 use crate::engine::font::FontManager;
+use glam::Vec2;
+use lazy_static::lazy_static;
+use skrifa::instance::{LocationRef, Size};
+use skrifa::MetadataProvider;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use vello::kurbo::{Affine, BezPath};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
-use glam::Vec2;
-use vello::kurbo::{Affine, BezPath};
-use std::time::Duration;
-use skrifa::MetadataProvider;
-use skrifa::instance::{Size, LocationRef};
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
-use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref GLOBAL_TEXT_CACHE: Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_TEXT_CACHE: Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>> =
+        Mutex::new(HashMap::new());
 }
 
 const DEFAULT_FONT_SIZE: f32 = 32.0;
@@ -132,11 +133,26 @@ impl Clone for TextNode {
 struct PathSink<'a>(&'a mut BezPath);
 
 impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
-    fn move_to(&mut self, x: f32, y: f32) { self.0.move_to((x as f64, y as f64)); }
-    fn line_to(&mut self, x: f32, y: f32) { self.0.line_to((x as f64, y as f64)); }
-    fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) { self.0.quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64)); }
-    fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) { self.0.curve_to((cx0 as f64, cy0 as f64), (cx1 as f64, cy1 as f64), (x as f64, y as f64)); }
-    fn close(&mut self) { self.0.close_path(); }
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.0.move_to((x as f64, y as f64));
+    }
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.0.line_to((x as f64, y as f64));
+    }
+    fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) {
+        self.0
+            .quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
+    }
+    fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
+        self.0.curve_to(
+            (cx0 as f64, cy0 as f64),
+            (cx1 as f64, cy1 as f64),
+            (x as f64, y as f64),
+        );
+    }
+    fn close(&mut self) {
+        self.0.close_path();
+    }
 }
 
 impl Node for TextNode {
@@ -161,28 +177,37 @@ impl Node for TextNode {
         } else {
             // 3. Rebuild
             let mut paths = Vec::new();
-            if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, DEFAULT_FONT_FAMILY, "Arial", "sans-serif"]) {
+            if let Some(font_data) = FontManager::get_font_with_fallback(&[
+                &self.font_family,
+                DEFAULT_FONT_FAMILY,
+                "Arial",
+                "sans-serif",
+            ]) {
                 let font_ref = FontManager::get_font_ref(&font_data);
                 let charmap = font_ref.charmap();
                 let outlines = font_ref.outline_glyphs();
                 let mut x_offset = 0.0;
-                
+
                 for c in text.chars() {
                     let glyph_id = charmap.map(c).unwrap_or_default();
                     let mut pb = BezPath::new();
                     let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
-                    
+
                     if let Some(glyph) = outlines.get(glyph_id) {
                         let mut sink = PathSink(&mut pb);
                         let font_size = Size::new(size);
                         let _ = glyph.draw(font_size, &mut sink);
-                        
-                        if let Some(metrics) = font_ref.glyph_metrics(font_size, LocationRef::default()).advance_width(glyph_id) {
+
+                        if let Some(metrics) = font_ref
+                            .glyph_metrics(font_size, LocationRef::default())
+                            .advance_width(glyph_id)
+                        {
                             advance = metrics as f64;
                         }
                     }
-                    
-                    let base_transform = Affine::translate((x_offset, size as f64)) * Affine::scale_non_uniform(1.0, -1.0);
+
+                    let base_transform = Affine::translate((x_offset, size as f64))
+                        * Affine::scale_non_uniform(1.0, -1.0);
                     paths.push((base_transform, pb));
                     x_offset += advance;
                 }
@@ -199,21 +224,27 @@ impl Node for TextNode {
             render_color.a = (color.a as f32 * opacity * parent_opacity).clamp(0.0, 255.0) as u8;
             let brush = Brush::Solid(render_color);
             for (glyph_transform, pb) in c.as_ref() {
-                scene.fill(Fill::NonZero, root_transform * *glyph_transform, &brush, None, pb);
+                scene.fill(
+                    Fill::NonZero,
+                    root_transform * *glyph_transform,
+                    &brush,
+                    None,
+                    pb,
+                );
             }
         }
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
-        
+
         self.text.get().hash(&mut s);
         self.font_size.get().to_bits().hash(&mut s);
         let color = self.color.get();

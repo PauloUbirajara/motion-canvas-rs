@@ -1,9 +1,9 @@
-use crate::engine::animation::{Signal, Node};
+use crate::engine::animation::{Node, Signal};
+use glam::Vec2;
+use std::time::Duration;
+use vello::kurbo::{Affine, Circle as KurboCircle};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
-use glam::Vec2;
-use vello::kurbo::{Affine, Circle as KurboCircle};
-use std::time::Duration;
 
 const DEFAULT_RADIUS: f32 = 50.0;
 const DEFAULT_COLOR: Color = Color::RED;
@@ -87,16 +87,16 @@ impl Node for Circle {
         let radius = self.radius.get();
         let color = self.color.get();
         let opacity = self.opacity.get();
-        
+
         // Combine transforms and opacities
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
-        
+
         let mut final_color = color;
         final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-        
+
         let brush = Brush::Solid(final_color);
-        
+
         scene.fill(
             Fill::NonZero,
             combined_transform,
@@ -107,15 +107,15 @@ impl Node for Circle {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
-        
+
         self.radius.get().to_bits().hash(&mut s);
         let color = self.color.get();
         color.r.hash(&mut s);

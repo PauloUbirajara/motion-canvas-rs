@@ -1,10 +1,10 @@
-use vello::kurbo::{BezPath, Affine, Stroke};
-use vello::peniko::{Brush, Color};
-use vello::Scene;
+use crate::engine::animation::{Node, Signal};
 use glam::Vec2;
 use std::sync::Arc;
 use std::time::Duration;
-use crate::engine::animation::{Node, Signal};
+use vello::kurbo::{Affine, BezPath, Stroke};
+use vello::peniko::{Brush, Color};
+use vello::Scene;
 
 const FLATTEN_TOLERANCE: f64 = 0.1;
 
@@ -19,40 +19,53 @@ impl PathData {
         let mut segments = Vec::new();
         let mut total_length = 0.0;
         let mut last_point: Option<Vec2> = None;
-        vello::kurbo::flatten(&path, FLATTEN_TOLERANCE, |el| {
-            match el {
-                vello::kurbo::PathEl::MoveTo(p) => {
+        vello::kurbo::flatten(&path, FLATTEN_TOLERANCE, |el| match el {
+            vello::kurbo::PathEl::MoveTo(p) => {
+                let pt = Vec2::new(p.x as f32, p.y as f32);
+                segments.push((pt, 0.0));
+                last_point = Some(pt);
+            }
+            vello::kurbo::PathEl::LineTo(p) => {
+                if let Some(last) = last_point {
                     let pt = Vec2::new(p.x as f32, p.y as f32);
-                    segments.push((pt, 0.0));
+                    total_length += last.distance(pt);
+                    segments.push((pt, total_length));
                     last_point = Some(pt);
                 }
-                vello::kurbo::PathEl::LineTo(p) => {
-                    if let Some(last) = last_point {
-                        let pt = Vec2::new(p.x as f32, p.y as f32);
-                        total_length += last.distance(pt);
-                        segments.push((pt, total_length));
-                        last_point = Some(pt);
-                    }
-                }
-                _ => {} 
             }
+            _ => {}
         });
-        Self { path, segments, total_length }
+        Self {
+            path,
+            segments,
+            total_length,
+        }
     }
-    
+
     pub fn sample(&self, t: f32) -> Vec2 {
-        if self.segments.is_empty() { return Vec2::ZERO; }
+        if self.segments.is_empty() {
+            return Vec2::ZERO;
+        }
         let target_len = t.clamp(0.0, 1.0) * self.total_length;
-        let idx = match self.segments.binary_search_by(|&(_, len)| len.partial_cmp(&target_len).unwrap()) {
+        let idx = match self
+            .segments
+            .binary_search_by(|&(_, len)| len.partial_cmp(&target_len).unwrap())
+        {
             Ok(i) => i,
             Err(i) => i,
         };
-        if idx == 0 { return self.segments[0].0; }
-        if idx >= self.segments.len() { return self.segments.last().unwrap().0; }
+        if idx == 0 {
+            return self.segments[0].0;
+        }
+        if idx >= self.segments.len() {
+            return self.segments.last().unwrap().0;
+        }
         let (p1, l1) = self.segments[idx - 1];
         let (p2, l2) = self.segments[idx];
         let segment_len = l2 - l1;
-        if segment_len < 0.0001 { return p2; }
+        if segment_len < 0.0001 {
+            return p2;
+        }
         let t_segment = (target_len - l1) / segment_len;
         p1.lerp(p2, t_segment)
     }
@@ -118,27 +131,33 @@ impl Node for PathNode {
         let width = self.width.get();
         let local_transform = self.transform.get();
         let opacity = self.opacity.get();
-        
+
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
         let mut final_color = color;
         final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-        
+
         let brush = Brush::Solid(final_color);
-        scene.stroke(&Stroke::new(width as f64), combined_transform, &brush, None, &self.data.path);
+        scene.stroke(
+            &Stroke::new(width as f64),
+            combined_transform,
+            &brush,
+            None,
+            &self.data.path,
+        );
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
-        
+
         self.width.get().to_bits().hash(&mut s);
         let color = self.color.get();
         color.r.hash(&mut s);

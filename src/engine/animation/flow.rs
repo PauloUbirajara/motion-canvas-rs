@@ -35,7 +35,14 @@ impl Animation for All {
                 all_finished = false;
             }
         }
-        (all_finished, if all_finished { min_leftover } else { Duration::ZERO })
+        (
+            all_finished,
+            if all_finished {
+                min_leftover
+            } else {
+                Duration::ZERO
+            },
+        )
     }
 
     fn duration(&self) -> Duration {
@@ -77,7 +84,14 @@ impl Animation for Any {
                 }
             }
         }
-        (any_finished, if any_finished { max_leftover } else { Duration::ZERO })
+        (
+            any_finished,
+            if any_finished {
+                max_leftover
+            } else {
+                Duration::ZERO
+            },
+        )
     }
 
     fn duration(&self) -> Duration {
@@ -243,7 +257,11 @@ impl Animation for Sequence {
         let total_finished = all_finished && self.elapsed >= self.duration();
         let final_leftover = if total_finished {
             let dur = self.duration();
-            if self.elapsed > dur { self.elapsed - dur } else { Duration::ZERO }
+            if self.elapsed > dur {
+                self.elapsed - dur
+            } else {
+                Duration::ZERO
+            }
         } else {
             Duration::ZERO
         };
@@ -352,7 +370,11 @@ impl Animation for Wait {
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.elapsed += dt;
         let finished = self.elapsed >= self.duration;
-        let leftover = if finished { self.elapsed - self.duration } else { Duration::ZERO };
+        let leftover = if finished {
+            self.elapsed - self.duration
+        } else {
+            Duration::ZERO
+        };
         (finished, leftover)
     }
 
@@ -375,7 +397,10 @@ where
     Box::new(LoopAnim::new(Box::new(factory), count))
 }
 
-pub fn with_easing(easing: fn(f32) -> f32, animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
+pub fn with_easing(
+    easing: fn(f32) -> f32,
+    animations: Vec<Box<dyn Animation>>,
+) -> Box<dyn Animation> {
     let mut all = All::new(animations);
     all.set_easing(easing);
     Box::new(all)

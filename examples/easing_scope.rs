@@ -50,10 +50,10 @@ fn main() {
             .with_text(name)
             .with_font_size(18.0)
             .with_color(Color::rgb8(0xcc, 0xcc, 0xcc));
-        
+
         project.scene.add(Box::new(ball.clone()));
         project.scene.add(Box::new(label.clone()));
-        
+
         balls.push(ball);
     }
 
@@ -61,29 +61,62 @@ fn main() {
     let configs_clone = easing_configs.clone();
 
     // Loop animation factory
-    project.scene.timeline.add(flows::loop_anim(move || {
-        let balls = &balls_clone;
-        let configs = &configs_clone;
-        
-        // 1. Move to right using individual scoped easings
-        let right_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
-            let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
-            flows::with_easing(*easing, vec![balls[i].transform.to(Affine::translate((end_pos.x as f64, end_pos.y as f64)), ANIM_DURATION_GO).into()])
-        }).collect());
+    project.scene.timeline.add(flows::loop_anim(
+        move || {
+            let balls = &balls_clone;
+            let configs = &configs_clone;
 
-        // 2. Move back to left using the SAME scoped easings
-        let left_anims = flows::all(configs.iter().enumerate().map(|(i, (_, easing))| {
-            let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
-            flows::with_easing(*easing, vec![balls[i].transform.to(Affine::translate((start_pos.x as f64, start_pos.y as f64)), ANIM_DURATION_RETURN).into()])
-        }).collect());
+            // 1. Move to right using individual scoped easings
+            let right_anims = flows::all(
+                configs
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (_, easing))| {
+                        let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
+                        flows::with_easing(
+                            *easing,
+                            vec![balls[i]
+                                .transform
+                                .to(
+                                    Affine::translate((end_pos.x as f64, end_pos.y as f64)),
+                                    ANIM_DURATION_GO,
+                                )
+                                .into()],
+                        )
+                    })
+                    .collect(),
+            );
 
-        flows::chain(vec![
-            right_anims,
-            flows::wait(WAIT_DURATION),
-            left_anims,
-            flows::wait(WAIT_DURATION),
-        ])
-    }, None));
+            // 2. Move back to left using the SAME scoped easings
+            let left_anims = flows::all(
+                configs
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (_, easing))| {
+                        let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
+                        flows::with_easing(
+                            *easing,
+                            vec![balls[i]
+                                .transform
+                                .to(
+                                    Affine::translate((start_pos.x as f64, start_pos.y as f64)),
+                                    ANIM_DURATION_RETURN,
+                                )
+                                .into()],
+                        )
+                    })
+                    .collect(),
+            );
+
+            flows::chain(vec![
+                right_anims,
+                flows::wait(WAIT_DURATION),
+                left_anims,
+                flows::wait(WAIT_DURATION),
+            ])
+        },
+        None,
+    ));
 
     project.show().expect("Failed to render");
 }

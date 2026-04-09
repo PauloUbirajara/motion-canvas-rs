@@ -1,8 +1,8 @@
-use crate::engine::animation::{Signal, Node};
-use vello::Scene;
+use crate::engine::animation::{Node, Signal};
 use glam::Vec2;
-use vello::kurbo::Affine;
 use std::time::Duration;
+use vello::kurbo::Affine;
+use vello::Scene;
 
 pub struct GroupNode {
     pub nodes: Vec<Box<dyn Node>>,
@@ -22,8 +22,7 @@ impl Default for GroupNode {
 
 impl GroupNode {
     pub fn new(nodes: Vec<Box<dyn Node>>) -> Self {
-        Self::default()
-            .with_nodes(nodes)
+        Self::default().with_nodes(nodes)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -79,14 +78,14 @@ impl Node for GroupNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let local_transform = self.transform.get();
         let opacity = self.opacity.get();
-        
+
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
-        
+
         if combined_opacity <= 0.0 {
             return;
         }
-        
+
         for node in &self.nodes {
             node.render(scene, combined_transform, combined_opacity);
         }
@@ -99,20 +98,20 @@ impl Node for GroupNode {
     }
 
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
         self.opacity.get().to_bits().hash(&mut s);
-        
+
         for node in &self.nodes {
             node.state_hash().hash(&mut s);
         }
-        
+
         s.finish()
     }
 

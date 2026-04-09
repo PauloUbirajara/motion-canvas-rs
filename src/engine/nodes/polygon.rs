@@ -1,9 +1,9 @@
-use crate::engine::animation::{Signal, Node};
+use crate::engine::animation::{Node, Signal};
+use glam::Vec2;
+use std::time::Duration;
+use vello::kurbo::{Affine, BezPath, Stroke};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
-use glam::Vec2;
-use vello::kurbo::{Affine, BezPath, Stroke};
-use std::time::Duration;
 
 const DEFAULT_FILL_COLOR: Color = Color::RED;
 const DEFAULT_STROKE_COLOR: Color = Color::TRANSPARENT;
@@ -94,7 +94,8 @@ impl Polygon {
     pub fn regular(position: Vec2, sides: u32, radius: f32, color: Color) -> Self {
         let mut points = Vec::new();
         for i in 0..sides {
-            let angle = (i as f32 / sides as f32) * 2.0 * std::f32::consts::PI - std::f32::consts::PI / 2.0;
+            let angle =
+                (i as f32 / sides as f32) * 2.0 * std::f32::consts::PI - std::f32::consts::PI / 2.0;
             points.push(Vec2::new(angle.cos() * radius, angle.sin() * radius));
         }
         Self::new(position, points, color)
@@ -104,14 +105,16 @@ impl Polygon {
 impl Node for Polygon {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let points = self.points.get();
-        if points.len() < 2 { return; }
+        if points.len() < 2 {
+            return;
+        }
 
         let fill_color = self.fill_color.get();
         let stroke_color = self.stroke_color.get();
         let stroke_width = self.stroke_width.get();
         let local_transform = self.transform.get();
         let opacity = self.opacity.get();
-        
+
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
@@ -126,28 +129,40 @@ impl Node for Polygon {
         // Fill
         let mut final_fill = fill_color;
         final_fill.a = (fill_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-        scene.fill(Fill::NonZero, combined_transform, &Brush::Solid(final_fill), None, &path);
+        scene.fill(
+            Fill::NonZero,
+            combined_transform,
+            &Brush::Solid(final_fill),
+            None,
+            &path,
+        );
 
         // Stroke
         if stroke_width > 0.001 {
             let mut final_stroke = stroke_color;
             final_stroke.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-            scene.stroke(&Stroke::new(stroke_width as f64), combined_transform, &Brush::Solid(final_stroke), None, &path);
+            scene.stroke(
+                &Stroke::new(stroke_width as f64),
+                combined_transform,
+                &Brush::Solid(final_stroke),
+                None,
+                &path,
+            );
         }
     }
 
     fn update(&mut self, _dt: Duration) {}
 
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
-        
+
         for p in self.points.get() {
             p.x.to_bits().hash(&mut s);
             p.y.to_bits().hash(&mut s);
@@ -158,16 +173,16 @@ impl Node for Polygon {
         color.g.hash(&mut s);
         color.b.hash(&mut s);
         color.a.hash(&mut s);
-        
+
         let s_color = self.stroke_color.get();
         s_color.r.hash(&mut s);
         s_color.g.hash(&mut s);
         s_color.b.hash(&mut s);
         s_color.a.hash(&mut s);
-        
+
         self.stroke_width.get().to_bits().hash(&mut s);
         self.opacity.get().to_bits().hash(&mut s);
-        
+
         s.finish()
     }
 

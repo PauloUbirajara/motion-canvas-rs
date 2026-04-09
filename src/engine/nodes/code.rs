@@ -1,29 +1,30 @@
 //! Code highlighting and animation module.
-//! 
+//!
 //! Credits: The token-based animation logic and diffing approach is inspired by
 //! [shiki-magic-move](https://github.com/shikijs/shiki-magic-move).
 
-use crate::engine::animation::{Signal, Node, Tweenable};
+use crate::engine::animation::{Node, Signal, Tweenable};
 use crate::engine::font::FontManager;
-use vello::peniko::{Brush, Color, Fill};
-use vello::Scene;
 use glam::Vec2;
-use vello::kurbo::{Affine, BezPath};
-use std::time::Duration;
-use skrifa::MetadataProvider;
-use skrifa::instance::{Size, LocationRef};
-use syntect::parsing::SyntaxSet;
-use syntect::highlighting::ThemeSet;
-use syntect::easy::HighlightLines;
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 use lazy_static::lazy_static;
 use similar::TextDiff;
+use skrifa::instance::{LocationRef, Size};
+use skrifa::MetadataProvider;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use syntect::easy::HighlightLines;
+use syntect::highlighting::ThemeSet;
+use syntect::parsing::SyntaxSet;
+use vello::kurbo::{Affine, BezPath};
+use vello::peniko::{Brush, Color, Fill};
+use vello::Scene;
 
 lazy_static! {
     static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
-    static ref GLOBAL_CODE_CACHE: Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_CODE_CACHE: Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>> =
+        Mutex::new(HashMap::new());
 }
 
 const DEFAULT_FONT_SIZE: f32 = 24.0;
@@ -88,17 +89,23 @@ impl CodeValue {
 
 fn strip_common_indent(text: &str) -> String {
     let lines: Vec<&str> = text.lines().collect();
-    if lines.is_empty() { return text.to_string(); }
+    if lines.is_empty() {
+        return text.to_string();
+    }
 
-    let min_indent = lines.iter()
+    let min_indent = lines
+        .iter()
         .filter(|l| !l.trim().is_empty())
         .map(|l| l.chars().take_while(|c| c.is_whitespace()).count())
         .min()
         .unwrap_or(0);
 
-    if min_indent == 0 { return text.to_string(); }
+    if min_indent == 0 {
+        return text.to_string();
+    }
 
-    lines.iter()
+    lines
+        .iter()
         .map(|l| {
             if l.trim().is_empty() {
                 ""
@@ -123,8 +130,12 @@ impl Default for CodeValue {
 
 impl Tweenable for CodeValue {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
-        if t <= 0.0 { return a.clone(); }
-        if t >= 1.0 { return b.clone(); }
+        if t <= 0.0 {
+            return a.clone();
+        }
+        if t >= 1.0 {
+            return b.clone();
+        }
 
         // If both text and highlights are identical, no need to transition
         if a.text == b.text && a.selection == b.selection {
@@ -133,9 +144,17 @@ impl Tweenable for CodeValue {
 
         // Find matches between a and b tokens using similar crate
         // We include color in the key to distinguish tokens better
-        let a_toks: Vec<String> = a.tokens.iter().map(|t| format!("{}{:?}", t.text, t.color)).collect();
-        let b_toks: Vec<String> = b.tokens.iter().map(|t| format!("{}{:?}", t.text, t.color)).collect();
-        
+        let a_toks: Vec<String> = a
+            .tokens
+            .iter()
+            .map(|t| format!("{}{:?}", t.text, t.color))
+            .collect();
+        let b_toks: Vec<String> = b
+            .tokens
+            .iter()
+            .map(|t| format!("{}{:?}", t.text, t.color))
+            .collect();
+
         // similar::diff_slices works best with &[&str]
         let a_tok_refs: Vec<&str> = a_toks.iter().map(|s| s.as_str()).collect();
         let b_tok_refs: Vec<&str> = b_toks.iter().map(|s| s.as_str()).collect();
@@ -144,10 +163,14 @@ impl Tweenable for CodeValue {
             .algorithm(similar::Algorithm::Patience)
             .diff_slices(&a_tok_refs, &b_tok_refs);
         let mut matches = Vec::new();
-        
+
         for op in diff.ops() {
             match *op {
-                similar::DiffOp::Equal { old_index, new_index, len } => {
+                similar::DiffOp::Equal {
+                    old_index,
+                    new_index,
+                    len,
+                } => {
                     for i in 0..len {
                         matches.push((old_index + i, new_index + i));
                     }
@@ -298,50 +321,82 @@ impl CodeNode {
         self
     }
 
-    pub fn edit(&self, code: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+    pub fn edit(
+        &self,
+        code: &str,
+        duration: Duration,
+    ) -> crate::engine::animation::SignalTween<CodeValue> {
         let code = code.to_string();
         let node = self.clone();
-        self.code.to_lazy(move |current| {
-            let mut next_value = CodeValue::new(code, &node);
-            next_value.selection = current.selection.clone();
-            next_value
-        }, duration)
+        self.code.to_lazy(
+            move |current| {
+                let mut next_value = CodeValue::new(code, &node);
+                next_value.selection = current.selection.clone();
+                next_value
+            },
+            duration,
+        )
     }
 
-    pub fn append(&self, text: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+    pub fn append(
+        &self,
+        text: &str,
+        duration: Duration,
+    ) -> crate::engine::animation::SignalTween<CodeValue> {
         let text = text.to_string();
         let node = self.clone();
-        self.code.to_lazy(move |current| {
-            let next_text = format!("{}{}", current.text, text);
-            let mut next_val = CodeValue::new(next_text, &node);
-            next_val.selection = current.selection.clone();
-            next_val
-        }, duration)
+        self.code.to_lazy(
+            move |current| {
+                let next_text = format!("{}{}", current.text, text);
+                let mut next_val = CodeValue::new(next_text, &node);
+                next_val.selection = current.selection.clone();
+                next_val
+            },
+            duration,
+        )
     }
 
-    pub fn prepend(&self, text: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+    pub fn prepend(
+        &self,
+        text: &str,
+        duration: Duration,
+    ) -> crate::engine::animation::SignalTween<CodeValue> {
         let text = text.to_string();
         let node = self.clone();
-        self.code.to_lazy(move |current| {
-            let next_text = format!("{}{}", text, current.text);
-            let mut next_val = CodeValue::new(next_text, &node);
-            next_val.selection = current.selection.clone();
-            next_val
-        }, duration)
+        self.code.to_lazy(
+            move |current| {
+                let next_text = format!("{}{}", text, current.text);
+                let mut next_val = CodeValue::new(next_text, &node);
+                next_val.selection = current.selection.clone();
+                next_val
+            },
+            duration,
+        )
     }
 
-    pub fn select_lines(&self, lines: Vec<usize>, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
-        self.code.to_lazy(move |current| {
-            let mut next_value = current.clone();
-            next_value.transition = None; // Reset transition for the target
-            next_value.selection = lines;
-            next_value
-        }, duration)
+    pub fn select_lines(
+        &self,
+        lines: Vec<usize>,
+        duration: Duration,
+    ) -> crate::engine::animation::SignalTween<CodeValue> {
+        self.code.to_lazy(
+            move |current| {
+                let mut next_value = current.clone();
+                next_value.transition = None; // Reset transition for the target
+                next_value.selection = lines;
+                next_value
+            },
+            duration,
+        )
     }
 
     /// Select lines using a printer-style selection string (e.g., "1-3, 5").
     /// Uses 1-based indexing for user convenience.
-    pub fn select_string(&self, selection: &str, duration: Duration) -> crate::engine::animation::SignalTween<CodeValue> {
+    pub fn select_string(
+        &self,
+        selection: &str,
+        duration: Duration,
+    ) -> crate::engine::animation::SignalTween<CodeValue> {
         let lines = self.parse_selection(selection);
         self.select_lines(lines, duration)
     }
@@ -353,7 +408,9 @@ impl CodeNode {
             if part.contains('-') {
                 let mut bounds = part.split('-');
                 if let (Some(start_str), Some(end_str)) = (bounds.next(), bounds.next()) {
-                    if let (Ok(start), Ok(end)) = (start_str.parse::<usize>(), end_str.parse::<usize>()) {
+                    if let (Ok(start), Ok(end)) =
+                        (start_str.parse::<usize>(), end_str.parse::<usize>())
+                    {
                         for i in start..=end {
                             if i > 0 {
                                 lines.push(i - 1);
@@ -387,12 +444,19 @@ impl CodeNode {
         }
 
         let mut tokens = Vec::new();
-        let syntax = SYNTAX_SET.find_syntax_by_extension(&self.language)
+        let syntax = SYNTAX_SET
+            .find_syntax_by_extension(&self.language)
             .or_else(|| SYNTAX_SET.find_syntax_by_name(&self.language))
             .or_else(|| SYNTAX_SET.find_syntax_by_name(&self.language.to_lowercase()))
-            .or_else(|| SYNTAX_SET.find_syntax_by_name(&format!("{}{}", (&self.language[..1]).to_uppercase(), &self.language[1..])))
+            .or_else(|| {
+                SYNTAX_SET.find_syntax_by_name(&format!(
+                    "{}{}",
+                    (&self.language[..1]).to_uppercase(),
+                    &self.language[1..]
+                ))
+            })
             .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text());
-        
+
         let theme_name = if THEME_SET.themes.contains_key(&self.theme) {
             &self.theme
         } else {
@@ -402,7 +466,12 @@ impl CodeNode {
         let mut h = HighlightLines::new(syntax, theme);
         let mut y_offset = 0.0;
 
-        if let Some(font_data) = FontManager::get_font_with_fallback(&[&self.font_family, "Fira Code", "Courier New", "monospace"]) {
+        if let Some(font_data) = FontManager::get_font_with_fallback(&[
+            &self.font_family,
+            "Fira Code",
+            "Courier New",
+            "monospace",
+        ]) {
             let font_ref = FontManager::get_font_ref(&font_data);
             let charmap = font_ref.charmap();
             let outlines = font_ref.outline_glyphs();
@@ -417,28 +486,32 @@ impl CodeNode {
                     let mut token_text = String::new();
                     let mut glyphs = Vec::new();
                     let mut token_width = 0.0;
-                    
+
                     for c in text.chars() {
                         let glyph_id = charmap.map(c).unwrap_or_default();
                         let mut pb = BezPath::new();
                         let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
-                        
+
                         if let Some(glyph) = outlines.get(glyph_id) {
                             let mut sink = PathSink(&mut pb);
                             let font_size = Size::new(size);
                             let _ = glyph.draw(font_size, &mut sink);
-                            
-                            if let Some(metrics) = font_ref.glyph_metrics(font_size, LocationRef::default()).advance_width(glyph_id) {
+
+                            if let Some(metrics) = font_ref
+                                .glyph_metrics(font_size, LocationRef::default())
+                                .advance_width(glyph_id)
+                            {
                                 advance = metrics as f64;
                             }
                         }
-                        
-                        let base_transform = Affine::translate((token_width, size as f64)) * Affine::scale_non_uniform(1.0, -1.0);
+
+                        let base_transform = Affine::translate((token_width, size as f64))
+                            * Affine::scale_non_uniform(1.0, -1.0);
                         glyphs.push((base_transform, pb));
                         token_width += advance;
                         token_text.push(c);
                     }
-                    
+
                     tokens.push(Token {
                         text: token_text,
                         color,
@@ -448,7 +521,7 @@ impl CodeNode {
                         width: token_width as f32,
                         line_index: line_idx,
                     });
-                    
+
                     x_offset += token_width;
                 }
                 y_offset += (size * LINE_HEIGHT_MULTIPLIER) as f64;
@@ -464,11 +537,26 @@ impl CodeNode {
 struct PathSink<'a>(&'a mut BezPath);
 
 impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
-    fn move_to(&mut self, x: f32, y: f32) { self.0.move_to((x as f64, y as f64)); }
-    fn line_to(&mut self, x: f32, y: f32) { self.0.line_to((x as f64, y as f64)); }
-    fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) { self.0.quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64)); }
-    fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) { self.0.curve_to((cx0 as f64, cy0 as f64), (cx1 as f64, cy1 as f64), (x as f64, y as f64)); }
-    fn close(&mut self) { self.0.close_path(); }
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.0.move_to((x as f64, y as f64));
+    }
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.0.line_to((x as f64, y as f64));
+    }
+    fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) {
+        self.0
+            .quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
+    }
+    fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
+        self.0.curve_to(
+            (cx0 as f64, cy0 as f64),
+            (cx1 as f64, cy1 as f64),
+            (x as f64, y as f64),
+        );
+    }
+    fn close(&mut self) {
+        self.0.close_path();
+    }
 }
 
 impl Node for CodeNode {
@@ -483,54 +571,78 @@ impl Node for CodeNode {
 
         if let Some(trans) = &code_val.transition {
             let p = trans.progress;
-            
+
             let mut matched_from = vec![false; trans.from_tokens.len()];
             let mut matched_to = vec![false; trans.to_tokens.len()];
-            
+
             // 1. Draw moving matches
             for &(from_idx, to_idx) in &trans.matches {
                 let from = &trans.from_tokens[from_idx];
                 let to = &trans.to_tokens[to_idx];
-                
+
                 let current_pos = from.pos.lerp(to.pos, p);
                 let current_color = Color::interpolate(&from.color, &to.color, p);
-                
+
                 let scale = if from.size != to.size {
                     (from.size + (to.size - from.size) * p) / to.size
                 } else {
                     1.0
                 };
 
-                let from_is_dimmed = !trans.from_selection.is_empty() && !trans.from_selection.contains(&from.line_index);
-                let to_is_dimmed = !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
-                
+                let from_is_dimmed = !trans.from_selection.is_empty()
+                    && !trans.from_selection.contains(&from.line_index);
+                let to_is_dimmed =
+                    !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
+
                 let from_dim = if from_is_dimmed { dim_factor } else { 1.0 };
                 let to_dim = if to_is_dimmed { dim_factor } else { 1.0 };
                 let current_dim = from_dim + (to_dim - from_dim) * p;
 
-                draw_token(scene, root_transform * Affine::translate((current_pos.x as f64, current_pos.y as f64)) * Affine::scale(scale as f64), to, current_color, combined_opacity * current_dim);
-                
+                draw_token(
+                    scene,
+                    root_transform
+                        * Affine::translate((current_pos.x as f64, current_pos.y as f64))
+                        * Affine::scale(scale as f64),
+                    to,
+                    current_color,
+                    combined_opacity * current_dim,
+                );
+
                 matched_from[from_idx] = true;
                 matched_to[to_idx] = true;
             }
-            
+
             // Draw unmatched from-tokens (vanishing)
             for (i, matched) in matched_from.iter().enumerate() {
                 if !*matched {
                     let from = &trans.from_tokens[i];
-                    let is_dimmed = !trans.from_selection.is_empty() && !trans.from_selection.contains(&from.line_index);
+                    let is_dimmed = !trans.from_selection.is_empty()
+                        && !trans.from_selection.contains(&from.line_index);
                     let dim = if is_dimmed { dim_factor } else { 1.0 };
-                    draw_token(scene, root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)), from, from.color, combined_opacity * dim * (1.0 - p));
+                    draw_token(
+                        scene,
+                        root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)),
+                        from,
+                        from.color,
+                        combined_opacity * dim * (1.0 - p),
+                    );
                 }
             }
-            
+
             // Draw unmatched to-tokens (appearing)
             for (i, matched) in matched_to.iter().enumerate() {
                 if !*matched {
                     let to = &trans.to_tokens[i];
-                    let is_dimmed = !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
+                    let is_dimmed = !trans.to_selection.is_empty()
+                        && !trans.to_selection.contains(&to.line_index);
                     let dim = if is_dimmed { dim_factor } else { 1.0 };
-                    draw_token(scene, root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)), to, to.color, combined_opacity * dim * p);
+                    draw_token(
+                        scene,
+                        root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)),
+                        to,
+                        to.color,
+                        combined_opacity * dim * p,
+                    );
                 }
             }
         } else {
@@ -540,7 +652,13 @@ impl Node for CodeNode {
             for token in &code_val.tokens {
                 let is_selected = !has_selection || code_val.selection.contains(&token.line_index);
                 let dim = if is_selected { 1.0 } else { dim_factor };
-                draw_token(scene, root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)), token, token.color, combined_opacity * dim);
+                draw_token(
+                    scene,
+                    root_transform * Affine::translate((token.pos.x as f64, token.pos.y as f64)),
+                    token,
+                    token.color,
+                    combined_opacity * dim,
+                );
             }
         }
     }
@@ -548,15 +666,15 @@ impl Node for CodeNode {
     fn update(&mut self, _dt: Duration) {}
 
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
-        
+
         self.font_size.get().to_bits().hash(&mut s);
         let val = self.code.get();
         val.text.hash(&mut s);
@@ -576,14 +694,22 @@ impl Node for CodeNode {
 }
 
 fn draw_token(scene: &mut Scene, transform: Affine, token: &Token, color: Color, opacity: f32) {
-    if opacity <= 0.0 { return; }
+    if opacity <= 0.0 {
+        return;
+    }
     let mut c = color;
-    // We need to be careful with alpha. 
+    // We need to be careful with alpha.
     // Multiply the token's original alpha by the transition opacity.
     let alpha = (color.a as f32 * opacity).clamp(0.0, 255.0) as u8;
     c.a = alpha;
     let brush = Brush::Solid(c);
     for (glyph_transform, pb) in &token.glyphs {
-        scene.fill(Fill::NonZero, transform * *glyph_transform, &brush, None, pb);
+        scene.fill(
+            Fill::NonZero,
+            transform * *glyph_transform,
+            &brush,
+            None,
+            pb,
+        );
     }
 }

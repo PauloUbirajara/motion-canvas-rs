@@ -43,10 +43,12 @@ fn main() {
 
     let code_block = CodeNode::default()
         .with_position(Vec2::new(50.0, 400.0))
-        .with_code(r#"fn main() {
+        .with_code(
+            r#"fn main() {
     let mut engine = MotionCanvas::new();
     engine.render();
-}"#)
+}"#,
+        )
         .with_language("rust");
 
     let math_eq = MathNode::default()

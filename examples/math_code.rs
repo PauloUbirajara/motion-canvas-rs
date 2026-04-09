@@ -38,8 +38,8 @@ fn main() {
             lines[1].clone_node(),
             lines[2].clone_node(),
         ])
-    .with_position(Vec2::new(300.0, 200.0))
-    .with_scale(0.0);
+        .with_position(Vec2::new(300.0, 200.0))
+        .with_scale(0.0);
 
     let pytagorean_theorem = MathNode::default()
         .with_position(Vec2::new(50.0, 200.0))
@@ -67,5 +67,5 @@ fn main() {
         ]
     ]);
 
-    project.show().expect("Failed to render");
+    project.export().expect("Failed to render");
 }

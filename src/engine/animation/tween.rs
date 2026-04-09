@@ -31,7 +31,8 @@ impl Tweenable for Vec2 {
 impl Tweenable for Vec<Vec2> {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         if a.len() == b.len() {
-            a.iter().zip(b.iter())
+            a.iter()
+                .zip(b.iter())
                 .map(|(v1, v2)| Vec2::interpolate(v1, v2, t))
                 .collect()
         } else if t >= 1.0 {
@@ -96,7 +97,9 @@ pub trait FromVec2: Send + Sync + 'static {
 }
 
 impl FromVec2 for Vec2 {
-    fn from_vec2(v: Vec2) -> Self { v }
+    fn from_vec2(v: Vec2) -> Self {
+        v
+    }
 }
 
 impl FromVec2 for Affine {
@@ -202,7 +205,7 @@ impl<T: Tweenable> Animation for SignalTween<T> {
         if self.start_value.is_none() {
             let current = self.data.lock().unwrap().value.clone();
             self.start_value = Some(current.clone());
-            
+
             // Evaluate lazy target if needed
             match std::mem::replace(&mut self.target, Target::Fixed(current.clone())) {
                 Target::Fixed(v) => self.target_value = Some(v),
@@ -220,8 +223,12 @@ impl<T: Tweenable> Animation for SignalTween<T> {
 
         self.elapsed += dt;
         let finished = self.elapsed >= self.duration;
-        let leftover = if finished { self.elapsed - self.duration } else { Duration::ZERO };
-        
+        let leftover = if finished {
+            self.elapsed - self.duration
+        } else {
+            Duration::ZERO
+        };
+
         let t_linear = (self.elapsed.as_secs_f32() / self.duration.as_secs_f32()).min(1.0);
         let t_eased = (self.easing)(t_linear);
 
@@ -266,8 +273,12 @@ impl<T: Tweenable + FromVec2> Animation for FollowPath<T> {
 
         self.elapsed += dt;
         let finished = self.elapsed >= self.duration;
-        let leftover = if finished { self.elapsed - self.duration } else { Duration::ZERO };
-        
+        let leftover = if finished {
+            self.elapsed - self.duration
+        } else {
+            Duration::ZERO
+        };
+
         let t_linear = (self.elapsed.as_secs_f32() / self.duration.as_secs_f32()).min(1.0);
         let t_eased = (self.easing)(t_linear);
 

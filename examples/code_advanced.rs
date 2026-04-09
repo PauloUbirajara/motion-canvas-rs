@@ -6,9 +6,11 @@ fn main() {
 
     let code = CodeNode::default()
         .with_position(Vec2::new(50.0, 50.0))
-        .with_code(r#"fn main() {
+        .with_code(
+            r#"fn main() {
     println!("Hello");
-}"#)
+}"#,
+        )
         .with_language("rust")
         .with_font_size(32.0)
         .with_dim_opacity(0.1);

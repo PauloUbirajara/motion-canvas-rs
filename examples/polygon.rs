@@ -28,9 +28,10 @@ fn main() {
 
     // Animate rotation and opacity
     project.scene.timeline.add(all![
-        pentagon
-            .transform
-            .to(pentagon.transform.get() * Affine::rotate(std::f64::consts::PI), Duration::from_secs(2)),
+        pentagon.transform.to(
+            pentagon.transform.get() * Affine::rotate(std::f64::consts::PI),
+            Duration::from_secs(2)
+        ),
         flows::chain![
             triangle.opacity.to(0.2, Duration::from_secs(1)),
             triangle.opacity.to(1.0, Duration::from_secs(1)),

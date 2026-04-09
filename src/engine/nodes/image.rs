@@ -1,12 +1,12 @@
-use crate::engine::animation::{Signal, Node};
-use vello::peniko::{Image as PenikoImage, Format, Extend, Blob};
-use vello::Scene;
+use crate::engine::animation::{Node, Signal};
 use glam::Vec2;
-use vello::kurbo::Affine;
-use std::time::Duration;
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use vello::kurbo::Affine;
+use vello::peniko::{Blob, Extend, Format, Image as PenikoImage};
+use vello::Scene;
 
 lazy_static! {
     static ref IMAGE_CACHE: Mutex<HashMap<String, Arc<PenikoImage>>> = Mutex::new(HashMap::new());
@@ -25,11 +25,16 @@ impl ImageManager {
             let svg_data = std::fs::read(path).ok()?;
             let opt = usvg::Options::default();
             let tree = usvg::Tree::from_data(&svg_data, &opt).ok()?;
-            
+
             let size = tree.size();
-            let mut pixmap = resvg::tiny_skia::Pixmap::new(size.width() as u32, size.height() as u32)?;
-            resvg::render(&tree, resvg::tiny_skia::Transform::default(), &mut pixmap.as_mut());
-            
+            let mut pixmap =
+                resvg::tiny_skia::Pixmap::new(size.width() as u32, size.height() as u32)?;
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::default(),
+                &mut pixmap.as_mut(),
+            );
+
             let data = Arc::new(pixmap.take());
             let peniko_img = Arc::new(PenikoImage {
                 data: Blob::new(data),
@@ -62,7 +67,7 @@ impl ImageManager {
                 eprintln!("Error: Failed to load image at '{}': {}", path, e);
             }
         }
-        
+
         None
     }
 }
@@ -88,9 +93,7 @@ impl Default for ImageNode {
 
 impl ImageNode {
     pub fn new(pos: Vec2, path: &str) -> Self {
-        Self::default()
-            .with_position(pos)
-            .with_path(path)
+        Self::default().with_position(pos).with_path(path)
     }
 
     pub fn with_transform(mut self, transform: Affine) -> Self {
@@ -148,17 +151,24 @@ impl Node for ImageNode {
             let opacity = self.opacity.get();
             let final_opacity = opacity * parent_opacity;
 
-            if final_opacity <= 0.0 { return; }
+            if final_opacity <= 0.0 {
+                return;
+            }
 
-            let transform = parent_transform 
+            let transform = parent_transform
                 * local_transform
                 * Affine::scale_non_uniform(
                     size.x as f64 / img.width as f64,
-                    size.y as f64 / img.height as f64
+                    size.y as f64 / img.height as f64,
                 );
 
             if final_opacity < 1.0 {
-                scene.push_layer(vello::peniko::Mix::Normal, final_opacity, transform, &vello::kurbo::Rect::new(0.0, 0.0, img.width as f64, img.height as f64));
+                scene.push_layer(
+                    vello::peniko::Mix::Normal,
+                    final_opacity,
+                    transform,
+                    &vello::kurbo::Rect::new(0.0, 0.0, img.width as f64, img.height as f64),
+                );
                 scene.draw_image(img, Affine::IDENTITY);
                 scene.pop_layer();
             } else {
@@ -168,15 +178,15 @@ impl Node for ImageNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        
+
         let coeffs = self.transform.get().as_coeffs();
         for c in coeffs {
             c.to_bits().hash(&mut s);
         }
-        
+
         self.size.get().x.to_bits().hash(&mut s);
         self.size.get().y.to_bits().hash(&mut s);
         self.opacity.get().to_bits().hash(&mut s);

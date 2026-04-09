@@ -11,7 +11,7 @@ fn main() {
         .with_size(Vec2::new(100.0, 100.0))
         .with_color(Color::rgba8(100, 100, 255, 255))
         .with_radius(10.0);
-    
+
     let circle1 = Circle::default()
         .with_position(Vec2::new(-40.0, -40.0))
         .with_radius(20.0)
@@ -29,7 +29,7 @@ fn main() {
             Box::new(circle1.clone()),
             Box::new(circle2.clone()),
         ])
-    .with_position(Vec2::new(400.0, 300.0));
+        .with_position(Vec2::new(400.0, 300.0));
 
     // We must add the group to the scene's nodes to render it
     project.scene.add(Box::new(group.clone()));
@@ -37,26 +37,27 @@ fn main() {
     // Define animations and add them to the timeline
     project.scene.timeline.add(chain![
         // 1. Move the whole group using a matrix
-        group.transform.to(Affine::translate((200.0, 150.0)), Duration::from_secs(2)),
-        
+        group
+            .transform
+            .to(Affine::translate((200.0, 150.0)), Duration::from_secs(2)),
         // 2. Rotate the group using a matrix
         group.transform.to(
-            Affine::translate((200.0, 150.0)) * Affine::rotate(std::f64::consts::PI), 
+            Affine::translate((200.0, 150.0)) * Affine::rotate(std::f64::consts::PI),
             Duration::from_secs(2)
         ),
-        
         // 3. Complex transform (move + scale)
         all![
             group.transform.to(
-                Affine::translate((400.0, 450.0)) * Affine::scale(2.0), 
+                Affine::translate((400.0, 450.0)) * Affine::scale(2.0),
                 Duration::from_secs(2)
             ),
             group.opacity.to(0.3, Duration::from_secs(2)),
         ],
-
         // 4. Reset to identity (at the center)
         all![
-            group.transform.to(Affine::translate((400.0, 300.0)), Duration::from_secs(1)),
+            group
+                .transform
+                .to(Affine::translate((400.0, 300.0)), Duration::from_secs(1)),
             group.opacity.to(1.0, Duration::from_secs(1)),
         ],
     ]);

@@ -62,7 +62,10 @@ impl FontManager {
         None
     }
 
-    pub fn register_font(name: &str, path: impl AsRef<std::path::Path>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn register_font(
+        name: &str,
+        path: impl AsRef<std::path::Path>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let data = std::fs::read(path)?;
         let font_data = Arc::new(FontData {
             name: name.to_string(),
