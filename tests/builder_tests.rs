@@ -125,23 +125,15 @@ fn test_image_builder() {
 #[test]
 fn test_project_frame_naming() {
     let project = Project::default()
-        .with_title(" My Project (Demo) ")
-        .with_frame_template("{title}_{:04}.png");
+        .with_title(" My Project (Demo) ");
     
     let name = project.get_frame_name(42);
     assert_eq!(name, "my_project_demo_0042.png");
     
-    // Test custom template without title placeholder
-    let project_custom = Project::default()
-        .with_title("Title")
-        .with_frame_template("custom_{:04}.png");
-    let name_custom = project_custom.get_frame_name(1);
-    assert_eq!(name_custom, "custom_0001.png");
-
     // Test default behavior with complex title
     let project_default = Project::default()
         .with_title("New  Project")
-        .close_on_finish(); // Use default template "{title}_{:04}.png"
+        .close_on_finish();
     let name_default = project_default.get_frame_name(0);
     assert_eq!(name_default, "new_project_0000.png");
 }

@@ -18,7 +18,6 @@ const DEFAULT_WIDTH: u32 = 800;
 const DEFAULT_HEIGHT: u32 = 600;
 const DEFAULT_TITLE: &str = "motion-canvas-rs";
 const DEFAULT_OUTPUT_PATH: &str = "output";
-const DEFAULT_FRAME_TEMPLATE: &str = "{title}_{:04}.png";
 const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
@@ -36,7 +35,6 @@ pub struct Project {
     pub title: String,
     pub scene: BaseScene,
     pub output_path: PathBuf,
-    pub frame_template: String,
     pub use_cache: bool,
     pub use_ffmpeg: bool,
     pub use_gpu: bool,
@@ -53,7 +51,6 @@ impl Project {
             title: DEFAULT_TITLE.to_string(),
             scene: BaseScene::new(),
             output_path: PathBuf::from(DEFAULT_OUTPUT_PATH),
-            frame_template: DEFAULT_FRAME_TEMPLATE.to_string(),
             use_cache: DEFAULT_USE_CACHE,
             use_ffmpeg: DEFAULT_USE_FFMPEG,
             use_gpu: DEFAULT_USE_GPU,
@@ -96,10 +93,6 @@ impl Project {
         self
     }
 
-    pub fn with_frame_template(mut self, template: &str) -> Self {
-        self.frame_template = template.to_string();
-        self
-    }
 
     pub fn with_ffmpeg(mut self, use_ffmpeg: bool) -> Self {
         self.use_ffmpeg = use_ffmpeg;
@@ -344,22 +337,6 @@ impl Project {
 
     pub fn get_frame_name(&self, frame_count: u32) -> String {
         let sanitized = self.sanitize_title();
-        let template = self.frame_template.replace("{title}", &sanitized);
-
-        if template.contains("{:04}") {
-            return template.replace("{:04}", &format!("{:04}", frame_count));
-        }
-
-        if template.contains(&format!("{:04}", frame_count)) {
-            return template;
-        }
-
-        // Fallback: If no placeholder exists and no frame count is present, append it before extension
-        if let Some(pos) = template.rfind('.') {
-            let (base, ext) = template.split_at(pos);
-            return format!("{}_{:04}{}", base, frame_count, ext);
-        }
-
-        format!("{}_{:04}", template, frame_count)
+        format!("{}_{:04}.png", sanitized, frame_count)
     }
 }
