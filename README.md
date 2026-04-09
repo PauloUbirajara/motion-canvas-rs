@@ -1,6 +1,6 @@
 # Motion Canvas in Rust
 
-![example](examples/images/motion-canvas-rs.svg)
+![Motion Canvas Banner](https://github.com/user-attachments/assets/e951737f-36ed-4a5a-829a-9643c7c1a3d8)
 
 A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst.
 
@@ -25,8 +25,7 @@ cargo add motion-canvas-rs --features math,image
 |:---|:---|:---|
 | `math` | Typst-powered LaTeX math rendering. | `MathNode` |
 | `code` | Syntax-highlighted code blocks via Syntect. | `CodeNode` |
-| `image` | Bitmap image support (PNG, JPEG, etc.). | `ImageNode` |
-| `svg` | Vector graphics support using `resvg`. | `SvgNode` |
+| `image` | Bitmap (PNG, JPEG) and Vector (SVG) support. | `ImageNode` |
 | `export` | Headless frame rendering and video generation. | `project.export()` |
 | `full` | Meta-feature that enables all of the above. | Everything |
 
@@ -36,6 +35,22 @@ cargo add motion-canvas-rs --features math,image
 - **Easing Library**: 30+ standardized easing functions.
 - **FFmpeg Integration**: Direct streaming of animation frames to video.
 - **Clean API**: Streamlined prelude for high-speed prototyping.
+- **Node Primitives**: Built-in support for Circles, Rects, Polygons, Lines, and Groups.
+
+## Supported Nodes
+
+| Node | Description | Features |
+|:---|:---|:---|
+| `Circle` | Basic circle primitive. | `radius`, `color`, `transform` |
+| `Rect` | Rectangle with optional corner radius. | `size`, `radius`, `color` |
+| `Polygon` | Regular and custom polygon shapes. | `points`, `fill`, `stroke` |
+| `Line` | Simple line between two points. | `start`, `end`, `width` |
+| `PathNode` | Complex path sampling and animation. | `arc-length`, `sample` |
+| `TextNode` | High-quality text rendering (skrifa). | `text`, `font_size`, `family` |
+| `MathNode` | Typst-powered mathematical formulas. | `LaTeX`, `smooth-transitions` |
+| `CodeNode` | Syntax-highlighted code with transitions. | `syntect`, `magic-move` |
+| `ImageNode` | Bitmap and SVG image display. | `png`, `jpeg`, `svg` |
+| `GroupNode` | Hierarchical grouping of any nodes. | `children`, `inherited-opacity` |
 
 ## Project Structure
 
@@ -54,17 +69,30 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::new(800, 600);
+    // Project::default() uses default values (800x600, 60fps)
+    let mut project = Project::default()
+        .with_title("Quick Start")
+        .with_background(Color::rgb8(0x1a, 0x1a, 0x1a));
 
-    let circle = Circle::new(Vec2::new(400.0, 300.0), 50.0, Color::RED);
-    let text = TextNode::new(Vec2::new(400.0, 450.0), "Hello Rust", 40.0, Color::WHITE);
+    // Nodes support a builder pattern and Default traits
+    let circle = Circle::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_radius(100.0)
+        .with_color(Color::RED);
+
+    let text = TextNode::default()
+        .with_position(Vec2::new(400.0, 300.0))
+        .with_text("Hello Motion Canvas!")
+        .with_font_size(48.0)
+        .with_color(Color::WHITE);
 
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(text.clone()));
 
     project.scene.timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
-        text.position.to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
+        text.transform
+            .to(Affine::translate((400.0, 500.0)), Duration::from_secs(1)),
     ]);
 
     project.show().expect("Failed to render");
@@ -73,7 +101,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes several formal examples covering different features. You can run them using `cargo run --example <name>`.
+The project includes 13+ formal examples. Detailed documentation for each can be found in the [examples directory](./examples/README.md).
 
 <details>
 <summary><b>Getting Started</b> - Basic node creation and animation.</summary>
@@ -81,8 +109,7 @@ The project includes several formal examples covering different features. You ca
 ```bash
 cargo run --example getting_started
 ```
-https://github.com/user-attachments/assets/7590c3da-8917-4ac4-8832-425211fab67b
-
+https://github.com/user-attachments/assets/0ce19049-7d85-4d3a-befe-5bc7c9dc33be
 </details>
 
 <details>
@@ -95,12 +122,21 @@ cargo run --example shapes
 </details>
 
 <details>
+<summary><b>Polygon</b> - Regular and custom polygon primitives.</summary>
+
+```bash
+cargo run --example polygon
+```
+https://github.com/user-attachments/assets/304d86fa-22c5-4aa4-83ab-35c199260c31
+</details>
+
+<details>
 <summary><b>Math & Code</b> - Typst LaTeX and Syntax Highlighting.</summary>
 
 ```bash
 cargo run --example math_code
 ```
-https://github.com/user-attachments/assets/97050ee4-0a67-4c4c-ba5d-737d7d0c101d
+https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
 </details>
 
 <details>
@@ -127,7 +163,7 @@ https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
 ```bash
 cargo run --example easing_scope
 ```
-https://github.com/user-attachments/assets/097e5b01-cdf4-4c9d-90a5-4cc4fc12e3ea
+https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
 </details>
 
 <details>
@@ -149,6 +185,33 @@ https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
 </details>
 
 <details>
+<summary><b>Code Animation</b> - "Magic Move" token-based code transitions.</summary>
+
+```bash
+cargo run --example code_animation
+```
+https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
+</details>
+
+<details>
+<summary><b>Advanced Code</b> - Fine-grained selection and content manipulation.</summary>
+
+```bash
+cargo run --example code_advanced
+```
+https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
+</details>
+
+<details>
+<summary><b>Group Animation</b> - Hierarchical transformations and inherited opacity.</summary>
+
+```bash
+cargo run --example group_animation
+```
+https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
+</details>
+
+<details>
 <summary><b>Export</b> - Video export with color and font-size animations.</summary>
 
 ```bash
@@ -165,4 +228,8 @@ https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
 
 ## Credits
 
-This project is heavily inspired by the original [Motion Canvas](https://github.com/motion-canvas/motion-canvas) by [aarthificial](https://github.com/aarthificial). It aims to be a proof of concept of the same declarative animation feel in Rust.
+This project is heavily inspired by the original [Motion Canvas](https://github.com/motion-canvas/motion-canvas) by [aarthificial](https://github.com/aarthificial).
+
+Special thanks to:
+- [easings.net](https://easings.net/) for the standardized easing function library.
+- [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.

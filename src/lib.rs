@@ -1,4 +1,7 @@
+#![doc = include_str!("../README.md")]
+
 pub mod engine;
+
 pub mod render;
 
 // --- RE-EXPORTS ---
@@ -11,6 +14,9 @@ pub use glam::Vec2;
 
 /// Custom Result type for the library
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+/// Font management and local font registration
+pub use engine::font::FontManager;
 
 /// Individual node types (Circle, Rect, TextNode, etc.)
 pub mod nodes {
@@ -46,11 +52,13 @@ pub mod prelude {
     // Glob-export for direct access (e.g. Circle, all!, quad_in)
     pub use crate::engine::animation::flow::*;
     pub use crate::engine::easings::*;
+    pub use crate::engine::nodes::Polygon;
     pub use crate::engine::nodes::*;
     pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing};
 
+    pub use crate::FontManager;
     pub use crate::Result;
     pub use glam::Vec2;
-    pub use vello::peniko::Color;
     pub use vello::kurbo::{Affine, BezPath};
+    pub use vello::peniko::Color;
 }

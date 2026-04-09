@@ -1,15 +1,19 @@
-use crate::engine::animation::{Signal, Node};
+use crate::engine::animation::{Node, Signal};
+use glam::Vec2;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use vello::kurbo::{Affine, BezPath};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
-use glam::Vec2;
-use vello::kurbo::{Affine, BezPath};
-use std::time::Duration;
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 
 lazy_static::lazy_static! {
     static ref GLOBAL_MATH_CACHE: Mutex<HashMap<MathCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
 }
+
+const DEFAULT_FONT_SIZE: f32 = 32.0;
+const DEFAULT_COLOR: Color = Color::WHITE;
+const DEFAULT_OPACITY: f32 = 1.0;
 
 #[derive(Hash, Eq, PartialEq)]
 struct MathCacheKey {
@@ -18,7 +22,7 @@ struct MathCacheKey {
 }
 
 pub struct MathNode {
-    pub position: Signal<Vec2>,
+    pub transform: Signal<Affine>,
     pub equation: Signal<String>,
     pub font_size: Signal<f32>,
     pub color: Signal<Color>,
@@ -28,10 +32,25 @@ pub struct MathNode {
     prev_cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
 
+impl Default for MathNode {
+    fn default() -> Self {
+        Self {
+            transform: Signal::new(Affine::IDENTITY),
+            equation: Signal::new("".to_string()),
+            font_size: Signal::new(DEFAULT_FONT_SIZE),
+            color: Signal::new(DEFAULT_COLOR),
+            opacity: Signal::new(DEFAULT_OPACITY),
+            transition_progress: Signal::new(1.0),
+            cache: Arc::new(Mutex::new(None)),
+            prev_cache: Arc::new(Mutex::new(None)),
+        }
+    }
+}
+
 impl Clone for MathNode {
     fn clone(&self) -> Self {
         Self {
-            position: self.position.clone(),
+            transform: self.transform.clone(),
             equation: self.equation.clone(),
             font_size: self.font_size.clone(),
             color: self.color.clone(),
@@ -45,19 +64,51 @@ impl Clone for MathNode {
 
 impl MathNode {
     pub fn new(pos: Vec2, equation: &str, size: f32, color: Color) -> Self {
-        Self {
-            position: Signal::new(pos),
-            equation: Signal::new(equation.to_string()),
-            font_size: Signal::new(size),
-            color: Signal::new(color),
-            opacity: Signal::new(1.0),
-            transition_progress: Signal::new(1.0),
-            cache: Arc::new(Mutex::new(None)),
-            prev_cache: Arc::new(Mutex::new(None)),
-        }
+        Self::default()
+            .with_position(pos)
+            .with_equation(equation)
+            .with_font_size(size)
+            .with_color(color)
     }
 
-    pub fn tex(&self, equation: &str, duration: Duration) -> Box<dyn crate::engine::animation::Animation> {
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = Signal::new(transform);
+        self
+    }
+
+    pub fn with_position(mut self, position: Vec2) -> Self {
+        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self
+    }
+
+    pub fn with_rotation(mut self, angle: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self
+    }
+
+    pub fn with_scale(mut self, scale: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self
+    }
+
+    pub fn with_opacity(mut self, opacity: f32) -> Self {
+        self.opacity = Signal::new(opacity);
+        self
+    }
+
+    pub fn tex(
+        &self,
+        equation: &str,
+        duration: Duration,
+    ) -> Box<dyn crate::engine::animation::Animation> {
         Box::new(MathTransition {
             node: self.clone(),
             target_eq: equation.to_string(),
@@ -66,9 +117,27 @@ impl MathNode {
         })
     }
 
+    pub fn with_equation(mut self, equation: &str) -> Self {
+        self.equation = Signal::new(equation.to_string());
+        self
+    }
+
+    pub fn with_font_size(mut self, size: f32) -> Self {
+        self.font_size = Signal::new(size);
+        self
+    }
+
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = Signal::new(color);
+        self
+    }
+    // ...
+
     pub fn start_transition(&self, new_eq: &str) {
         let prev_eq = self.equation.get();
-        if prev_eq == new_eq { return; }
+        if prev_eq == new_eq {
+            return;
+        }
 
         self.rebuild_if_needed();
 
@@ -82,7 +151,7 @@ impl MathNode {
         // 2. Start transition
         self.transition_progress.set(0.0);
         self.equation.set(new_eq.to_string());
-        
+
         self.rebuild_if_needed();
     }
 
@@ -95,16 +164,7 @@ impl MathNode {
             font_size_bits: size.to_bits(),
         };
 
-        // 1. Check if we already have it locally
-        {
-            let local = self.cache.lock().unwrap();
-            if let Some(_paths) = local.as_ref() {
-                // If we want to be more efficient, we'd store the key locally too to avoid locking GLOBAL_MATH_CACHE
-                // For now, let's keep it simple.
-            }
-        }
-
-        // 2. Check global cache
+        // 1. Check global cache
         let mut global = GLOBAL_MATH_CACHE.lock().unwrap();
         if let Some(paths) = global.get(&key) {
             let mut local = self.cache.lock().unwrap();
@@ -115,22 +175,34 @@ impl MathNode {
         // 3. Compile
         let mut paths_with_color = Vec::new();
         let (font_name, _) = crate::engine::font::FontManager::get_math_font();
-        let typst_code = format!("#set text(size: {}pt)\n#show math.equation: set text(font: \"{}\")\n$ {} $", size, font_name, eq);
+        let typst_code = format!(
+            "#set text(size: {}pt)\n#show math.equation: set text(font: \"{}\")\n$ {} $",
+            size, font_name, eq
+        );
         let world = crate::engine::typst_support::TypstWorld::new(&typst_code);
         let output = typst::compile::<typst::layout::PagedDocument>(&world).output;
-        
+
         match output {
             Ok(document) => {
                 for page in document.pages {
-                    crate::engine::typst_support::collect_paths(&page.frame, Affine::IDENTITY, &mut paths_with_color);
+                    crate::engine::typst_support::collect_paths(
+                        &page.frame,
+                        Affine::IDENTITY,
+                        &mut paths_with_color,
+                    );
                 }
             }
             Err(e) => println!("Typst compilation failed: {:?}", e),
         }
 
-        let paths: Arc<Vec<(Affine, BezPath)>> = Arc::new(paths_with_color.into_iter().map(|(a, _, p)| (a, p)).collect());
+        let paths: Arc<Vec<(Affine, BezPath)>> = Arc::new(
+            paths_with_color
+                .into_iter()
+                .map(|(a, _, p)| (a, p))
+                .collect(),
+        );
         global.insert(key, paths.clone());
-        
+
         let mut local = self.cache.lock().unwrap();
         *local = Some(paths);
     }
@@ -144,7 +216,7 @@ struct MathTransition {
 }
 
 impl crate::engine::animation::Animation for MathTransition {
-    fn update(&mut self, dt: Duration) -> bool {
+    fn update(&mut self, dt: Duration) -> (bool, Duration) {
         if self.tween.is_none() {
             self.node.start_transition(&self.target_eq);
             self.tween = Some(self.node.transition_progress.to(1.0, self.duration));
@@ -156,12 +228,11 @@ impl crate::engine::animation::Animation for MathTransition {
     }
 }
 
-use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 impl Node for MathNode {
-    fn render(&self, scene: &mut Scene) {
-        let pos = self.position.get();
+    fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let color = self.color.get();
 
         self.rebuild_if_needed();
@@ -169,15 +240,22 @@ impl Node for MathNode {
         let cache_guard = self.cache.lock().unwrap();
         let progress = self.transition_progress.get();
         let base_opacity = self.opacity.get();
-        let root_transform = Affine::translate((pos.x as f64, pos.y as f64));
+        let root_transform = parent_transform * self.transform.get();
 
         // 1. Draw previous equation if transitioning
         if progress < 1.0 {
             if let Some(prev) = self.prev_cache.lock().unwrap().as_ref() {
                 let mut prev_color = color;
-                prev_color.a = (color.a as f32 * base_opacity * (1.0 - progress)) as u8;
+                prev_color.a = (color.a as f32 * base_opacity * (1.0 - progress) * parent_opacity)
+                    .clamp(0.0, 255.0) as u8;
                 for (local_transform, pb) in prev.as_ref() {
-                    scene.fill(Fill::NonZero, root_transform * *local_transform, &Brush::Solid(prev_color), None, pb);
+                    scene.fill(
+                        Fill::NonZero,
+                        root_transform * *local_transform,
+                        &Brush::Solid(prev_color),
+                        None,
+                        pb,
+                    );
                 }
             }
         }
@@ -189,18 +267,29 @@ impl Node for MathNode {
                 base_opacity
             };
             let mut current_color = color;
-            current_color.a = (color.a as f32 * current_alpha) as u8;
+            current_color.a =
+                (color.a as f32 * current_alpha * parent_opacity).clamp(0.0, 255.0) as u8;
 
             for (local_transform, pb) in c.as_ref() {
-                scene.fill(Fill::NonZero, root_transform * *local_transform, &Brush::Solid(current_color), None, pb);
+                scene.fill(
+                    Fill::NonZero,
+                    root_transform * *local_transform,
+                    &Brush::Solid(current_color),
+                    None,
+                    pb,
+                );
             }
         }
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
         let mut s = DefaultHasher::new();
-        self.position.get().x.to_bits().hash(&mut s);
-        self.position.get().y.to_bits().hash(&mut s);
+
+        let coeffs = self.transform.get().as_coeffs();
+        for c in coeffs {
+            c.to_bits().hash(&mut s);
+        }
+
         self.equation.get().hash(&mut s);
         self.font_size.get().to_bits().hash(&mut s);
         let color = self.color.get();
@@ -211,5 +300,9 @@ impl Node for MathNode {
         self.opacity.get().to_bits().hash(&mut s);
         self.transition_progress.get().to_bits().hash(&mut s);
         s.finish()
+    }
+
+    fn clone_node(&self) -> Box<dyn Node> {
+        Box::new(self.clone())
     }
 }

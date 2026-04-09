@@ -99,11 +99,11 @@ pub struct AnimationWindow {
 }
 
 impl AnimationWindow {
-    pub fn new(project: crate::engine::Project) -> crate::Result<Self> {
+    pub fn new(project: crate::engine::Project) -> Result<Self, Box<dyn std::error::Error>> {
         Ok(Self { project })
     }
 
-    pub fn run(mut self) -> crate::Result<()> {
+    pub fn run(mut self) -> Result<(), Box<dyn std::error::Error>> {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
             .with_title(&self.project.title)
@@ -113,9 +113,6 @@ impl AnimationWindow {
             ))
             .build(&event_loop)?;
 
-        // Wrap renderer in an Option so we can create it inside 'resumed' if needed,
-        // or just keep it outside and manage lifetimes carefully.
-        // For simplicity in event_loop.run, we can use a wrapper or just pollster::block_on.
         let mut renderer = VelloRenderer::new(self.project.use_gpu, self.project.background_color);
         let mut last_update = Instant::now();
         let mut last_hash = 0u64;
@@ -127,27 +124,35 @@ impl AnimationWindow {
             std::mem::transmute::<&winit::window::Window, &'static winit::window::Window>(&window)
         };
 
-        event_loop.run(move |event, elwt| match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => elwt.exit(),
-            Event::WindowEvent {
-                event: WindowEvent::RedrawRequested,
-                ..
-            } => {
-                renderer.render(&self.project.scene, self.project.width, self.project.height);
-            }
-            Event::AboutToWait => {
-                if finished {
-                    elwt.set_control_flow(ControlFlow::Wait);
-                    return;
+        event_loop.run(move |event, elwt| {
+            match event {
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => elwt.exit(),
+
+                Event::WindowEvent {
+                    event: WindowEvent::RedrawRequested,
+                    ..
+                } => {
+                    renderer.render(&self.project.scene, self.project.width, self.project.height);
                 }
 
-                let now = Instant::now();
-                let elapsed = now.duration_since(last_update);
+                Event::AboutToWait => {
+                    if finished {
+                        elwt.set_control_flow(ControlFlow::Wait);
+                        return;
+                    }
 
-                if elapsed >= dt {
+                    let now = Instant::now();
+                    let elapsed = now.duration_since(last_update);
+
+                    if elapsed < dt {
+                        elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
+                        return;
+                    }
+
+                    // Process update
                     self.project.scene.update(dt);
                     last_update = now;
 
@@ -161,17 +166,18 @@ impl AnimationWindow {
                         println!("Animation finished.");
                         finished = true;
                         elwt.set_control_flow(ControlFlow::Wait);
-                    } else {
-                        elwt.set_control_flow(ControlFlow::WaitUntil(now + dt));
+                        return;
                     }
-                } else {
-                    elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
+
+                    elwt.set_control_flow(ControlFlow::WaitUntil(now + dt));
                 }
+
+                Event::Resumed => {
+                    pollster::block_on(renderer.resume(window_ref));
+                }
+
+                _ => (),
             }
-            Event::Resumed => {
-                pollster::block_on(renderer.resume(window_ref));
-            }
-            _ => (),
         })?;
 
         Ok(())

@@ -1,3 +1,7 @@
+//! Easing functions library.
+//!
+//! Credits: The easing functions are based on the equations from [easings.net](https://easings.net/).
+
 use std::f32::consts::PI;
 
 pub fn linear(t: f32) -> f32 {
@@ -89,11 +93,19 @@ pub fn quint_in_out(t: f32) -> f32 {
 
 // --- Expo ---
 pub fn expo_in(t: f32) -> f32 {
-    if t == 0.0 { 0.0 } else { 2.0f32.powf(10.0 * t - 10.0) }
+    if t == 0.0 {
+        0.0
+    } else {
+        2.0f32.powf(10.0 * t - 10.0)
+    }
 }
 
 pub fn expo_out(t: f32) -> f32 {
-    if t == 1.0 { 1.0 } else { 1.0 - 2.0f32.powf(-10.0 * t) }
+    if t == 1.0 {
+        1.0
+    } else {
+        1.0 - 2.0f32.powf(-10.0 * t)
+    }
 }
 
 pub fn expo_in_out(t: f32) -> f32 {

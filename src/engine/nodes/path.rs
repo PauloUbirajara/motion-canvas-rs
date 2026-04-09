@@ -1,10 +1,12 @@
-use vello::kurbo::{BezPath, Affine, Stroke};
-use vello::peniko::{Brush, Color};
-use vello::Scene;
+use crate::engine::animation::{Node, Signal};
 use glam::Vec2;
 use std::sync::Arc;
 use std::time::Duration;
-use crate::engine::animation::{Node, Signal};
+use vello::kurbo::{Affine, BezPath, Stroke};
+use vello::peniko::{Brush, Color};
+use vello::Scene;
+
+const FLATTEN_TOLERANCE: f64 = 0.1;
 
 pub struct PathData {
     pub path: BezPath,
@@ -17,40 +19,53 @@ impl PathData {
         let mut segments = Vec::new();
         let mut total_length = 0.0;
         let mut last_point: Option<Vec2> = None;
-        vello::kurbo::flatten(&path, 0.1, |el| {
-            match el {
-                vello::kurbo::PathEl::MoveTo(p) => {
+        vello::kurbo::flatten(&path, FLATTEN_TOLERANCE, |el| match el {
+            vello::kurbo::PathEl::MoveTo(p) => {
+                let pt = Vec2::new(p.x as f32, p.y as f32);
+                segments.push((pt, 0.0));
+                last_point = Some(pt);
+            }
+            vello::kurbo::PathEl::LineTo(p) => {
+                if let Some(last) = last_point {
                     let pt = Vec2::new(p.x as f32, p.y as f32);
-                    segments.push((pt, 0.0));
+                    total_length += last.distance(pt);
+                    segments.push((pt, total_length));
                     last_point = Some(pt);
                 }
-                vello::kurbo::PathEl::LineTo(p) => {
-                    if let Some(last) = last_point {
-                        let pt = Vec2::new(p.x as f32, p.y as f32);
-                        total_length += last.distance(pt);
-                        segments.push((pt, total_length));
-                        last_point = Some(pt);
-                    }
-                }
-                _ => {} 
             }
+            _ => {}
         });
-        Self { path, segments, total_length }
+        Self {
+            path,
+            segments,
+            total_length,
+        }
     }
-    
+
     pub fn sample(&self, t: f32) -> Vec2 {
-        if self.segments.is_empty() { return Vec2::ZERO; }
+        if self.segments.is_empty() {
+            return Vec2::ZERO;
+        }
         let target_len = t.clamp(0.0, 1.0) * self.total_length;
-        let idx = match self.segments.binary_search_by(|&(_, len)| len.partial_cmp(&target_len).unwrap()) {
+        let idx = match self
+            .segments
+            .binary_search_by(|&(_, len)| len.partial_cmp(&target_len).unwrap())
+        {
             Ok(i) => i,
             Err(i) => i,
         };
-        if idx == 0 { return self.segments[0].0; }
-        if idx >= self.segments.len() { return self.segments.last().unwrap().0; }
+        if idx == 0 {
+            return self.segments[0].0;
+        }
+        if idx >= self.segments.len() {
+            return self.segments.last().unwrap().0;
+        }
         let (p1, l1) = self.segments[idx - 1];
         let (p2, l2) = self.segments[idx];
         let segment_len = l2 - l1;
-        if segment_len < 0.0001 { return p2; }
+        if segment_len < 0.0001 {
+            return p2;
+        }
         let t_segment = (target_len - l1) / segment_len;
         p1.lerp(p2, t_segment)
     }
@@ -58,44 +73,102 @@ impl PathData {
 
 #[derive(Clone)]
 pub struct PathNode {
-    pub position: Signal<Vec2>,
+    pub transform: Signal<Affine>,
     pub data: Arc<PathData>,
     pub color: Signal<Color>,
     pub width: Signal<f32>,
+    pub opacity: Signal<f32>,
 }
 
 impl PathNode {
     pub fn new(position: Vec2, path: BezPath, color: Color, width: f32) -> Self {
         Self {
-            position: Signal::new(position),
+            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
             data: Arc::new(PathData::new(path)),
             color: Signal::new(color),
             width: Signal::new(width),
+            opacity: Signal::new(1.0),
         }
+    }
+
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = Signal::new(transform);
+        self
+    }
+
+    pub fn with_position(mut self, position: Vec2) -> Self {
+        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self
+    }
+
+    pub fn with_rotation(mut self, angle: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self
+    }
+
+    pub fn with_scale(mut self, scale: f32) -> Self {
+        let current = self.transform.get();
+        let coeffs = current.as_coeffs();
+        let tx = coeffs[4];
+        let ty = coeffs[5];
+        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self
+    }
+
+    pub fn with_opacity(mut self, opacity: f32) -> Self {
+        self.opacity = Signal::new(opacity);
+        self
     }
 }
 
 impl Node for PathNode {
-    fn render(&self, scene: &mut Scene) {
-        let pos = self.position.get();
+    fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let color = self.color.get();
         let width = self.width.get();
-        let brush = Brush::Solid(color);
-        scene.stroke(&Stroke::new(width as f64), Affine::translate((pos.x as f64, pos.y as f64)), &brush, None, &self.data.path);
+        let local_transform = self.transform.get();
+        let opacity = self.opacity.get();
+
+        let combined_transform = parent_transform * local_transform;
+        let combined_opacity = parent_opacity * opacity;
+
+        let mut final_color = color;
+        final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+
+        let brush = Brush::Solid(final_color);
+        scene.stroke(
+            &Stroke::new(width as f64),
+            combined_transform,
+            &brush,
+            None,
+            &self.data.path,
+        );
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::hash::{Hash, Hasher};
         use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
-        self.position.get().x.to_bits().hash(&mut s);
-        self.position.get().y.to_bits().hash(&mut s);
+
+        let coeffs = self.transform.get().as_coeffs();
+        for c in coeffs {
+            c.to_bits().hash(&mut s);
+        }
+
         self.width.get().to_bits().hash(&mut s);
         let color = self.color.get();
         color.r.hash(&mut s);
         color.g.hash(&mut s);
         color.b.hash(&mut s);
         color.a.hash(&mut s);
+        self.opacity.get().to_bits().hash(&mut s);
         s.finish()
+    }
+
+    fn clone_node(&self) -> Box<dyn Node> {
+        Box::new(self.clone())
     }
 }

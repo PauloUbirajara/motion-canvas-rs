@@ -8,12 +8,11 @@ fn main() {
         .with_title("Typst Math Animation");
 
     // 2. Create MathNode (Typst syntax)
-    let tex = MathNode::new(
-        Vec2::new(100.0, 300.0),
-        "y = a x^2",
-        48.0,
-        Color::rgb8(0xf2, 0xf2, 0xf2),
-    );
+    let tex = MathNode::default()
+        .with_position(Vec2::new(100.0, 300.0))
+        .with_equation("y = a x^2")
+        .with_font_size(48.0)
+        .with_color(Color::rgb8(0xf2, 0xf2, 0xf2));
     project.scene.add(Box::new(tex.clone()));
 
     // 3. Define Animation Sequence

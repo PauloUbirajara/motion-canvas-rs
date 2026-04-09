@@ -9,7 +9,12 @@ fn test_math_animation_export() {
         .with_gpu(false)
         .with_background(Color::rgb8(40, 44, 52));
 
-    let tex = MathNode::new(Vec2::new(100.0, 300.0), "y = a x^2", 48.0, Color::rgb8(0xff, 0xff, 0xff));
+    let tex = MathNode::new(
+        Vec2::new(100.0, 300.0),
+        "y = a x^2",
+        48.0,
+        Color::rgb8(0xff, 0xff, 0xff),
+    );
     project.scene.add(Box::new(tex.clone()));
 
     project.scene.timeline.add(flows::chain![
