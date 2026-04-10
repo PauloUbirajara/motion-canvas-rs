@@ -8,21 +8,22 @@ use vello::{
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
+    window::{Window, WindowBuilder},
 };
+use std::sync::Arc;
 
 pub mod export;
 
-pub struct VelloRenderer<'a> {
+pub struct VelloRenderer {
     context: RenderContext,
-    surface: Option<RenderSurface<'a>>,
+    surface: Option<RenderSurface<'static>>,
     renderer: Option<Renderer>,
     scene: Scene,
     use_gpu: bool,
     background_color: vello::peniko::Color,
 }
 
-impl<'a> VelloRenderer<'a> {
+impl VelloRenderer {
     pub fn new(use_gpu: bool, background_color: vello::peniko::Color) -> Self {
         Self {
             context: RenderContext::new(),
@@ -34,12 +35,12 @@ impl<'a> VelloRenderer<'a> {
         }
     }
 
-    pub async fn resume(&mut self, window: &'a winit::window::Window) {
+    pub async fn resume(&mut self, window: Arc<Window>) {
         let size = window.inner_size();
         let surface = self
             .context
             .create_surface(
-                window,
+                window.clone(),
                 size.width,
                 size.height,
                 vello::wgpu::PresentMode::Fifo,
@@ -105,25 +106,21 @@ impl AnimationWindow {
 
     pub fn run(mut self) -> Result<(), Box<dyn std::error::Error>> {
         let event_loop = EventLoop::new()?;
-        let window = WindowBuilder::new()
+        let window = Arc::new(WindowBuilder::new()
             .with_title(&self.project.title)
             .with_inner_size(winit::dpi::LogicalSize::new(
                 self.project.width,
                 self.project.height,
             ))
-            .build(&event_loop)?;
+            .build(&event_loop)?);
 
-        let mut renderer = VelloRenderer::new(self.project.use_gpu, self.project.background_color);
+        let mut renderer_opt: Option<VelloRenderer> = None;
         let mut last_update = Instant::now();
         let mut last_hash = 0u64;
         let mut finished = false;
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
 
-        // Capture window as a reference to avoid lifetime issues with Move
-        let window_ref = unsafe {
-            std::mem::transmute::<&winit::window::Window, &'static winit::window::Window>(&window)
-        };
-
+        let window_clone = window.clone();
         event_loop.run(move |event, elwt| {
             match event {
                 Event::WindowEvent {
@@ -135,7 +132,9 @@ impl AnimationWindow {
                     event: WindowEvent::RedrawRequested,
                     ..
                 } => {
-                    renderer.render(&self.project.scene, self.project.width, self.project.height);
+                    if let Some(ref mut renderer) = renderer_opt {
+                        renderer.render(&self.project.scene, self.project.width, self.project.height);
+                    }
                 }
 
                 Event::AboutToWait => {
@@ -155,7 +154,7 @@ impl AnimationWindow {
 
                     let current_hash = self.project.scene.state_hash();
                     if current_hash != last_hash {
-                        window_ref.request_redraw();
+                        window.request_redraw();
                         last_hash = current_hash;
                     }
 
@@ -188,7 +187,10 @@ impl AnimationWindow {
                 }
 
                 Event::Resumed => {
-                    pollster::block_on(renderer.resume(window_ref));
+                    let renderer = renderer_opt.get_or_insert_with(|| {
+                        VelloRenderer::new(self.project.use_gpu, self.project.background_color)
+                    });
+                    pollster::block_on(renderer.resume(window_clone.clone()));
                 }
 
                 _ => (),
