@@ -10,20 +10,20 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
-use std::sync::Arc;
 
 pub mod export;
+use std::future::Future;
 
-pub struct VelloRenderer {
+pub struct VelloRenderer<'a> {
     context: RenderContext,
-    surface: Option<RenderSurface<'static>>,
+    surface: Option<RenderSurface<'a>>,
     renderer: Option<Renderer>,
     scene: Scene,
     use_gpu: bool,
     background_color: vello::peniko::Color,
 }
 
-impl VelloRenderer {
+impl<'a> VelloRenderer<'a> {
     pub fn new(use_gpu: bool, background_color: vello::peniko::Color) -> Self {
         Self {
             context: RenderContext::new(),
@@ -35,18 +35,25 @@ impl VelloRenderer {
         }
     }
 
-    pub async fn resume(&mut self, window: Arc<Window>) {
+    pub fn resume(&mut self, window: &'a Window) {
         let size = window.inner_size();
-        let surface = self
-            .context
-            .create_surface(
-                window.clone(),
+        let surface: RenderSurface = {
+            let mut future = std::pin::pin!(self.context.create_surface(
+                window,
                 size.width,
                 size.height,
                 vello::wgpu::PresentMode::Fifo,
-            )
-            .await
-            .unwrap();
+            ));
+            let waker = std::task::Waker::noop();
+            let mut cx = std::task::Context::from_waker(&waker);
+
+            loop {
+                match future.as_mut().poll(&mut cx) {
+                    std::task::Poll::Ready(val) => break val.unwrap(),
+                    std::task::Poll::Pending => std::hint::spin_loop(),
+                }
+            }
+        };
 
         let device_handle = &self.context.devices[surface.dev_id];
         let renderer = Renderer::new(
@@ -106,13 +113,13 @@ impl AnimationWindow {
 
     pub fn run(mut self) -> Result<(), Box<dyn std::error::Error>> {
         let event_loop = EventLoop::new()?;
-        let window = Arc::new(WindowBuilder::new()
+        let window = WindowBuilder::new()
             .with_title(&self.project.title)
             .with_inner_size(winit::dpi::LogicalSize::new(
                 self.project.width,
                 self.project.height,
             ))
-            .build(&event_loop)?);
+            .build(&event_loop)?;
 
         let mut renderer_opt: Option<VelloRenderer> = None;
         let mut last_update = Instant::now();
@@ -120,8 +127,7 @@ impl AnimationWindow {
         let mut finished = false;
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
 
-        let window_clone = window.clone();
-        event_loop.run(move |event, elwt| {
+        event_loop.run(|event, elwt| {
             match event {
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
@@ -190,7 +196,7 @@ impl AnimationWindow {
                     let renderer = renderer_opt.get_or_insert_with(|| {
                         VelloRenderer::new(self.project.use_gpu, self.project.background_color)
                     });
-                    pollster::block_on(renderer.resume(window_clone.clone()));
+                    renderer.resume(&window);
                 }
 
                 _ => (),
