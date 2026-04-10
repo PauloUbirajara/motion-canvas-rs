@@ -108,79 +108,39 @@ fn main() {
 The project includes 14 examples that can be found in the [examples directory](./examples).
 
 <details>
-<summary><b>Getting Started</b> - Basic node creation and animation.</summary>
-
-```bash
-cargo run --example getting_started
-```
-https://github.com/user-attachments/assets/510d8aac-67ba-42d8-882a-b3c0ad969437
-</details>
-
-<details>
-<summary><b>Shapes</b> - Circle, Rect, and Line primitives.</summary>
-
-```bash
-cargo run --example shapes
-```
-<img width="400" height="200" alt="shapes" src="https://github.com/user-attachments/assets/24d3c9a4-6330-4d03-a0b0-6d0fed318ab7" />
-</details>
-
-<details>
-<summary><b>Polygon</b> - Regular and custom polygon primitives.</summary>
-
-```bash
-cargo run --example polygon
-```
-https://github.com/user-attachments/assets/efc1e214-4297-47a2-b6e4-1eae0840b0c9
-</details>
-
-<details>
-<summary><b>Math & Code</b> - Typst LaTeX and Syntax Highlighting.</summary>
-
-```bash
-cargo run --example math_code
-```
-https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
-</details>
-
-<details>
-<summary><b>Images</b> - Bitmap image support and transformations.</summary>
-
-
-https://github.com/user-attachments/assets/7b1fa63a-8500-41e9-a611-0a4ca0a90967
-
-
-```bash
-cargo run --example images
-```
-https://github.com/user-attachments/assets/25248e66-ccc7-4422-9f2f-7b9ef361d8d9
-</details>
-
-<details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
 
 ```bash
-cargo run --example advanced_flow
+cargo run --example advanced_flow --features=math,code,image,svg
 ```
 https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
 </details>
 
 <details>
-<summary><b>Easing Scope</b> - 100% parity easing library visualizer.</summary>
+<summary><b>Audio Demo</b> - Independent audio and video timelines with cropping.</summary>
 
 ```bash
-cargo run --example easing_scope
+cargo run --example audio_demo --features audio
 ```
-https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
+https://github.com/user-attachments/assets/02670f39-8499-4202-8b22-c160d35f9031
 </details>
 
 <details>
-<summary><b>Math Animation</b> - Advanced mathematical transitions.</summary>
+<summary><b>Advanced Code</b> - Fine-grained selection and content manipulation.</summary>
 
 ```bash
-cargo run --example math_animation
+cargo run --example code_advanced --features code
 ```
-https://github.com/user-attachments/assets/f3d8e774-31f4-4e96-b7b7-9e6bda0ec16f
+https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
+</details>
+
+<details>
+<summary><b>Code Animation</b> - "Magic Move" token-based code transitions.</summary>
+
+```bash
+cargo run --example code_animation --features code
+```
+https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
 </details>
 
 <details>
@@ -193,21 +153,30 @@ https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
 </details>
 
 <details>
-<summary><b>Code Animation</b> - "Magic Move" token-based code transitions.</summary>
+<summary><b>Easing Scope</b> - 100% parity easing library visualizer.</summary>
 
 ```bash
-cargo run --example code_animation
+cargo run --example easing_scope
 ```
-https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
+https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
 </details>
 
 <details>
-<summary><b>Advanced Code</b> - Fine-grained selection and content manipulation.</summary>
+<summary><b>Export</b> - Video export with color and font-size animations.</summary>
 
 ```bash
-cargo run --example code_advanced
+cargo run --example export --features export
 ```
-https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
+https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
+</details>
+
+<details>
+<summary><b>Getting Started</b> - Basic node creation and animation.</summary>
+
+```bash
+cargo run --example getting_started
+```
+https://github.com/user-attachments/assets/510d8aac-67ba-42d8-882a-b3c0ad969437
 </details>
 
 <details>
@@ -220,21 +189,48 @@ https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
 </details>
 
 <details>
-<summary><b>Export</b> - Video export with color and font-size animations.</summary>
+<summary><b>Images</b> - Bitmap image support and transformations.</summary>
 
 ```bash
-cargo run --example export
+cargo run --example images --features image,svg
 ```
-https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
+https://github.com/user-attachments/assets/25248e66-ccc7-4422-9f2f-7b9ef361d8d9
 </details>
 
 <details>
-<summary><b>Audio Demo</b> - Independent audio and video timelines with cropping.</summary>
+<summary><b>Math Animation</b> - Advanced mathematical transitions.</summary>
 
 ```bash
-cargo run --example audio_demo --features audio
+cargo run --example math_animation --features math
 ```
-https://github.com/user-attachments/assets/02670f39-8499-4202-8b22-c160d35f9031
+https://github.com/user-attachments/assets/f3d8e774-31f4-4e96-b7b7-9e6bda0ec16f
+</details>
+
+<details>
+<summary><b>Math & Code</b> - Typst LaTeX and Syntax Highlighting.</summary>
+
+```bash
+cargo run --example math_code --features math,code
+```
+https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
+</details>
+
+<details>
+<summary><b>Polygon</b> - Regular and custom polygon primitives.</summary>
+
+```bash
+cargo run --example polygon
+```
+https://github.com/user-attachments/assets/efc1e214-4297-47a2-b6e4-1eae0840b0c9
+</details>
+
+<details>
+<summary><b>Shapes</b> - Circle, Rect, and Line primitives.</summary>
+
+```bash
+cargo run --example shapes
+```
+<img width="400" height="200" alt="shapes" src="https://github.com/user-attachments/assets/24d3c9a4-6330-4d03-a0b0-6d0fed318ab7" />
 </details>
 
 ## Requirements

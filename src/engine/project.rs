@@ -144,6 +144,7 @@ impl Project {
             let mut rendered_count = 0;
             let mut skipped_count = 0;
 
+            #[cfg(feature = "audio")]
             let mut audio_events = Vec::new();
             let video_duration = self.scene.video_timeline.duration();
             let audio_duration = {

@@ -1,6 +1,6 @@
 [package]
 name = "motion-canvas-rs"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 authors = ["Paulo Ubirajara"]
 description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
@@ -46,36 +46,12 @@ full = ["code", "math", "image", "export", "svg", "audio"]
 audio = ["dep:rodio"]
 
 [[example]]
-name = "math_code"
-required-features = ["math", "code"]
-
-[[example]]
-name = "images"
-required-features = ["image", "svg"]
-
-[[example]]
-name = "export"
-required-features = ["export"]
-
-[[example]]
-name = "math_animation"
-required-features = ["math"]
-
-[[example]]
-name = "color_interpolation"
-
-[[example]]
-name = "getting_started"
-
-[[example]]
 name = "advanced_flow"
 required-features = ["math", "code", "image", "svg"]
 
 [[example]]
-name = "easing_scope"
-
-[[example]]
-name = "shapes"
+name = "audio_demo"
+required-features = ["audio"]
 
 [[example]]
 name = "code_advanced"
@@ -86,11 +62,35 @@ name = "code_animation"
 required-features = ["code"]
 
 [[example]]
+name = "color_interpolation"
+
+[[example]]
+name = "easing_scope"
+
+[[example]]
+name = "export"
+required-features = ["export"]
+
+[[example]]
+name = "getting_started"
+
+[[example]]
 name = "group_animation"
+
+[[example]]
+name = "images"
+required-features = ["image", "svg"]
+
+[[example]]
+name = "math_animation"
+required-features = ["math"]
+
+[[example]]
+name = "math_code"
+required-features = ["math", "code"]
 
 [[example]]
 name = "polygon"
 
 [[example]]
-name = "audio_demo"
-required-features = ["audio"]
+name = "shapes"

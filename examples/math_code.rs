@@ -67,5 +67,5 @@ fn main() {
         ]
     ]);
 
-    project.export().expect("Failed to render");
+    project.show().expect("Failed to render");
 }
