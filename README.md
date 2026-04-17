@@ -41,19 +41,19 @@ cargo add motion-canvas-rs --features math,image,audio
 
 ## Supported Nodes
 
-| Node | Description | Features |
+| Node | Description | Transform Properties |
 |:---|:---|:---|
-| `Circle` | Basic circle primitive. | `radius`, `position`, `rotation`, `scale` |
-| `Rect` | Rectangle with optional corner radius. | `size`, `radius`, `position` |
-| `Polygon` | Regular and custom polygon shapes. | `points`, `fill`, `stroke`, `rotation` |
-| `Line` | Simple line between two points. | `start`, `end`, `position`, `rotation` |
-| `PathNode` | Complex path sampling and animation. | `arc-length`, `sample`, `position` |
-| `TextNode` | High-quality text rendering (skrifa). | `text`, `font_size`, `position` |
-| `MathNode` | Typst-powered mathematical formulas. | `LaTeX`, `position` |
-| `CodeNode` | Syntax-highlighted code with transitions. | `syntect`, `magic-move`, `position` |
-| `ImageNode` | Bitmap and SVG image display. | `png`, `jpeg`, `svg`, `position` |
-| `AudioNode` | Independent audio clip playback. | `mp3`, `volume`, `crop` |
-| `GroupNode` | Hierarchical grouping of any nodes. | `children`, `position`, `rotation`, `scale` |
+| `AudioNode` | Independent audio clip playback. | `volume`, `crop` |
+| `Circle` | Basic circle primitive. | `position`, `rotation`, `scale`, `radius` |
+| `CodeNode` | Syntax-highlighted code with transitions. | `position`, `rotation`, `scale`, `code` |
+| `GroupNode` | Hierarchical grouping of any nodes. | `position`, `rotation`, `scale`, `children` |
+| `ImageNode` | Bitmap and SVG image display. | `position`, `rotation`, `scale`, `size` |
+| `Line` | Simple line between two points. | `position`, `rotation`, `scale`, `start`, `end` |
+| `MathNode` | Typst-powered mathematical formulas. | `position`, `rotation`, `scale`, `equation` |
+| `PathNode` | Complex path sampling and animation. | `position`, `rotation`, `scale`, `arc-length` |
+| `Polygon` | Regular and custom polygon shapes. | `position`, `rotation`, `scale`, `points` |
+| `Rect` | Rectangle with optional corner radius. | `position`, `rotation`, `scale`, `size`, `radius` |
+| `TextNode` | High-quality text rendering (skrifa). | `position`, `rotation`, `scale`, `text` |
 
 ## Project Structure
 
@@ -104,12 +104,12 @@ fn main() {
 
 ## Running Examples
 
-The project includes 14 examples that can be found in the [examples directory](./examples).
+The project includes 15 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
 
-```bash
+```sh
 cargo run --example advanced_flow --features=math,code,image,svg
 ```
 https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
 <details>
 <summary><b>Audio Demo</b> - Independent audio and video timelines with cropping.</summary>
 
-```bash
+```sh
 cargo run --example audio_demo --features audio
 ```
 https://github.com/user-attachments/assets/02670f39-8499-4202-8b22-c160d35f9031
@@ -127,7 +127,7 @@ https://github.com/user-attachments/assets/02670f39-8499-4202-8b22-c160d35f9031
 <details>
 <summary><b>Advanced Code</b> - Fine-grained selection and content manipulation.</summary>
 
-```bash
+```sh
 cargo run --example code_advanced --features code
 ```
 https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
@@ -136,7 +136,7 @@ https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
 <details>
 <summary><b>Code Animation</b> - "Magic Move" token-based code transitions.</summary>
 
-```bash
+```sh
 cargo run --example code_animation --features code
 ```
 https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
@@ -145,7 +145,7 @@ https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
 <details>
 <summary><b>Color Interpolation</b> - Smooth transitions between color spaces.</summary>
 
-```bash
+```sh
 cargo run --example color_interpolation
 ```
 https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
@@ -154,7 +154,7 @@ https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
 <details>
 <summary><b>Easing Scope</b> - 100% parity easing library visualizer.</summary>
 
-```bash
+```sh
 cargo run --example easing_scope
 ```
 https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
@@ -163,7 +163,7 @@ https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
 <details>
 <summary><b>Export</b> - Video export with color and font-size animations.</summary>
 
-```bash
+```sh
 cargo run --example export --features export
 ```
 https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
@@ -172,7 +172,7 @@ https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
 <details>
 <summary><b>Getting Started</b> - Basic node creation and animation.</summary>
 
-```bash
+```sh
 cargo run --example getting_started
 ```
 https://github.com/user-attachments/assets/510d8aac-67ba-42d8-882a-b3c0ad969437
@@ -181,7 +181,7 @@ https://github.com/user-attachments/assets/510d8aac-67ba-42d8-882a-b3c0ad969437
 <details>
 <summary><b>Group Animation</b> - Hierarchical transformations and inherited opacity.</summary>
 
-```bash
+```sh
 cargo run --example group_animation
 ```
 https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
@@ -190,7 +190,7 @@ https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
 <details>
 <summary><b>Images</b> - Bitmap image support and transformations.</summary>
 
-```bash
+```sh
 cargo run --example images --features image,svg
 ```
 https://github.com/user-attachments/assets/25248e66-ccc7-4422-9f2f-7b9ef361d8d9
@@ -199,7 +199,7 @@ https://github.com/user-attachments/assets/25248e66-ccc7-4422-9f2f-7b9ef361d8d9
 <details>
 <summary><b>Math Animation</b> - Advanced mathematical transitions.</summary>
 
-```bash
+```sh
 cargo run --example math_animation --features math
 ```
 https://github.com/user-attachments/assets/f3d8e774-31f4-4e96-b7b7-9e6bda0ec16f
@@ -208,7 +208,7 @@ https://github.com/user-attachments/assets/f3d8e774-31f4-4e96-b7b7-9e6bda0ec16f
 <details>
 <summary><b>Math & Code</b> - Typst LaTeX and Syntax Highlighting.</summary>
 
-```bash
+```sh
 cargo run --example math_code --features math,code
 ```
 https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
@@ -217,7 +217,7 @@ https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
 <details>
 <summary><b>Polygon</b> - Regular and custom polygon primitives.</summary>
 
-```bash
+```sh
 cargo run --example polygon
 ```
 https://github.com/user-attachments/assets/efc1e214-4297-47a2-b6e4-1eae0840b0c9
@@ -226,10 +226,18 @@ https://github.com/user-attachments/assets/efc1e214-4297-47a2-b6e4-1eae0840b0c9
 <details>
 <summary><b>Shapes</b> - Circle, Rect, and Line primitives.</summary>
 
-```bash
+```sh
 cargo run --example shapes
 ```
 <img width="400" height="200" alt="shapes" src="https://github.com/user-attachments/assets/24d3c9a4-6330-4d03-a0b0-6d0fed318ab7" />
+</details>
+
+<details>
+<summary><b>Signals</b> - Reactive signal linking and independent property animation.</summary>
+
+```sh
+cargo run --example signals
+```
 </details>
 
 ## Requirements
