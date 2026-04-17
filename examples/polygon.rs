@@ -31,11 +31,12 @@ fn main() {
         chain![
             pentagon
                 .position
-                .to(Vec2::new(200.0, 300.0), Duration::from_secs(1)),
+                .to(Vec2::new(200.0, 300.0), Duration::from_secs(0)),
+            pentagon.scale.to(Vec2::ONE, Duration::from_secs(1)),
             pentagon
                 .rotation
-                .to(std::f32::consts::PI, Duration::from_secs(1)),
-            pentagon.scale.to(Vec2::ONE, Duration::from_secs(2))
+                .to(std::f32::consts::PI, Duration::from_secs(2)),
+            pentagon.scale.to(-Vec2::ONE, Duration::from_secs(1)),
         ],
         chain![
             triangle.opacity.to(1.0, Duration::from_secs(1)),

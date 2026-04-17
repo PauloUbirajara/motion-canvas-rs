@@ -44,6 +44,7 @@ pub mod prelude {
     // Core Traits
     pub use crate::engine::animation::base::Animation;
     pub use crate::engine::animation::base::Node;
+    pub use crate::engine::animation::tween::Signal;
     pub use crate::engine::animation::tween::Tweenable;
 
     // Export the modules themselves for namespaced access
@@ -71,4 +72,5 @@ pub mod prelude {
     pub use glam::Vec2;
     pub use vello::kurbo::{Affine, BezPath};
     pub use vello::peniko::Color;
+    pub use vello::Scene;
 }
