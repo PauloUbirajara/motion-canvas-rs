@@ -37,28 +37,25 @@ fn main() {
 
     // Define animations and add them to the timeline
     project.scene.video_timeline.add(chain![
-        // 1. Move the whole group using a matrix
+        // 1. Move the whole group
         group
-            .transform
-            .to(Affine::translate((200.0, 150.0)), Duration::from_secs(2)),
-        // 2. Rotate the group using a matrix
-        group.transform.to(
-            Affine::translate((200.0, 150.0)) * Affine::rotate(std::f64::consts::PI),
-            Duration::from_secs(2)
-        ),
+            .position
+            .to(Vec2::new(200.0, 150.0), Duration::from_secs(2)),
+        // 2. Rotate the group
+        group.rotation.to(std::f32::consts::PI, Duration::from_secs(2)),
         // 3. Complex transform (move + scale)
         all![
-            group.transform.to(
-                Affine::translate((400.0, 450.0)) * Affine::scale(2.0),
-                Duration::from_secs(2)
-            ),
+            group.position.to(Vec2::new(400.0, 450.0), Duration::from_secs(2)),
+            group.scale.to(Vec2::splat(2.0), Duration::from_secs(2)),
             group.opacity.to(0.3, Duration::from_secs(2)),
         ],
-        // 4. Reset to identity (at the center)
+        // 4. Reset (at the center)
         all![
             group
-                .transform
-                .to(Affine::translate((400.0, 300.0)), Duration::from_secs(1)),
+                .position
+                .to(Vec2::new(400.0, 300.0), Duration::from_secs(1)),
+            group.scale.to(Vec2::ONE, Duration::from_secs(1)),
+            group.rotation.to(0.0, Duration::from_secs(1)),
             group.opacity.to(1.0, Duration::from_secs(1)),
         ],
     ]);

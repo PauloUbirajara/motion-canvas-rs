@@ -73,7 +73,9 @@ impl PathData {
 
 #[derive(Clone)]
 pub struct PathNode {
-    pub transform: Signal<Affine>,
+    pub position: Signal<Vec2>,
+    pub rotation: Signal<f32>,
+    pub scale: Signal<Vec2>,
     pub data: Arc<PathData>,
     pub color: Signal<Color>,
     pub width: Signal<f32>,
@@ -83,7 +85,9 @@ pub struct PathNode {
 impl PathNode {
     pub fn new(position: Vec2, path: BezPath, color: Color, width: f32) -> Self {
         Self {
-            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
+            position: Signal::new(position),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
             data: Arc::new(PathData::new(path)),
             color: Signal::new(color),
             width: Signal::new(width),
@@ -91,31 +95,23 @@ impl PathNode {
         }
     }
 
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = Signal::new(transform);
-        self
-    }
-
     pub fn with_position(mut self, position: Vec2) -> Self {
-        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self.position = Signal::new(position);
         self
     }
 
     pub fn with_rotation(mut self, angle: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self.rotation = Signal::new(angle);
         self
     }
 
     pub fn with_scale(mut self, scale: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
         self
     }
 
@@ -129,8 +125,15 @@ impl Node for PathNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let color = self.color.get();
         let width = self.width.get();
-        let local_transform = self.transform.get();
         let opacity = self.opacity.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -153,10 +156,15 @@ impl Node for PathNode {
         use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
 
-        let coeffs = self.transform.get().as_coeffs();
-        for c in coeffs {
-            c.to_bits().hash(&mut s);
-        }
+        let pos = self.position.get();
+        pos.x.to_bits().hash(&mut s);
+        pos.y.to_bits().hash(&mut s);
+
+        self.rotation.get().to_bits().hash(&mut s);
+
+        let sc = self.scale.get();
+        sc.x.to_bits().hash(&mut s);
+        sc.y.to_bits().hash(&mut s);
 
         self.width.get().to_bits().hash(&mut s);
         let color = self.color.get();

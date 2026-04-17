@@ -19,28 +19,28 @@ fn main() {
 
     project.scene.video_timeline.add(chain!(
         all!(
-            png.transform
-                .to(Affine::translate((50.0, 350.0)), Duration::from_secs(1)),
-            svg.transform
-                .to(Affine::translate((350.0, 50.0)), Duration::from_secs(1)),
+            png.position
+                .to(Vec2::new(50.0, 350.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(350.0, 50.0), Duration::from_secs(1)),
         ),
         all!(
-            png.transform
-                .to(Affine::translate((50.0, 50.0)), Duration::from_secs(1)),
-            svg.transform
-                .to(Affine::translate((350.0, 350.0)), Duration::from_secs(1)),
+            png.position
+                .to(Vec2::new(50.0, 50.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(350.0, 350.0), Duration::from_secs(1)),
         ),
         all!(
-            png.transform
-                .to(Affine::translate((350.0, 50.0)), Duration::from_secs(1)),
-            svg.transform
-                .to(Affine::translate((50.0, 350.0)), Duration::from_secs(1)),
+            png.position
+                .to(Vec2::new(350.0, 50.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(50.0, 350.0), Duration::from_secs(1)),
         ),
         all!(
-            png.transform
-                .to(Affine::translate((350.0, 350.0)), Duration::from_secs(1)),
-            svg.transform
-                .to(Affine::translate((50.0, 50.0)), Duration::from_secs(1)),
+            png.position
+                .to(Vec2::new(350.0, 350.0), Duration::from_secs(1)),
+            svg.position
+                .to(Vec2::new(50.0, 50.0), Duration::from_secs(1)),
         ),
     ));
 

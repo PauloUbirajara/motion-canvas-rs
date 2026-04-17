@@ -78,11 +78,8 @@ fn main() {
                         flows::with_easing(
                             *easing,
                             vec![balls[i]
-                                .transform
-                                .to(
-                                    Affine::translate((end_pos.x as f64, end_pos.y as f64)),
-                                    ANIM_DURATION_GO,
-                                )
+                                .position
+                                .to(end_pos, ANIM_DURATION_GO)
                                 .into()],
                         )
                     })
@@ -99,11 +96,8 @@ fn main() {
                         flows::with_easing(
                             *easing,
                             vec![balls[i]
-                                .transform
-                                .to(
-                                    Affine::translate((start_pos.x as f64, start_pos.y as f64)),
-                                    ANIM_DURATION_RETURN,
-                                )
+                                .position
+                                .to(start_pos, ANIM_DURATION_RETURN)
                                 .into()],
                         )
                     })

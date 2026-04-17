@@ -43,17 +43,17 @@ cargo add motion-canvas-rs --features math,image,audio
 
 | Node | Description | Features |
 |:---|:---|:---|
-| `Circle` | Basic circle primitive. | `radius`, `color`, `transform` |
-| `Rect` | Rectangle with optional corner radius. | `size`, `radius`, `color` |
-| `Polygon` | Regular and custom polygon shapes. | `points`, `fill`, `stroke` |
-| `Line` | Simple line between two points. | `start`, `end`, `width` |
-| `PathNode` | Complex path sampling and animation. | `arc-length`, `sample` |
-| `TextNode` | High-quality text rendering (skrifa). | `text`, `font_size`, `family` |
-| `MathNode` | Typst-powered mathematical formulas. | `LaTeX`, `smooth-transitions` |
-| `CodeNode` | Syntax-highlighted code with transitions. | `syntect`, `magic-move` |
-| `ImageNode` | Bitmap and SVG image display. | `png`, `jpeg`, `svg` |
+| `Circle` | Basic circle primitive. | `radius`, `position`, `rotation`, `scale` |
+| `Rect` | Rectangle with optional corner radius. | `size`, `radius`, `position` |
+| `Polygon` | Regular and custom polygon shapes. | `points`, `fill`, `stroke`, `rotation` |
+| `Line` | Simple line between two points. | `start`, `end`, `position`, `rotation` |
+| `PathNode` | Complex path sampling and animation. | `arc-length`, `sample`, `position` |
+| `TextNode` | High-quality text rendering (skrifa). | `text`, `font_size`, `position` |
+| `MathNode` | Typst-powered mathematical formulas. | `LaTeX`, `position` |
+| `CodeNode` | Syntax-highlighted code with transitions. | `syntect`, `magic-move`, `position` |
+| `ImageNode` | Bitmap and SVG image display. | `png`, `jpeg`, `svg`, `position` |
 | `AudioNode` | Independent audio clip playback. | `mp3`, `volume`, `crop` |
-| `GroupNode` | Hierarchical grouping of any nodes. | `children`, `inherited-opacity` |
+| `GroupNode` | Hierarchical grouping of any nodes. | `children`, `position`, `rotation`, `scale` |
 
 ## Project Structure
 
@@ -95,8 +95,7 @@ fn main() {
 
     project.scene.video_timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
-        text.transform
-            .to(Affine::translate((200.0, 400.0)), Duration::from_secs(1)),
+        text.position.to(Vec2::new(200.0, 400.0), Duration::from_secs(1)),
     ]);
 
     project.show().expect("Failed to render");

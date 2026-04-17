@@ -64,8 +64,8 @@ fn main() {
 
     // Clone signals for use in closures to avoid partial moves
     let bg_size = background_rect.size.clone();
-    let bg_transform = background_rect.transform.clone();
-    let text_transform = title_text.transform.clone();
+    let bg_pos = background_rect.position.clone();
+    let text_pos = title_text.position.clone();
 
     // 3. Define the Animation "Super Sequence"
     project.scene.video_timeline.add(flows::all![
@@ -93,7 +93,7 @@ fn main() {
             // The path follow combined with a "race" logic
             flows::any![
                 follower
-                    .transform
+                    .position
                     .follow(&path_node, Duration::from_secs(4))
                     .ease(easings::cubic_in_out),
                 // Race: if this 'wait' finishes first, the follow is done
@@ -111,15 +111,15 @@ fn main() {
                     .ease(easings::cubic_in),
                 flows::delay![
                     Duration::from_millis(200),
-                    bg_transform
-                        .to(Affine::translate((400.0, 280.0)), Duration::from_secs(1))
+                    bg_pos
+                        .to(Vec2::new(400.0, 280.0), Duration::from_secs(1))
                         .ease(easings::elastic_in)
                 ],
-                text_transform
-                    .to(Affine::translate((100.0, 50.0)), Duration::from_secs(1))
+                text_pos
+                    .to(Vec2::new(100.0, 50.0), Duration::from_secs(1))
                     .ease(easings::cubic_out),
-                logo.transform
-                    .to(Affine::translate((600.0, 80.0)), Duration::from_secs(1))
+                logo.position
+                    .to(Vec2::new(600.0, 80.0), Duration::from_secs(1))
                     .ease(easings::elastic_out),
             ]
         ]

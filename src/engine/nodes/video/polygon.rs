@@ -5,14 +5,16 @@ use vello::kurbo::{Affine, BezPath, Stroke};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 
-const DEFAULT_FILL_COLOR: Color = Color::RED;
-const DEFAULT_STROKE_COLOR: Color = Color::TRANSPARENT;
-const DEFAULT_STROKE_WIDTH: f32 = 0.0;
+const DEFAULT_FILL_COLOR: Color = Color::rgb8(9, 9, 11); // Zinc 950
+const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25); // 10% Zinc 50
+const DEFAULT_STROKE_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
 #[derive(Clone)]
 pub struct Polygon {
-    pub transform: Signal<Affine>,
+    pub position: Signal<Vec2>,
+    pub rotation: Signal<f32>,
+    pub scale: Signal<Vec2>,
     pub points: Signal<Vec<Vec2>>,
     pub fill_color: Signal<Color>,
     pub stroke_color: Signal<Color>,
@@ -23,7 +25,9 @@ pub struct Polygon {
 impl Default for Polygon {
     fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::IDENTITY),
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
             points: Signal::new(Vec::new()),
             fill_color: Signal::new(DEFAULT_FILL_COLOR),
             stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
@@ -41,31 +45,23 @@ impl Polygon {
             .with_fill(fill_color)
     }
 
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = Signal::new(transform);
-        self
-    }
-
     pub fn with_position(mut self, position: Vec2) -> Self {
-        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self.position = Signal::new(position);
         self
     }
 
     pub fn with_rotation(mut self, angle: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self.rotation = Signal::new(angle);
         self
     }
 
     pub fn with_scale(mut self, scale: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
         self
     }
 
@@ -91,14 +87,14 @@ impl Polygon {
     }
 
     /// Convenience method to create a regular polygon.
-    pub fn regular(position: Vec2, sides: u32, radius: f32, color: Color) -> Self {
+    pub fn regular(sides: u32, radius: f32) -> Self {
         let mut points = Vec::new();
         for i in 0..sides {
             let angle =
                 (i as f32 / sides as f32) * 2.0 * std::f32::consts::PI - std::f32::consts::PI / 2.0;
             points.push(Vec2::new(angle.cos() * radius, angle.sin() * radius));
         }
-        Self::new(position, points, color)
+        Self::default().with_points(points)
     }
 }
 
@@ -112,8 +108,15 @@ impl Node for Polygon {
         let fill_color = self.fill_color.get();
         let stroke_color = self.stroke_color.get();
         let stroke_width = self.stroke_width.get();
-        let local_transform = self.transform.get();
         let opacity = self.opacity.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -158,10 +161,15 @@ impl Node for Polygon {
         use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
 
-        let coeffs = self.transform.get().as_coeffs();
-        for c in coeffs {
-            c.to_bits().hash(&mut s);
-        }
+        let pos = self.position.get();
+        pos.x.to_bits().hash(&mut s);
+        pos.y.to_bits().hash(&mut s);
+
+        self.rotation.get().to_bits().hash(&mut s);
+
+        let sc = self.scale.get();
+        sc.x.to_bits().hash(&mut s);
+        sc.y.to_bits().hash(&mut s);
 
         for p in self.points.get() {
             p.x.to_bits().hash(&mut s);

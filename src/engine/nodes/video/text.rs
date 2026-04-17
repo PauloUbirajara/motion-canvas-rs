@@ -31,7 +31,9 @@ struct TextCacheKey {
 }
 
 pub struct TextNode {
-    pub transform: Signal<Affine>,
+    pub position: Signal<Vec2>,
+    pub rotation: Signal<f32>,
+    pub scale: Signal<Vec2>,
     pub text: Signal<String>,
     pub font_size: Signal<f32>,
     pub color: Signal<Color>,
@@ -43,7 +45,9 @@ pub struct TextNode {
 impl Default for TextNode {
     fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::IDENTITY),
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
             text: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
             color: Signal::new(DEFAULT_COLOR),
@@ -63,31 +67,23 @@ impl TextNode {
             .with_color(color)
     }
 
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = Signal::new(transform);
-        self
-    }
-
     pub fn with_position(mut self, position: Vec2) -> Self {
-        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self.position = Signal::new(position);
         self
     }
 
     pub fn with_rotation(mut self, angle: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self.rotation = Signal::new(angle);
         self
     }
 
     pub fn with_scale(mut self, scale: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
         self
     }
 
@@ -120,7 +116,9 @@ impl TextNode {
 impl Clone for TextNode {
     fn clone(&self) -> Self {
         Self {
-            transform: self.transform.clone(),
+            position: self.position.clone(),
+            rotation: self.rotation.clone(),
+            scale: self.scale.clone(),
             text: self.text.clone(),
             font_size: self.font_size.clone(),
             color: self.color.clone(),
@@ -161,8 +159,15 @@ impl Node for TextNode {
         let text = self.text.get();
         let size = self.font_size.get();
         let color = self.color.get();
-        let local_transform = self.transform.get();
         let opacity = self.opacity.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
 
         let key = TextCacheKey {
             text: text.clone(),
@@ -242,10 +247,15 @@ impl Node for TextNode {
         use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
 
-        let coeffs = self.transform.get().as_coeffs();
-        for c in coeffs {
-            c.to_bits().hash(&mut s);
-        }
+        let pos = self.position.get();
+        pos.x.to_bits().hash(&mut s);
+        pos.y.to_bits().hash(&mut s);
+
+        self.rotation.get().to_bits().hash(&mut s);
+
+        let sc = self.scale.get();
+        sc.x.to_bits().hash(&mut s);
+        sc.y.to_bits().hash(&mut s);
 
         self.text.get().hash(&mut s);
         self.font_size.get().to_bits().hash(&mut s);

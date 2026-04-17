@@ -6,7 +6,9 @@ use vello::Scene;
 
 pub struct GroupNode {
     pub nodes: Vec<Box<dyn Node>>,
-    pub transform: Signal<Affine>,
+    pub position: Signal<Vec2>,
+    pub rotation: Signal<f32>,
+    pub scale: Signal<Vec2>,
     pub opacity: Signal<f32>,
 }
 
@@ -14,7 +16,9 @@ impl Default for GroupNode {
     fn default() -> Self {
         Self {
             nodes: Vec::new(),
-            transform: Signal::new(Affine::IDENTITY),
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
             opacity: Signal::new(1.0),
         }
     }
@@ -25,13 +29,8 @@ impl GroupNode {
         Self::default().with_nodes(nodes)
     }
 
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = Signal::new(transform);
-        self
-    }
-
     pub fn with_position(mut self, pos: Vec2) -> Self {
-        self.transform = Signal::new(Affine::translate((pos.x as f64, pos.y as f64)));
+        self.position = Signal::new(pos);
         self
     }
 
@@ -41,20 +40,17 @@ impl GroupNode {
     }
 
     pub fn with_rotation(mut self, angle: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self.rotation = Signal::new(angle);
         self
     }
 
     pub fn with_scale(mut self, scale: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
         self
     }
 
@@ -68,7 +64,9 @@ impl Clone for GroupNode {
     fn clone(&self) -> Self {
         Self {
             nodes: self.nodes.iter().map(|n| n.clone_node()).collect(),
-            transform: self.transform.clone(),
+            position: self.position.clone(),
+            rotation: self.rotation.clone(),
+            scale: self.scale.clone(),
             opacity: self.opacity.clone(),
         }
     }
@@ -76,8 +74,15 @@ impl Clone for GroupNode {
 
 impl Node for GroupNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let local_transform = self.transform.get();
         let opacity = self.opacity.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -102,10 +107,15 @@ impl Node for GroupNode {
         use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
 
-        let coeffs = self.transform.get().as_coeffs();
-        for c in coeffs {
-            c.to_bits().hash(&mut s);
-        }
+        let pos = self.position.get();
+        pos.x.to_bits().hash(&mut s);
+        pos.y.to_bits().hash(&mut s);
+
+        self.rotation.get().to_bits().hash(&mut s);
+
+        let sc = self.scale.get();
+        sc.x.to_bits().hash(&mut s);
+        sc.y.to_bits().hash(&mut s);
         self.opacity.get().to_bits().hash(&mut s);
 
         for node in &self.nodes {

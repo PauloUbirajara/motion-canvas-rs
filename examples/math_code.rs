@@ -52,18 +52,18 @@ fn main() {
     project.scene.add(Box::new(pytagorean_theorem.clone()));
 
     project.scene.video_timeline.add(all![
-        triangle_line_group.transform.to(
-            Affine::translate((50.0, 200.0)) * Affine::scale(1.0),
-            Duration::from_secs(1),
-        ),
+        all![
+            triangle_line_group.position.to(Vec2::new(50.0, 200.0), Duration::from_secs(1)),
+            triangle_line_group.scale.to(Vec2::ONE, Duration::from_secs(1)),
+        ],
         all![
             pytagorean_theorem.opacity.to(1.0, Duration::from_secs(1)),
             pytagorean_theorem
                 .font_size
                 .to(32.0, Duration::from_secs(1)),
             pytagorean_theorem
-                .transform
-                .to(Affine::translate((150.0, 200.0)), Duration::from_secs(1)),
+                .position
+                .to(Vec2::new(150.0, 200.0), Duration::from_secs(1)),
         ]
     ]);
 
