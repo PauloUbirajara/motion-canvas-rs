@@ -26,10 +26,9 @@ fn test_circle_builder() {
         .with_color(Color::BLUE);
 
     // Check initial values via signals
-    let transform = circle.transform.get();
-    let coeffs = transform.as_coeffs();
-    assert_eq!(coeffs[4], 100.0);
-    assert_eq!(coeffs[5], 200.0);
+    let position = circle.position.get();
+    assert_eq!(position.x, 100.0);
+    assert_eq!(position.y, 200.0);
     assert_eq!(circle.radius.get(), 75.0);
     assert_eq!(circle.color.get(), Color::BLUE);
 }
@@ -41,6 +40,7 @@ fn test_rect_builder() {
         .with_size(Vec2::new(200.0, 300.0))
         .with_radius(10.0);
 
+    assert_eq!(rect.position.get(), Vec2::new(10.0, 10.0));
     assert_eq!(rect.size.get(), Vec2::new(200.0, 300.0));
     assert_eq!(rect.radius.get(), 10.0);
 }
@@ -109,6 +109,7 @@ fn test_group_builder() {
         .with_position(Vec2::new(50.0, 50.0))
         .with_opacity(0.5);
 
+    assert_eq!(group.position.get(), Vec2::new(50.0, 50.0));
     assert_eq!(group.opacity.get(), 0.5);
 }
 
@@ -124,12 +125,11 @@ fn test_image_builder() {
 
 #[test]
 fn test_project_frame_naming() {
-    let project = Project::default()
-        .with_title(" My Project (Demo) ");
-    
+    let project = Project::default().with_title(" My Project (Demo) ");
+
     let name = project.get_frame_name(42);
     assert_eq!(name, "my_project_demo_0042.png");
-    
+
     // Test default behavior with complex title
     let project_default = Project::default()
         .with_title("New  Project")
