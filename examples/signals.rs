@@ -36,8 +36,7 @@ impl<T: Tweenable + PartialEq, S: Tweenable + PartialEq> Node for SignalLink<T, 
     fn state_hash(&self) -> u64 {
         // Hashing the source signal ensures the scene knows it needs a redraw
         // when the source value changes, even if no other node has updated yet.
-        // self.source.hash()
-        0
+        self.source.state_hash()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {
