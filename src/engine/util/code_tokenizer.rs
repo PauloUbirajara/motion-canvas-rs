@@ -170,6 +170,18 @@ impl Tweenable for CodeValue {
             selection: b.selection.clone(),
         }
     }
+
+    fn state_hash(&self) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut s = DefaultHasher::new();
+        self.text.hash(&mut s);
+        self.selection.hash(&mut s);
+        if let Some(trans) = &self.transition {
+            trans.progress.to_bits().hash(&mut s);
+        }
+        s.finish()
+    }
 }
 
 pub fn strip_common_indent(text: &str) -> String {

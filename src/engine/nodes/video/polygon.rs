@@ -157,41 +157,14 @@ impl Node for Polygon {
     fn update(&mut self, _dt: Duration) {}
 
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
-
-        let pos = self.position.get();
-        pos.x.to_bits().hash(&mut s);
-        pos.y.to_bits().hash(&mut s);
-
-        self.rotation.get().to_bits().hash(&mut s);
-
-        let sc = self.scale.get();
-        sc.x.to_bits().hash(&mut s);
-        sc.y.to_bits().hash(&mut s);
-
-        for p in self.points.get() {
-            p.x.to_bits().hash(&mut s);
-            p.y.to_bits().hash(&mut s);
-        }
-
-        let color = self.fill_color.get();
-        color.r.hash(&mut s);
-        color.g.hash(&mut s);
-        color.b.hash(&mut s);
-        color.a.hash(&mut s);
-
-        let s_color = self.stroke_color.get();
-        s_color.r.hash(&mut s);
-        s_color.g.hash(&mut s);
-        s_color.b.hash(&mut s);
-        s_color.a.hash(&mut s);
-
-        self.stroke_width.get().to_bits().hash(&mut s);
-        self.opacity.get().to_bits().hash(&mut s);
-
-        s.finish()
+        self.position.state_hash()
+            ^ self.rotation.state_hash()
+            ^ self.scale.state_hash()
+            ^ self.points.state_hash()
+            ^ self.fill_color.state_hash()
+            ^ self.stroke_color.state_hash()
+            ^ self.stroke_width.state_hash()
+            ^ self.opacity.state_hash()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

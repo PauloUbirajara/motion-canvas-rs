@@ -232,8 +232,6 @@ impl crate::engine::animation::Animation for MathTransition {
     }
 }
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 
 impl Node for MathNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
@@ -297,28 +295,14 @@ impl Node for MathNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let mut s = DefaultHasher::new();
-
-        let pos = self.position.get();
-        pos.x.to_bits().hash(&mut s);
-        pos.y.to_bits().hash(&mut s);
-
-        self.rotation.get().to_bits().hash(&mut s);
-
-        let sc = self.scale.get();
-        sc.x.to_bits().hash(&mut s);
-        sc.y.to_bits().hash(&mut s);
-
-        self.equation.get().hash(&mut s);
-        self.font_size.get().to_bits().hash(&mut s);
-        let color = self.color.get();
-        color.r.hash(&mut s);
-        color.g.hash(&mut s);
-        color.b.hash(&mut s);
-        color.a.hash(&mut s);
-        self.opacity.get().to_bits().hash(&mut s);
-        self.transition_progress.get().to_bits().hash(&mut s);
-        s.finish()
+        self.position.state_hash()
+            ^ self.rotation.state_hash()
+            ^ self.scale.state_hash()
+            ^ self.equation.state_hash()
+            ^ self.font_size.state_hash()
+            ^ self.color.state_hash()
+            ^ self.opacity.state_hash()
+            ^ self.transition_progress.state_hash()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

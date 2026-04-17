@@ -103,26 +103,16 @@ impl Node for GroupNode {
     }
 
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
-
-        let pos = self.position.get();
-        pos.x.to_bits().hash(&mut s);
-        pos.y.to_bits().hash(&mut s);
-
-        self.rotation.get().to_bits().hash(&mut s);
-
-        let sc = self.scale.get();
-        sc.x.to_bits().hash(&mut s);
-        sc.y.to_bits().hash(&mut s);
-        self.opacity.get().to_bits().hash(&mut s);
+        let mut s = self.position.state_hash()
+            ^ self.rotation.state_hash()
+            ^ self.scale.state_hash()
+            ^ self.opacity.state_hash();
 
         for node in &self.nodes {
-            node.state_hash().hash(&mut s);
+            s ^= node.state_hash();
         }
 
-        s.finish()
+        s
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

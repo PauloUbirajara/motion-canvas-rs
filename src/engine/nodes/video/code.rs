@@ -372,26 +372,18 @@ impl Node for CodeNode {
         use std::hash::{Hash, Hasher};
         let mut s = DefaultHasher::new();
 
-        let pos = self.position.get();
-        pos.x.to_bits().hash(&mut s);
-        pos.y.to_bits().hash(&mut s);
+        s.write_u64(self.position.state_hash());
+        s.write_u64(self.rotation.state_hash());
+        s.write_u64(self.scale.state_hash());
+        s.write_u64(self.font_size.state_hash());
+        s.write_u64(self.code.state_hash());
+        s.write_u64(self.opacity.state_hash());
+        s.write_u64(self.dim_opacity.state_hash());
 
-        self.rotation.get().to_bits().hash(&mut s);
-
-        let sc = self.scale.get();
-        sc.x.to_bits().hash(&mut s);
-        sc.y.to_bits().hash(&mut s);
-
-        self.font_size.get().to_bits().hash(&mut s);
-        let val = self.code.get();
-        val.text.hash(&mut s);
-        if let Some(trans) = &val.transition {
-            trans.progress.to_bits().hash(&mut s);
-        }
         self.language.hash(&mut s);
         self.theme.hash(&mut s);
         self.font_family.hash(&mut s);
-        self.opacity.get().to_bits().hash(&mut s);
+
         s.finish()
     }
 

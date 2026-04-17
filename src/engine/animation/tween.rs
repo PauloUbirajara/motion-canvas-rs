@@ -81,7 +81,7 @@ impl Tweenable for Color {
             lerp(a.r as f32, b.r as f32, t) as u8,
             lerp(a.g as f32, b.g as f32, t) as u8,
             lerp(a.b as f32, b.b as f32, t) as u8,
-            lerp(a.a as f32, b.b as f32, t) as u8,
+            lerp(a.a as f32, b.a as f32, t) as u8,
         )
     }
     fn state_hash(&self) -> u64 {
