@@ -29,9 +29,6 @@ fn main() {
     // Animate rotation and opacity
     project.scene.video_timeline.add(all![
         chain![
-            pentagon
-                .position
-                .to(Vec2::new(200.0, 300.0), Duration::from_secs(0)),
             pentagon.scale.to(Vec2::ONE, Duration::from_secs(1)),
             pentagon
                 .rotation

@@ -31,7 +31,11 @@ impl Tweenable for Vec2 {
         Vec2::new(lerp(a.x, b.x, t), lerp(a.y, b.y, t))
     }
     fn state_hash(&self) -> u64 {
-        self.x.to_bits() as u64 ^ self.y.to_bits() as u64
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        use std::hash::{Hash, Hasher};
+        self.x.to_bits().hash(&mut hasher);
+        self.y.to_bits().hash(&mut hasher);
+        hasher.finish()
     }
 }
 
@@ -104,8 +108,13 @@ impl Tweenable for Affine {
         ])
     }
     fn state_hash(&self) -> u64 {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        use std::hash::{Hash, Hasher};
         let c = self.as_coeffs();
-        c[0].to_bits() ^ c[1].to_bits() ^ c[2].to_bits() ^ c[3].to_bits() ^ c[4].to_bits() ^ c[5].to_bits()
+        for val in c {
+            val.to_bits().hash(&mut hasher);
+        }
+        hasher.finish()
     }
 }
 
