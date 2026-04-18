@@ -5,6 +5,7 @@ use motion_canvas_rs::prelude::*;
 fn main() {
     let mut project = Project::default()
         .with_dimensions(650, 200)
+        .with_title("Shapes")
         .close_on_finish();
 
     // Circle

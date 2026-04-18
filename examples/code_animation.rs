@@ -4,6 +4,7 @@ use std::time::Duration;
 fn main() {
     let mut project = Project::default()
         .with_dimensions(800, 800)
+        .with_title("Code Animation")
         .close_on_finish();
 
     let code = CodeNode::default()

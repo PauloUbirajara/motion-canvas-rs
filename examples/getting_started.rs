@@ -6,6 +6,7 @@ fn main() {
     let mut project = Project::default()
         .with_fps(60)
         .with_cache(true)
+        .with_title("Getting Started")
         .close_on_finish();
 
     // 2. Define Nodes

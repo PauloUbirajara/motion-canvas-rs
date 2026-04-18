@@ -48,7 +48,7 @@ impl<T: Tweenable + PartialEq, S: Tweenable + PartialEq> Node for SignalLink<T, 
 
 fn main() {
     let mut project = Project::default()
-        .with_title("Signals Demo")
+        .with_title("Signals")
         .with_dimensions(800, 600)
         .close_on_finish();
 

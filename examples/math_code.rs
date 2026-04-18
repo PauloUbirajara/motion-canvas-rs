@@ -2,7 +2,10 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::default().with_fps(120).close_on_finish();
+    let mut project = Project::default()
+        .with_fps(120)
+        .with_title("Math Code")
+        .close_on_finish();
 
     let triangle = Polygon::default()
         .with_position(Vec2::ZERO)
@@ -53,8 +56,12 @@ fn main() {
 
     project.scene.video_timeline.add(all![
         all![
-            triangle_line_group.position.to(Vec2::new(50.0, 200.0), Duration::from_secs(1)),
-            triangle_line_group.scale.to(Vec2::ONE, Duration::from_secs(1)),
+            triangle_line_group
+                .position
+                .to(Vec2::new(50.0, 200.0), Duration::from_secs(1)),
+            triangle_line_group
+                .scale
+                .to(Vec2::ONE, Duration::from_secs(1)),
         ],
         all![
             pytagorean_theorem.opacity.to(1.0, Duration::from_secs(1)),

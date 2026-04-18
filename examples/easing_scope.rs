@@ -14,6 +14,7 @@ const WAIT_DURATION: Duration = Duration::from_secs(1);
 fn main() {
     let mut project = Project::default()
         .with_dimensions(CANVAS_WIDTH, CANVAS_HEIGHT)
+        .with_title("Easing Scope")
         .close_on_finish();
 
     let easing_configs = vec![

@@ -9,7 +9,7 @@ fn main() {
         .with_cache(true)
         .with_ffmpeg(true)
         .with_output_path("output")
-        .with_title("Motion Canvas Rust - Demo")
+        .with_title("Advanced Flow")
         .close_on_finish();
 
     // 2. Setup Nodes

@@ -6,6 +6,7 @@ fn main() {
     let mut project = Project::default()
         .with_fps(30)
         .with_ffmpeg(true)
+        .with_title("Export")
         .with_output_path("output")
         .close_on_finish();
 

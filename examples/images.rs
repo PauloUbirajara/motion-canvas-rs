@@ -4,6 +4,7 @@ use std::time::Duration;
 fn main() {
     let mut project = Project::default()
         .with_dimensions(600, 600)
+        .with_title("Images")
         .close_on_finish();
 
     // Using the sample logo path from the project
