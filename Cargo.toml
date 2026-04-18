@@ -93,3 +93,6 @@ name = "polygon"
 
 [[example]]
 name = "shapes"
+
+[[example]]
+name = "signals"
