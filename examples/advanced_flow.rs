@@ -20,25 +20,24 @@ fn main() {
     let follower = Circle::default()
         .with_position(Vec2::new(100.0, 300.0))
         .with_radius(20.0)
-        .with_color(Color::rgb8(0xe1, 0x32, 0x38)); // Red
+        .with_fill(Color::rgb8(0xe1, 0x32, 0x38)); // Red
 
     // Showcase: Rect and Line
     let background_rect = Rect::default()
         .with_position(Vec2::new(400.0, 300.0))
         .with_size(Vec2::new(760.0, 560.0))
-        .with_color(Color::rgba8(0x33, 0x33, 0x33, 150))
+        .with_fill(Color::rgba8(0x33, 0x33, 0x33, 150))
         .with_radius(20.0);
 
     let divider_line = Line::default()
         .with_start(Vec2::new(0.0, 300.0))
         .with_end(Vec2::new(0.0, 300.0))
-        .with_color(Color::rgb8(0x44, 0x44, 0x44))
-        .with_width(1.0);
+        .with_stroke(Color::rgb8(0x44, 0x44, 0x44), 1.0);
     let title_text = TextNode::default()
         .with_position(Vec2::new(50.0, 50.0))
         .with_text("Motion Canvas in Rust")
         .with_font_size(40.0)
-        .with_color(Color::rgb8(0x68, 0xab, 0xdf)) // Blue
+        .with_fill(Color::rgb8(0x68, 0xab, 0xdf)) // Blue
         .with_font("Inter");
 
     let code_block = CodeNode::default()
@@ -55,7 +54,7 @@ fn main() {
         .with_position(Vec2::new(50.0, 200.0))
         .with_equation("e^(i pi) + 1 = 0")
         .with_font_size(30.0)
-        .with_color(Color::rgb8(0xe6, 0xa7, 0x00)); // Yellow
+        .with_fill(Color::rgb8(0xe6, 0xa7, 0x00)); // Yellow
 
     let logo = ImageNode::default()
         .with_position(Vec2::new(600.0, 50.0))

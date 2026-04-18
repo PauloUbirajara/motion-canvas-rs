@@ -7,7 +7,7 @@ use vello::Scene;
 
 const DEFAULT_START: Vec2 = Vec2::ZERO;
 const DEFAULT_END: Vec2 = Vec2::new(100.0, 0.0);
-const DEFAULT_COLOR: Color = Color::rgba8(250, 250, 250, 25); // 10% Zinc 50
+const DEFAULT_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
@@ -18,7 +18,7 @@ pub struct Line {
     pub scale: Signal<Vec2>,
     pub start: Signal<Vec2>,
     pub end: Signal<Vec2>,
-    pub color: Signal<Color>,
+    pub stroke_color: Signal<Color>,
     pub width: Signal<f32>,
     pub opacity: Signal<f32>,
 }
@@ -31,7 +31,7 @@ impl Default for Line {
             scale: Signal::new(Vec2::ONE),
             start: Signal::new(DEFAULT_START),
             end: Signal::new(DEFAULT_END),
-            color: Signal::new(DEFAULT_COLOR),
+            stroke_color: Signal::new(DEFAULT_COLOR),
             width: Signal::new(DEFAULT_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
         }
@@ -43,8 +43,7 @@ impl Line {
         Self::default()
             .with_start(start)
             .with_end(end)
-            .with_color(color)
-            .with_width(width)
+            .with_stroke(color, width)
     }
 
     pub fn with_position(mut self, position: Vec2) -> Self {
@@ -82,20 +81,15 @@ impl Line {
         self
     }
 
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
-        self
-    }
-
-    pub fn with_fill(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
-        self
-    }
-
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
-        self.color = Signal::new(color);
+        self.stroke_color = Signal::new(color);
         self.width = Signal::new(width);
         self
+    }
+
+    #[deprecated(note = "use with_stroke instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        self.with_stroke(color, 1.0)
     }
 
     pub fn with_width(mut self, width: f32) -> Self {
@@ -108,7 +102,7 @@ impl Node for Line {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let start = self.start.get();
         let end = self.end.get();
-        let color = self.color.get();
+        let stroke_color = self.stroke_color.get();
         let width = self.width.get();
         let opacity = self.opacity.get();
 
@@ -123,8 +117,8 @@ impl Node for Line {
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let mut final_color = color;
-        final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+        let mut final_color = stroke_color;
+        final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
 
         let brush = Brush::Solid(final_color);
 
@@ -147,7 +141,7 @@ impl Node for Line {
             ^ self.start.state_hash()
             ^ self.end.state_hash()
             ^ self.width.state_hash()
-            ^ self.color.state_hash()
+            ^ self.stroke_color.state_hash()
             ^ self.opacity.state_hash()
     }
 

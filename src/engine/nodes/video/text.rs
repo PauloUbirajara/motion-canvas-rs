@@ -36,7 +36,7 @@ pub struct TextNode {
     pub scale: Signal<Vec2>,
     pub text: Signal<String>,
     pub font_size: Signal<f32>,
-    pub color: Signal<Color>,
+    pub fill_color: Signal<Color>,
     pub opacity: Signal<f32>,
     pub font_family: String,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
@@ -50,7 +50,7 @@ impl Default for TextNode {
             scale: Signal::new(Vec2::ONE),
             text: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
-            color: Signal::new(DEFAULT_COLOR),
+            fill_color: Signal::new(DEFAULT_COLOR),
             opacity: Signal::new(DEFAULT_OPACITY),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
             cache: Arc::new(Mutex::new(None)),
@@ -64,7 +64,7 @@ impl TextNode {
             .with_position(position)
             .with_text(text)
             .with_font_size(size)
-            .with_color(color)
+            .with_fill(color)
     }
 
     pub fn with_position(mut self, position: Vec2) -> Self {
@@ -107,9 +107,14 @@ impl TextNode {
         self
     }
 
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
+    pub fn with_fill(mut self, color: Color) -> Self {
+        self.fill_color = Signal::new(color);
         self
+    }
+
+    #[deprecated(note = "use with_fill instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        self.with_fill(color)
     }
 }
 
@@ -121,7 +126,7 @@ impl Clone for TextNode {
             scale: self.scale.clone(),
             text: self.text.clone(),
             font_size: self.font_size.clone(),
-            color: self.color.clone(),
+            fill_color: self.fill_color.clone(),
             opacity: self.opacity.clone(),
             font_family: self.font_family.clone(),
             cache: self.cache.clone(),
@@ -158,7 +163,7 @@ impl Node for TextNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let text = self.text.get();
         let size = self.font_size.get();
-        let color = self.color.get();
+        let color = self.fill_color.get();
         let opacity = self.opacity.get();
 
         let pos = self.position.get();
@@ -248,7 +253,7 @@ impl Node for TextNode {
             ^ self.scale.state_hash()
             ^ self.text.state_hash()
             ^ self.font_size.state_hash()
-            ^ self.color.state_hash()
+            ^ self.fill_color.state_hash()
             ^ self.opacity.state_hash()
     }
 

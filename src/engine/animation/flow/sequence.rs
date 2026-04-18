@@ -92,16 +92,16 @@ impl Animation for Sequence {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node1 = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
-/// # let node2 = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
-/// # let node3 = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
-/// # let target = Affine::translate((100.0, 100.0));
+/// # let node1 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let node2 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let node3 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let target = Vec2::new(100.0, 100.0);
 /// # let dur = Duration::from_secs(1);
 /// sequence!(
 ///     Duration::from_millis(100),
-///     node1.transform.to(target.clone(), dur),
-///     node2.transform.to(target.clone(), dur),
-///     node3.transform.to(target, dur)
+///     node1.position.to(target.clone(), dur),
+///     node2.position.to(target.clone(), dur),
+///     node3.position.to(target, dur)
 /// );
 /// ```
 pub fn sequence(stagger: Duration, animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {

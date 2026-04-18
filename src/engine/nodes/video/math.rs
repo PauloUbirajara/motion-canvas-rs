@@ -33,7 +33,7 @@ pub struct MathNode {
     pub scale: Signal<Vec2>,
     pub equation: Signal<String>,
     pub font_size: Signal<f32>,
-    pub color: Signal<Color>,
+    pub fill_color: Signal<Color>,
     pub opacity: Signal<f32>,
     pub transition_progress: Signal<f32>,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
@@ -48,7 +48,7 @@ impl Default for MathNode {
             scale: Signal::new(Vec2::ONE),
             equation: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
-            color: Signal::new(DEFAULT_COLOR),
+            fill_color: Signal::new(DEFAULT_COLOR),
             opacity: Signal::new(DEFAULT_OPACITY),
             transition_progress: Signal::new(1.0),
             cache: Arc::new(Mutex::new(None)),
@@ -65,7 +65,7 @@ impl Clone for MathNode {
             scale: self.scale.clone(),
             equation: self.equation.clone(),
             font_size: self.font_size.clone(),
-            color: self.color.clone(),
+            fill_color: self.fill_color.clone(),
             opacity: self.opacity.clone(),
             transition_progress: self.transition_progress.clone(),
             cache: self.cache.clone(),
@@ -80,7 +80,7 @@ impl MathNode {
             .with_position(pos)
             .with_equation(equation)
             .with_font_size(size)
-            .with_color(color)
+            .with_fill(color)
     }
 
     pub fn with_position(mut self, position: Vec2) -> Self {
@@ -131,11 +131,15 @@ impl MathNode {
         self
     }
 
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
+    pub fn with_fill(mut self, color: Color) -> Self {
+        self.fill_color = Signal::new(color);
         self
     }
-    // ...
+
+    #[deprecated(note = "use with_fill instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        self.with_fill(color)
+    }
 
     pub fn start_transition(&self, new_eq: &str) {
         let prev_eq = self.equation.get();
@@ -232,10 +236,9 @@ impl crate::engine::animation::Animation for MathTransition {
     }
 }
 
-
 impl Node for MathNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let color = self.color.get();
+        let color = self.fill_color.get();
 
         self.rebuild_if_needed();
 
@@ -300,7 +303,7 @@ impl Node for MathNode {
             ^ self.scale.state_hash()
             ^ self.equation.state_hash()
             ^ self.font_size.state_hash()
-            ^ self.color.state_hash()
+            ^ self.fill_color.state_hash()
             ^ self.opacity.state_hash()
             ^ self.transition_progress.state_hash()
     }

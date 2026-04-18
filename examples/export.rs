@@ -14,13 +14,13 @@ fn main() {
     let circle = Circle::default()
         .with_position(Vec2::new(400.0, 300.0))
         .with_radius(50.0)
-        .with_color(Color::rgb8(0x68, 0xab, 0xdf)); // Blue
+        .with_fill(Color::rgb8(0x68, 0xab, 0xdf)); // Blue
 
     let text = TextNode::default()
         .with_position(Vec2::new(200.0, 450.0))
         .with_text("Export Demo")
         .with_font_size(40.0)
-        .with_color(Color::rgb8(0xf2, 0xf2, 0xf2)); // White
+        .with_fill(Color::rgb8(0xf2, 0xf2, 0xf2)); // White
 
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(text.clone()));
@@ -29,7 +29,7 @@ fn main() {
     project.scene.video_timeline.add(flows::all![
         // Circle color and size
         circle
-            .color
+            .fill_color
             .to(Color::rgb8(0xf2, 0xf2, 0xf2), Duration::from_secs(2))
             .ease(easings::quad_in_out),
         circle

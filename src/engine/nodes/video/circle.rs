@@ -6,8 +6,8 @@ use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 
 const DEFAULT_RADIUS: f32 = 50.0;
-const DEFAULT_COLOR: Color = Color::rgb8(9, 9, 11); // Zinc 950
-const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25); // 10% Zinc 50
+const DEFAULT_COLOR: Color = Color::rgb8(9, 9, 11);
+const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_STROKE_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
@@ -17,7 +17,7 @@ pub struct Circle {
     pub rotation: Signal<f32>,
     pub scale: Signal<Vec2>,
     pub radius: Signal<f32>,
-    pub color: Signal<Color>,
+    pub fill_color: Signal<Color>,
     pub stroke_color: Signal<Color>,
     pub stroke_width: Signal<f32>,
     pub opacity: Signal<f32>,
@@ -30,7 +30,7 @@ impl Default for Circle {
             rotation: Signal::new(0.0),
             scale: Signal::new(Vec2::ONE),
             radius: Signal::new(DEFAULT_RADIUS),
-            color: Signal::new(DEFAULT_COLOR),
+            fill_color: Signal::new(DEFAULT_COLOR),
             stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
@@ -43,7 +43,7 @@ impl Circle {
         Self::default()
             .with_position(position)
             .with_radius(radius)
-            .with_color(color)
+            .with_fill(color)
     }
 
     pub fn with_position(mut self, position: Vec2) -> Self {
@@ -76,14 +76,14 @@ impl Circle {
         self
     }
 
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
+    pub fn with_fill(mut self, color: Color) -> Self {
+        self.fill_color = Signal::new(color);
         self
     }
 
-    pub fn with_fill(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
-        self
+    #[deprecated(note = "use with_fill instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        self.with_fill(color)
     }
 
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
@@ -96,7 +96,7 @@ impl Circle {
 impl Node for Circle {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let radius = self.radius.get();
-        let fill_color = self.color.get();
+        let fill_color = self.fill_color.get();
         let stroke_color = self.stroke_color.get();
         let stroke_width = self.stroke_width.get();
         let opacity = self.opacity.get();
@@ -144,7 +144,7 @@ impl Node for Circle {
             ^ self.rotation.state_hash()
             ^ self.scale.state_hash()
             ^ self.radius.state_hash()
-            ^ self.color.state_hash()
+            ^ self.fill_color.state_hash()
             ^ self.stroke_color.state_hash()
             ^ self.stroke_width.state_hash()
             ^ self.opacity.state_hash()

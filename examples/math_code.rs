@@ -20,18 +20,15 @@ fn main() {
         Line::default()
             .with_start(Vec2::new(0.0, 0.0))
             .with_end(Vec2::new(0.0, 200.0))
-            .with_color(Color::WHITE)
-            .with_width(10.0),
+            .with_stroke(Color::WHITE, 10.0),
         Line::default()
             .with_start(Vec2::new(0.0, 0.0))
             .with_end(Vec2::new(200.0, 200.0))
-            .with_color(Color::WHITE)
-            .with_width(10.0),
+            .with_stroke(Color::WHITE, 10.0),
         Line::default()
             .with_start(Vec2::new(0.0, 200.0))
             .with_end(Vec2::new(200.0, 200.0))
-            .with_color(Color::WHITE)
-            .with_width(10.0),
+            .with_stroke(Color::WHITE, 10.0),
     ];
 
     let triangle_line_group = GroupNode::default()
@@ -48,7 +45,7 @@ fn main() {
         .with_position(Vec2::new(50.0, 200.0))
         .with_equation("a^2 + b^2 = c^2")
         .with_font_size(10.0)
-        .with_color(Color::GRAY)
+        .with_fill(Color::GRAY)
         .with_opacity(0.0);
 
     project.scene.add(Box::new(triangle_line_group.clone()));

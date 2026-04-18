@@ -17,12 +17,12 @@ fn main() {
             rect.position
                 .to(Vec2::new(150.0, 150.0), Duration::from_secs(1)),
             rect.size.to(Vec2::new(200.0, 50.0), Duration::from_secs(1)),
-            rect.color.to(Color::BLUE, Duration::from_secs(1)),
+            rect.fill_color.to(Color::BLUE, Duration::from_secs(1)),
         ],
         all![
             rect.position
                 .to(Vec2::new(350.0, 150.0), Duration::from_secs(1)),
-            rect.color.to(Color::RED, Duration::from_secs(1)),
+            rect.fill_color.to(Color::RED, Duration::from_secs(1)),
         ]
     ));
 

@@ -70,15 +70,15 @@ impl Animation for LoopAnim {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
-/// # let target = Affine::translate((100.0, 100.0));
+/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let target = Vec2::new(100.0, 100.0);
 /// # let dur = Duration::from_secs(1);
 /// // Repeat 5 times
-/// loop_anim!(node.transform.to(target.clone(), dur), Some(5));
+/// loop_anim!(node.position.to(target.clone(), dur), Some(5));
 ///
-/// # let node_2 = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
+/// # let node_2 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
 /// // Repeat infinitely
-/// loop_anim!(node_2.transform.to(target, dur), None);
+/// loop_anim!(node_2.position.to(target, dur), None);
 /// ```
 pub fn loop_anim<F>(factory: F, count: Option<usize>) -> Box<dyn Animation>
 where

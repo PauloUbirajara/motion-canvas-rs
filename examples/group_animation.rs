@@ -10,18 +10,18 @@ fn main() {
     let rect = Rect::default()
         .with_position(Vec2::new(-50.0, -50.0))
         .with_size(Vec2::new(100.0, 100.0))
-        .with_color(Color::rgba8(100, 100, 255, 255))
+        .with_fill(Color::rgba8(100, 100, 255, 255))
         .with_radius(10.0);
 
     let circle1 = Circle::default()
         .with_position(Vec2::new(-40.0, -40.0))
         .with_radius(20.0)
-        .with_color(Color::rgba8(255, 100, 100, 255));
+        .with_fill(Color::rgba8(255, 100, 100, 255));
 
     let circle2 = Circle::default()
         .with_position(Vec2::new(40.0, 40.0))
         .with_radius(20.0)
-        .with_color(Color::rgba8(100, 255, 100, 255));
+        .with_fill(Color::rgba8(100, 255, 100, 255));
 
     // Create a GroupNode holding them
     let group = GroupNode::default()

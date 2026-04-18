@@ -59,9 +59,9 @@ impl Animation for Any {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
+/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
 /// any![
-///     node.transform.to(Affine::translate((500.0, 500.0)), Duration::from_secs(5)),
+///     node.position.to(Vec2::new(500.0, 500.0), Duration::from_secs(5)),
 ///     wait(Duration::from_secs(1)), // Finish after 1s regardless of position
 /// ];
 /// ```

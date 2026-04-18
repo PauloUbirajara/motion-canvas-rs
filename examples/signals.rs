@@ -78,18 +78,18 @@ fn main() {
     // 3. Create a representation of the point (P)
     let point = Circle::default()
         .with_radius(8.0)
-        .with_color(Color::rgb8(0xe1, 0x32, 0x38)); // Red
+        .with_fill(Color::rgb8(0xe1, 0x32, 0x38)); // Red
 
     // 4. Create text labels that show the values
     let x_label = TextNode::default()
         .with_text("X: 0")
         .with_font_size(24.0)
-        .with_color(Color::WHITE);
+        .with_fill(Color::WHITE);
 
     let y_label = TextNode::default()
         .with_text("Y: 0")
         .with_font_size(24.0)
-        .with_color(Color::WHITE);
+        .with_fill(Color::WHITE);
 
     // 5. Use SignalLink to derive node properties from our variables
     // This is the "magic" that makes node positions react to x_var and y_var.

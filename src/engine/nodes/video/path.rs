@@ -77,8 +77,8 @@ pub struct PathNode {
     pub rotation: Signal<f32>,
     pub scale: Signal<Vec2>,
     pub data: Arc<PathData>,
-    pub color: Signal<Color>,
-    pub width: Signal<f32>,
+    pub stroke_color: Signal<Color>,
+    pub stroke_width: Signal<f32>,
     pub opacity: Signal<f32>,
 }
 
@@ -89,8 +89,8 @@ impl PathNode {
             rotation: Signal::new(0.0),
             scale: Signal::new(Vec2::ONE),
             data: Arc::new(PathData::new(path)),
-            color: Signal::new(color),
-            width: Signal::new(width),
+            stroke_color: Signal::new(color),
+            stroke_width: Signal::new(width),
             opacity: Signal::new(1.0),
         }
     }
@@ -123,8 +123,8 @@ impl PathNode {
 
 impl Node for PathNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let color = self.color.get();
-        let width = self.width.get();
+        let stroke_color = self.stroke_color.get();
+        let stroke_width = self.stroke_width.get();
         let opacity = self.opacity.get();
 
         let pos = self.position.get();
@@ -138,12 +138,12 @@ impl Node for PathNode {
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let mut final_color = color;
-        final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+        let mut final_color = stroke_color;
+        final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
 
         let brush = Brush::Solid(final_color);
         scene.stroke(
-            &Stroke::new(width as f64),
+            &Stroke::new(stroke_width as f64),
             combined_transform,
             &brush,
             None,
@@ -155,8 +155,8 @@ impl Node for PathNode {
         self.position.state_hash()
             ^ self.rotation.state_hash()
             ^ self.scale.state_hash()
-            ^ self.color.state_hash()
-            ^ self.width.state_hash()
+            ^ self.stroke_color.state_hash()
+            ^ self.stroke_width.state_hash()
             ^ self.opacity.state_hash()
     }
 

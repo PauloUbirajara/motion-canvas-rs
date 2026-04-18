@@ -62,10 +62,10 @@ impl Animation for Chain {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
+/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
 /// chain![
-///     node.transform.to(Affine::translate((100.0, 0.0)), Duration::from_secs(1)),
-///     node.transform.to(Affine::translate((100.0, 100.0)), Duration::from_secs(1)),
+///     node.position.to(Vec2::new(100.0, 0.0), Duration::from_secs(1)),
+///     node.position.to(Vec2::new(100.0, 100.0), Duration::from_secs(1)),
 /// ];
 /// ```
 pub fn chain(animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {

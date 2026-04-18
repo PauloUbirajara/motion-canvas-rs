@@ -5,8 +5,8 @@ use vello::kurbo::{Affine, BezPath, Stroke};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 
-const DEFAULT_FILL_COLOR: Color = Color::rgb8(9, 9, 11); // Zinc 950
-const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25); // 10% Zinc 50
+const DEFAULT_FILL_COLOR: Color = Color::rgb8(9, 9, 11);
+const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_STROKE_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
@@ -84,6 +84,11 @@ impl Polygon {
     pub fn with_fill(mut self, color: Color) -> Self {
         self.fill_color = Signal::new(color);
         self
+    }
+
+    #[deprecated(note = "use with_fill instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        self.with_fill(color)
     }
 
     /// Convenience method to create a regular polygon.
