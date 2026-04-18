@@ -14,6 +14,12 @@ pub struct PathData {
     pub total_length: f32,
 }
 
+impl Default for PathData {
+    fn default() -> Self {
+        Self::new(BezPath::new())
+    }
+}
+
 impl PathData {
     pub fn new(path: BezPath) -> Self {
         let mut segments = Vec::new();
@@ -71,6 +77,20 @@ impl PathData {
     }
 }
 
+impl Default for PathNode {
+    fn default() -> Self {
+        Self {
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
+            data: Arc::new(PathData::default()),
+            stroke_color: Signal::new(Color::WHITE),
+            stroke_width: Signal::new(1.0),
+            opacity: Signal::new(1.0),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct PathNode {
     pub position: Signal<Vec2>,
@@ -118,6 +138,23 @@ impl PathNode {
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
+    }
+
+    pub fn with_path(mut self, path: BezPath) -> Self {
+        self.data = Arc::new(PathData::new(path));
+        self
+    }
+
+    pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
+        self.stroke_color = Signal::new(color);
+        self.stroke_width = Signal::new(width);
+        self
+    }
+
+    #[deprecated(note = "use with_stroke instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        let width = self.stroke_width.get();
+        self.with_stroke(color, width)
     }
 }
 

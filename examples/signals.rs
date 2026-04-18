@@ -61,14 +61,12 @@ fn main() {
     let x_axis = Line::default()
         .with_start(Vec2::new(-300.0, 0.0))
         .with_end(Vec2::new(300.0, 0.0))
-        .with_color(Color::rgba8(255, 255, 255, 100))
-        .with_width(2.0);
+        .with_stroke(Color::rgba8(255, 255, 255, 100), 2.0);
 
     let y_axis = Line::default()
         .with_start(Vec2::new(0.0, -200.0))
         .with_end(Vec2::new(0.0, 200.0))
-        .with_color(Color::rgba8(255, 255, 255, 100))
-        .with_width(2.0);
+        .with_stroke(Color::rgba8(255, 255, 255, 100), 2.0);
 
     // Group the axes at the center
     let axes = GroupNode::default()

@@ -23,14 +23,14 @@ fn test_circle_builder() {
     let circle = Circle::default()
         .with_position(Vec2::new(100.0, 200.0))
         .with_radius(75.0)
-        .with_color(Color::BLUE);
+        .with_fill(Color::BLUE);
 
     // Check initial values via signals
     let position = circle.position.get();
     assert_eq!(position.x, 100.0);
     assert_eq!(position.y, 200.0);
     assert_eq!(circle.radius.get(), 75.0);
-    assert_eq!(circle.color.get(), Color::BLUE);
+    assert_eq!(circle.fill_color.get(), Color::BLUE);
 }
 
 #[test]
@@ -50,13 +50,12 @@ fn test_line_builder() {
     let line = Line::default()
         .with_start(Vec2::new(0.0, 0.0))
         .with_end(Vec2::new(100.0, 100.0))
-        .with_width(5.0)
-        .with_color(Color::GREEN);
+        .with_stroke(Color::GREEN, 5.0);
 
     assert_eq!(line.start.get(), Vec2::new(0.0, 0.0));
     assert_eq!(line.end.get(), Vec2::new(100.0, 100.0));
-    assert_eq!(line.width.get(), 5.0);
-    assert_eq!(line.color.get(), Color::GREEN);
+    assert_eq!(line.stroke_width.get(), 5.0);
+    assert_eq!(line.stroke_color.get(), Color::GREEN);
 }
 
 #[test]

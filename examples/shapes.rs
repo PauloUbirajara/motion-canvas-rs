@@ -20,7 +20,7 @@ fn main() {
 
     // Line
     let line_text = TextNode::default().with_text("Line").with_opacity(0.0);
-    let line = Line::default().with_scale(0.0).with_width(1.0);
+    let line = Line::default().with_scale(0.0).with_stroke_width(1.0);
 
     // Polygon
     let poly_text = TextNode::default().with_text("Polygon").with_opacity(0.0);

@@ -19,7 +19,7 @@ pub struct Line {
     pub start: Signal<Vec2>,
     pub end: Signal<Vec2>,
     pub stroke_color: Signal<Color>,
-    pub width: Signal<f32>,
+    pub stroke_width: Signal<f32>,
     pub opacity: Signal<f32>,
 }
 
@@ -32,7 +32,7 @@ impl Default for Line {
             start: Signal::new(DEFAULT_START),
             end: Signal::new(DEFAULT_END),
             stroke_color: Signal::new(DEFAULT_COLOR),
-            width: Signal::new(DEFAULT_WIDTH),
+            stroke_width: Signal::new(DEFAULT_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
         }
     }
@@ -83,7 +83,7 @@ impl Line {
 
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
-        self.width = Signal::new(width);
+        self.stroke_width = Signal::new(width);
         self
     }
 
@@ -92,8 +92,13 @@ impl Line {
         self.with_stroke(color, 1.0)
     }
 
-    pub fn with_width(mut self, width: f32) -> Self {
-        self.width = Signal::new(width);
+    #[deprecated(note = "use with_stroke_width instead")]
+    pub fn with_width(self, width: f32) -> Self {
+        self.with_stroke_width(width)
+    }
+
+    pub fn with_stroke_width(mut self, width: f32) -> Self {
+        self.stroke_width = Signal::new(width);
         self
     }
 }
@@ -103,7 +108,7 @@ impl Node for Line {
         let start = self.start.get();
         let end = self.end.get();
         let stroke_color = self.stroke_color.get();
-        let width = self.width.get();
+        let stroke_width = self.stroke_width.get();
         let opacity = self.opacity.get();
 
         let pos = self.position.get();
@@ -123,7 +128,7 @@ impl Node for Line {
         let brush = Brush::Solid(final_color);
 
         scene.stroke(
-            &Stroke::new(width as f64),
+            &Stroke::new(stroke_width as f64),
             combined_transform,
             &brush,
             None,
@@ -140,7 +145,7 @@ impl Node for Line {
             ^ self.scale.state_hash()
             ^ self.start.state_hash()
             ^ self.end.state_hash()
-            ^ self.width.state_hash()
+            ^ self.stroke_width.state_hash()
             ^ self.stroke_color.state_hash()
             ^ self.opacity.state_hash()
     }

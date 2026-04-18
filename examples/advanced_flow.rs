@@ -16,7 +16,9 @@ fn main() {
     let mut path = BezPath::new();
     path.move_to((100.0, 300.0));
     path.curve_to((250.0, 100.0), (550.0, 500.0), (700.0, 300.0));
-    let path_node = PathNode::new(Vec2::ZERO, path, Color::rgb8(0x44, 0x44, 0x44), 2.0); // PathNode doesn't have builder yet but let's keep it
+    let path_node = PathNode::default()
+        .with_path(path)
+        .with_stroke(Color::rgb8(0x44, 0x44, 0x44), 2.0);
     let follower = Circle::default()
         .with_position(Vec2::new(100.0, 300.0))
         .with_radius(20.0)
