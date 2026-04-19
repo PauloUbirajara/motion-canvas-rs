@@ -2,6 +2,7 @@ use crate::engine::scene::BaseScene;
 #[cfg(feature = "export")]
 use crate::engine::scene::Scene2D;
 use crate::render::AnimationWindow;
+#[cfg(feature = "export")]
 use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
