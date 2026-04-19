@@ -109,6 +109,8 @@ pub fn merge_audio(title: &str, audio_events: &[AudioEvent]) -> io::Result<()> {
         let input_idx = i + 1;
         active_count += 1;
         let delay_ms = (event.start_time.as_secs_f64() * 1000.0) as i64;
+        println!("  - Event: {}, volume: {:.2}, delay: {}ms, crop: {:.3}s", 
+            event.path, event.volume, delay_ms, event.start_crop.as_secs_f64());
 
         filter.push_str(&format!(
             "[{}:a]atrim=start={:.3},adelay={}|{}[a{}];",
@@ -139,12 +141,15 @@ pub fn merge_audio(title: &str, audio_events: &[AudioEvent]) -> io::Result<()> {
         "copy",
         "-c:a",
         "aac",
+        "-shortest",
         &final_output,
     ]);
 
-    let status = cmd.status()?;
-    if !status.success() {
-        eprintln!("FFmpeg audio merge failed with status: {}", status);
+    let output = cmd.output()?;
+    if !output.status.success() {
+        eprintln!("FFmpeg audio merge failed!");
+        eprintln!("Filter: {}", filter);
+        eprintln!("Error: {}", String::from_utf8_lossy(&output.stderr));
         return Ok(());
     }
 
