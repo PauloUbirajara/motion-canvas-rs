@@ -225,6 +225,13 @@ impl<T: Tweenable + PartialEq> Signal<T> {
             easing: DEFAULT_EASING,
         }
     }
+
+    pub fn bind<S: Tweenable + PartialEq, F>(&self, source: Signal<S>, mapper: F) -> crate::engine::nodes::video::BindingNode<T, S>
+    where
+        F: Fn(S) -> T + Send + Sync + 'static,
+    {
+        crate::engine::nodes::video::BindingNode::new(source, self.clone(), mapper)
+    }
 }
 
 /// SignalTween now tracks its own elapsed time and start/target values.

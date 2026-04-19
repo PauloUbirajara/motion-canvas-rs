@@ -143,63 +143,54 @@ impl AnimationWindow {
         let mut finished = false;
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
 
-        event_loop.run(|event, elwt| {
-            match event {
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
-                    ..
-                } => elwt.exit(),
+        event_loop.run(|event, elwt| match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => elwt.exit(),
 
-                Event::WindowEvent {
-                    event: WindowEvent::RedrawRequested,
-                    ..
-                } => {
-                    if let Some(ref mut renderer) = renderer_opt {
-                        renderer.render(
-                            &self.project.scene,
-                            self.project.width,
-                            self.project.height,
-                        );
-                    }
+            Event::WindowEvent {
+                event: WindowEvent::RedrawRequested,
+                ..
+            } => {
+                if let Some(ref mut renderer) = renderer_opt {
+                    renderer.render(&self.project.scene, self.project.width, self.project.height);
                 }
+            }
 
-                Event::WindowEvent {
-                    event: WindowEvent::KeyboardInput {
-                        event: KeyEvent {
-                            physical_key: PhysicalKey::Code(code),
-                            state: winit::event::ElementState::Pressed,
-                            ..
-                        },
+            Event::WindowEvent {
+                event:
+                    WindowEvent::KeyboardInput {
+                        event:
+                            KeyEvent {
+                                physical_key: PhysicalKey::Code(code),
+                                state: winit::event::ElementState::Pressed,
+                                ..
+                            },
                         ..
                     },
-                    ..
-                } => self.handle_keyboard_input(
-                    code,
-                    elwt,
-                    &window,
-                    &mut finished,
-                    &mut last_update,
-                    dt,
-                ),
-
-                Event::AboutToWait => self.handle_playback_update(
-                    elwt,
-                    &window,
-                    &mut last_update,
-                    &mut last_hash,
-                    &mut finished,
-                    dt,
-                ),
-
-                Event::Resumed => {
-                    let renderer = renderer_opt.get_or_insert_with(|| {
-                        VelloRenderer::new(self.project.use_gpu, self.project.background_color)
-                    });
-                    renderer.resume(&window);
-                }
-
-                _ => (),
+                ..
+            } => {
+                self.handle_keyboard_input(code, elwt, &window, &mut finished, &mut last_update, dt)
             }
+
+            Event::AboutToWait => self.handle_playback_update(
+                elwt,
+                &window,
+                &mut last_update,
+                &mut last_hash,
+                &mut finished,
+                dt,
+            ),
+
+            Event::Resumed => {
+                let renderer = renderer_opt.get_or_insert_with(|| {
+                    VelloRenderer::new(self.project.use_gpu, self.project.background_color)
+                });
+                renderer.resume(&window);
+            }
+
+            _ => (),
         })?;
 
         Ok(())
@@ -221,6 +212,7 @@ impl AnimationWindow {
             }
             KeyCode::Space | KeyCode::KeyP => {
                 self.project.paused = !self.project.paused;
+                self.project.speed = 1.0;
             }
             KeyCode::ArrowRight | KeyCode::KeyL => {
                 let target = self.project.current_time + Duration::from_secs(10);
@@ -256,6 +248,7 @@ impl AnimationWindow {
                 self.project.speed = (self.project.speed - 0.5).max(0.1);
             }
             KeyCode::KeyR => {
+                self.project.speed = 1.0;
                 self.project.seek_to(Duration::ZERO);
                 *finished = false;
                 *last_update = Instant::now();
@@ -296,7 +289,6 @@ impl AnimationWindow {
             }
         } else {
             *last_update = Instant::now();
-            self.project.speed = 1.0;
         }
 
         // Minimal TUI: Print status
