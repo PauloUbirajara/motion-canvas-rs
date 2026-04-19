@@ -1449,7 +1449,7 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
 
     #[cfg(feature = "audio")]
     project.scene.audio_timeline.add(
-        play!(AudioNode::new("./background.mp3").with_volume(0.3))
+        play!(AudioNode::new("tests/background.mp3").with_volume(0.3))
     );
 
     project
