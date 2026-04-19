@@ -2,6 +2,7 @@ use crate::engine::scene::BaseScene;
 #[cfg(feature = "export")]
 use crate::engine::scene::Scene2D;
 use crate::render::AnimationWindow;
+#[cfg(feature = "export")]
 use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -181,18 +182,24 @@ impl Project {
             let saved_count_clone = saved_count.clone();
 
             // Initialize FFmpeg if requested
-            let mut ffmpeg_process = self.use_ffmpeg.then(|| {
-                crate::engine::util::export::start_ffmpeg(
-                    &self.title,
-                    width,
-                    height,
-                    self.fps,
-                    cfg!(feature = "audio")
-                ).map_err(|e| {
-                    eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
-                    e
-                }).ok().flatten()
-            }).flatten();
+            let mut ffmpeg_process = self
+                .use_ffmpeg
+                .then(|| {
+                    crate::engine::util::export::start_ffmpeg(
+                        &self.title,
+                        width,
+                        height,
+                        self.fps,
+                        cfg!(feature = "audio"),
+                    )
+                    .map_err(|e| {
+                        eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
+                        e
+                    })
+                    .ok()
+                    .flatten()
+                })
+                .flatten();
 
             let saving_thread = std::thread::spawn(move || {
                 while let Ok((pixels, path)) = rx.recv() {
@@ -234,7 +241,10 @@ impl Project {
                                 }
                             }
                             Err(e) => {
-                                eprintln!("\nCache corruption detected at {:?}: {}. Re-rendering...", frame_path, e);
+                                eprintln!(
+                                    "\nCache corruption detected at {:?}: {}. Re-rendering...",
+                                    frame_path, e
+                                );
                                 let pixels = exporter.export_frame(&self.scene);
                                 stdin.write_all(&pixels)?;
                                 tx.send((pixels, frame_path)).unwrap();

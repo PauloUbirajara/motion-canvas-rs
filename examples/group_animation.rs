@@ -42,10 +42,14 @@ fn main() {
             .position
             .to(Vec2::new(200.0, 150.0), Duration::from_secs(2)),
         // 2. Rotate the group
-        group.rotation.to(std::f32::consts::PI, Duration::from_secs(2)),
+        group
+            .rotation
+            .to(std::f32::consts::PI, Duration::from_secs(2)),
         // 3. Complex transform (move + scale)
         all![
-            group.position.to(Vec2::new(400.0, 450.0), Duration::from_secs(2)),
+            group
+                .position
+                .to(Vec2::new(400.0, 450.0), Duration::from_secs(2)),
             group.scale.to(Vec2::splat(2.0), Duration::from_secs(2)),
             group.opacity.to(0.3, Duration::from_secs(2)),
         ],

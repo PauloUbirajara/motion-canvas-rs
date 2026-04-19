@@ -26,7 +26,14 @@ impl Animation for Any {
             }
         }
 
-        (any_finished, if any_finished { max_leftover } else { Duration::ZERO })
+        (
+            any_finished,
+            if any_finished {
+                max_leftover
+            } else {
+                Duration::ZERO
+            },
+        )
     }
 
     fn duration(&self) -> Duration {

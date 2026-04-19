@@ -109,8 +109,13 @@ pub fn merge_audio(title: &str, audio_events: &[AudioEvent]) -> io::Result<()> {
         let input_idx = i + 1;
         active_count += 1;
         let delay_ms = (event.start_time.as_secs_f64() * 1000.0) as i64;
-        println!("  - Event: {}, volume: {:.2}, delay: {}ms, crop: {:.3}s", 
-            event.path, event.volume, delay_ms, event.start_crop.as_secs_f64());
+        println!(
+            "  - Event: {}, volume: {:.2}, delay: {}ms, crop: {:.3}s",
+            event.path,
+            event.volume,
+            delay_ms,
+            event.start_crop.as_secs_f64()
+        );
 
         filter.push_str(&format!(
             "[{}:a]atrim=start={:.3},adelay={}|{}[a{}];",

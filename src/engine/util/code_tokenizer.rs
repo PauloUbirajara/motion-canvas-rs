@@ -1,7 +1,9 @@
 #![cfg(feature = "code")]
+use crate::engine::animation::Tweenable;
 use crate::engine::font::FontManager;
 use glam::Vec2;
 use lazy_static::lazy_static;
+use similar::TextDiff;
 use skrifa::instance::{LocationRef, Size};
 use skrifa::MetadataProvider;
 use std::collections::HashMap;
@@ -12,8 +14,6 @@ use syntect::parsing::SyntaxSet;
 use vello::kurbo::{Affine, BezPath};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
-use similar::TextDiff;
-use crate::engine::animation::Tweenable;
 
 lazy_static! {
     pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
@@ -361,8 +361,7 @@ pub fn parse_selection(selection: &str) -> Vec<usize> {
         if part.contains('-') {
             let mut bounds = part.split('-');
             if let (Some(start_str), Some(end_str)) = (bounds.next(), bounds.next()) {
-                if let (Ok(start), Ok(end)) =
-                    (start_str.parse::<usize>(), end_str.parse::<usize>())
+                if let (Ok(start), Ok(end)) = (start_str.parse::<usize>(), end_str.parse::<usize>())
                 {
                     for i in start..=end {
                         if i > 0 {
@@ -382,13 +381,7 @@ pub fn parse_selection(selection: &str) -> Vec<usize> {
     lines
 }
 
-pub fn draw_token(
-    scene: &mut Scene,
-    transform: Affine,
-    token: &Token,
-    color: Color,
-    opacity: f32,
-) {
+pub fn draw_token(scene: &mut Scene, transform: Affine, token: &Token, color: Color, opacity: f32) {
     if opacity <= 0.0 {
         return;
     }

@@ -16,6 +16,9 @@ exclude = [".github/*", "media/*"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[profile.dev.package."*"]
+opt-level = 3
+
 [dependencies]
 font-kit = "0.14.3"
 glam = "0.25"

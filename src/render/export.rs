@@ -1,6 +1,6 @@
+use std::future::Future;
 use vello::wgpu;
 use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
-use std::future::Future;
 
 pub struct Exporter {
     width: u32,

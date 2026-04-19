@@ -103,8 +103,12 @@ pub fn expo_out(t: f32) -> f32 {
 }
 
 pub fn expo_in_out(t: f32) -> f32 {
-    if t == 0.0 { return 0.0; }
-    if t == 1.0 { return 1.0; }
+    if t == 0.0 {
+        return 0.0;
+    }
+    if t == 1.0 {
+        return 1.0;
+    }
     if t < 0.5 {
         return 2.0f32.powf(10.0 * (2.0 * t) - 10.0) / 2.0;
     }
@@ -149,20 +153,32 @@ pub fn back_in_out(t: f32) -> f32 {
 
 // --- Elastic ---
 pub fn elastic_in(t: f32) -> f32 {
-    if t == 0.0 { return 0.0; }
-    if t == 1.0 { return 1.0; }
+    if t == 0.0 {
+        return 0.0;
+    }
+    if t == 1.0 {
+        return 1.0;
+    }
     -(2.0f32.powf(10.0 * (t - 1.0)) * ((t - 1.1) * 5.0 * PI).sin())
 }
 
 pub fn elastic_out(t: f32) -> f32 {
-    if t == 0.0 { return 0.0; }
-    if t == 1.0 { return 1.0; }
+    if t == 0.0 {
+        return 0.0;
+    }
+    if t == 1.0 {
+        return 1.0;
+    }
     2.0f32.powf(-10.0 * t) * ((t - 0.1) * 5.0 * PI).sin() + 1.0
 }
 
 pub fn elastic_in_out(t: f32) -> f32 {
-    if t == 0.0 { return 0.0; }
-    if t == 1.0 { return 1.0; }
+    if t == 0.0 {
+        return 0.0;
+    }
+    if t == 1.0 {
+        return 1.0;
+    }
     if t < 0.5 {
         return -(2.0f32.powf(10.0 * (2.0 * t - 1.0)) * ((2.0 * t - 1.1) * 5.0 * PI).sin()) / 2.0;
     }
@@ -177,17 +193,17 @@ pub fn bounce_out(mut t: f32) -> f32 {
     if t < 1.0 / d1 {
         return n1 * t * t;
     }
-    
+
     if t < 2.0 / d1 {
         t -= 1.5 / d1;
         return n1 * t * t + 0.75;
     }
-    
+
     if t < 2.5 / d1 {
         t -= 2.25 / d1;
         return n1 * t * t + 0.9375;
     }
-    
+
     t -= 2.625 / d1;
     n1 * t * t + 0.984375
 }
