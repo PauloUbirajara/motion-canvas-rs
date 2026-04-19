@@ -105,7 +105,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 16 examples that can be found in the [examples directory](./examples).
+The project includes 17 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -273,6 +273,15 @@ cargo run --example math_code --features math,code
 https://github.com/user-attachments/assets/f51268ee-87cf-4f6d-b261-a4aa1f2d4e07
 
 <img width="800" height="600" alt="Math & Code" src="https://github.com/user-attachments/assets/c0ce9ede-273d-498e-94ce-54f2d94ff25a" />
+
+</details>
+
+<details>
+<summary><b>News Feed</b> - A simple architectural visualization of a news feed system.</summary>
+
+```sh
+cargo run --example news_feed
+```
 
 </details>
 

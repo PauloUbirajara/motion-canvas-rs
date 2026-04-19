@@ -97,6 +97,9 @@ name = "math_code"
 required-features = ["math", "code"]
 
 [[example]]
+name = "news_feed"
+
+[[example]]
 name = "polygon"
 
 [[example]]
