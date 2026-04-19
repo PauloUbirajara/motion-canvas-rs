@@ -138,4 +138,12 @@ impl Node for ImageNode {
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.size.reset();
+        self.opacity.reset();
+    }
 }

@@ -54,6 +54,10 @@ impl<T: Tweenable + PartialEq, S: Tweenable + PartialEq> Node for SignalLink<T, 
         // For simplicity in this example, we don't clone the links.
         panic!("LinkNode cloning not implemented for this example");
     }
+
+    fn reset(&mut self) {
+        self.target.set((self.mapper)(self.source.get()));
+    }
 }
 
 fn main() {

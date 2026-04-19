@@ -52,6 +52,13 @@ impl Animation for Chain {
             self.animations[self.index].collect_audio_events(current_time, events);
         }
     }
+
+    fn reset(&mut self) {
+        for anim in &mut self.animations {
+            anim.reset();
+        }
+        self.index = 0;
+    }
 }
 
 /// Creates an animation that runs multiple animations one after another.

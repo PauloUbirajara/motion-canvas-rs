@@ -6,10 +6,26 @@ use vello::{
     Renderer, RendererOptions, Scene,
 };
 use winit::{
-    event::{Event, WindowEvent},
+    event::{Event, KeyEvent, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
+    keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowBuilder},
 };
+
+const TUI_HEADER: &str = "--- motion-canvas-rs playback ---";
+const TUI_CONTROLS: &str = r#"
+Controls:
+  Esc / Q      : [Q]uit
+  R            : [R]estart
+  Space / P    : [P]ause / Resume
+  .            : Step +1 frame
+  ,            : Step -1 frame
+  Right / L    : Seek +10s
+  Left / H     : Seek -10s
+  Up / K       : Increase speed
+  Down / J     : Decrease speed (min 0.1x)
+"#;
+const TUI_FOOTER: &str = "---------------------------------";
 
 pub mod export;
 use std::future::Future;
@@ -147,58 +163,33 @@ impl AnimationWindow {
                     }
                 }
 
-                Event::AboutToWait => {
-                    if finished {
-                        elwt.set_control_flow(ControlFlow::Wait);
-                        return;
-                    }
+                Event::WindowEvent {
+                    event: WindowEvent::KeyboardInput {
+                        event: KeyEvent {
+                            physical_key: PhysicalKey::Code(code),
+                            state: winit::event::ElementState::Pressed,
+                            ..
+                        },
+                        ..
+                    },
+                    ..
+                } => self.handle_keyboard_input(
+                    code,
+                    elwt,
+                    &window,
+                    &mut finished,
+                    &mut last_update,
+                    dt,
+                ),
 
-                    let mut elapsed = last_update.elapsed();
-                    if elapsed < dt {
-                        elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
-                        return;
-                    }
-
-                    // Process all pending updates (catch-up)
-                    while elapsed >= dt {
-                        self.project.scene.update(dt);
-                        elapsed -= dt;
-                        last_update += dt;
-                    }
-
-                    let current_hash = self.project.scene.state_hash();
-                    if current_hash != last_hash {
-                        window.request_redraw();
-                        last_hash = current_hash;
-                    }
-
-                    let is_video_finished = self.project.scene.video_timeline.finished();
-                    let is_audio_finished = {
-                        #[cfg(feature = "audio")]
-                        {
-                            self.project.scene.audio_timeline.finished()
-                        }
-                        #[cfg(not(feature = "audio"))]
-                        {
-                            true
-                        }
-                    };
-
-                    if is_video_finished && is_audio_finished {
-                        println!("Animation finished.");
-                        finished = true;
-
-                        if self.project.close_on_finish {
-                            elwt.exit();
-                            return;
-                        }
-
-                        elwt.set_control_flow(ControlFlow::Wait);
-                        return;
-                    }
-
-                    elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
-                }
+                Event::AboutToWait => self.handle_playback_update(
+                    elwt,
+                    &window,
+                    &mut last_update,
+                    &mut last_hash,
+                    &mut finished,
+                    dt,
+                ),
 
                 Event::Resumed => {
                     let renderer = renderer_opt.get_or_insert_with(|| {
@@ -212,5 +203,150 @@ impl AnimationWindow {
         })?;
 
         Ok(())
+    }
+
+    fn handle_keyboard_input(
+        &mut self,
+        code: KeyCode,
+        elwt: &winit::event_loop::EventLoopWindowTarget<()>,
+        window: &Window,
+        finished: &mut bool,
+        last_update: &mut Instant,
+        dt: Duration,
+    ) {
+        match code {
+            KeyCode::Escape | KeyCode::KeyQ => {
+                *finished = true;
+                elwt.exit();
+            }
+            KeyCode::Space | KeyCode::KeyP => {
+                self.project.paused = !self.project.paused;
+            }
+            KeyCode::ArrowRight | KeyCode::KeyL => {
+                let target = self.project.current_time + Duration::from_secs(10);
+                self.project.seek_to(target);
+                *last_update = Instant::now();
+                window.request_redraw();
+            }
+            KeyCode::ArrowLeft | KeyCode::KeyH => {
+                let target = self
+                    .project
+                    .current_time
+                    .saturating_sub(Duration::from_secs(10));
+                self.project.seek_to(target);
+                *last_update = Instant::now();
+                window.request_redraw();
+            }
+            KeyCode::Period => {
+                let target = self.project.current_time + dt;
+                self.project.seek_to(target);
+                *last_update = Instant::now();
+                window.request_redraw();
+            }
+            KeyCode::Comma => {
+                let target = self.project.current_time.saturating_sub(dt);
+                self.project.seek_to(target);
+                *last_update = Instant::now();
+                window.request_redraw();
+            }
+            KeyCode::ArrowUp | KeyCode::KeyK => {
+                self.project.speed += 0.5;
+            }
+            KeyCode::ArrowDown | KeyCode::KeyJ => {
+                self.project.speed = (self.project.speed - 0.5).max(0.1);
+            }
+            KeyCode::KeyR => {
+                self.project.seek_to(Duration::ZERO);
+                *finished = false;
+                *last_update = Instant::now();
+                window.request_redraw();
+            }
+            _ => (),
+        }
+    }
+
+    fn handle_playback_update(
+        &mut self,
+        elwt: &winit::event_loop::EventLoopWindowTarget<()>,
+        window: &Window,
+        last_update: &mut Instant,
+        last_hash: &mut u64,
+        finished: &mut bool,
+        dt: Duration,
+    ) {
+        if *finished {
+            elwt.set_control_flow(ControlFlow::Wait);
+            return;
+        }
+
+        let mut elapsed = last_update.elapsed();
+        if elapsed < dt {
+            elwt.set_control_flow(ControlFlow::WaitUntil(*last_update + dt));
+            return;
+        }
+
+        // Process all pending updates (catch-up)
+        if !self.project.paused {
+            let effective_dt = dt.mul_f32(self.project.speed);
+            while elapsed >= dt {
+                self.project.scene.update(effective_dt);
+                self.project.current_time += effective_dt;
+                elapsed -= dt;
+                *last_update += dt;
+            }
+        } else {
+            *last_update = Instant::now();
+            self.project.speed = 1.0;
+        }
+
+        // Minimal TUI: Print status
+        print!("\x1B[2J\x1B[H");
+        println!("{}", TUI_HEADER);
+        println!("{}", TUI_CONTROLS);
+        println!("{}", TUI_FOOTER);
+        println!(
+            "[Playback] Time: {:.2}s | Speed: {:.1}x | {}",
+            self.project.current_time.as_secs_f32(),
+            self.project.speed,
+            if self.project.paused {
+                "PAUSED "
+            } else {
+                "PLAYING"
+            }
+        );
+        std::io::Write::flush(&mut std::io::stdout()).unwrap();
+
+        let current_hash = self.project.scene.state_hash();
+        if current_hash != *last_hash {
+            window.request_redraw();
+            *last_hash = current_hash;
+        }
+
+        let is_video_finished = self.project.scene.video_timeline.finished();
+        let is_audio_finished = {
+            #[cfg(feature = "audio")]
+            {
+                self.project.scene.audio_timeline.finished()
+            }
+            #[cfg(not(feature = "audio"))]
+            {
+                true
+            }
+        };
+
+        if is_video_finished && is_audio_finished {
+            println!("Animation finished.");
+            *finished = true;
+
+            if self.project.close_on_finish {
+                elwt.exit();
+                return;
+            }
+
+            elwt.set_control_flow(ControlFlow::Wait);
+            return;
+        }
+
+        elwt.set_control_flow(ControlFlow::WaitUntil(*last_update + dt));
     }
 }

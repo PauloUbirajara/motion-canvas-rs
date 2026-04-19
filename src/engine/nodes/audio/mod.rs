@@ -182,6 +182,12 @@ impl Animation for AudioAnimation {
             },
         });
     }
+
+    fn reset(&mut self) {
+        self.elapsed = Duration::ZERO;
+        self.started.store(false, Ordering::SeqCst);
+        self.recorded = false;
+    }
 }
 
 impl From<AudioNode> for Box<dyn Animation> {

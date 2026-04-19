@@ -26,28 +26,25 @@ pub struct CodeNode {
 
 impl Default for CodeNode {
     fn default() -> Self {
-        let node = Self {
+        let font_size = crate::engine::util::code_tokenizer::DEFAULT_FONT_SIZE;
+        let language = crate::engine::util::code_tokenizer::DEFAULT_LANGUAGE.to_string();
+        let theme = crate::engine::util::code_tokenizer::DEFAULT_THEME.to_string();
+        let font_family = crate::engine::util::code_tokenizer::DEFAULT_FONT_FAMILY.to_string();
+
+        let val = CodeValue::new("".to_string(), font_size, &language, &theme, &font_family);
+
+        Self {
             position: Signal::new(Vec2::ZERO),
             rotation: Signal::new(0.0),
             scale: Signal::new(Vec2::ONE),
-            code: Signal::new(CodeValue::default()),
-            font_size: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_FONT_SIZE),
+            code: Signal::new(val),
+            font_size: Signal::new(font_size),
             opacity: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_OPACITY),
             dim_opacity: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_DIM_OPACITY),
-            language: crate::engine::util::code_tokenizer::DEFAULT_LANGUAGE.to_string(),
-            theme: crate::engine::util::code_tokenizer::DEFAULT_THEME.to_string(),
-            font_family: crate::engine::util::code_tokenizer::DEFAULT_FONT_FAMILY.to_string(),
-        };
-        // Initialize with empty code
-        let val = CodeValue::new(
-            "".to_string(),
-            node.font_size.get(),
-            &node.language,
-            &node.theme,
-            &node.font_family,
-        );
-        node.code.set(val);
-        node
+            language,
+            theme,
+            font_family,
+        }
     }
 }
 
@@ -101,7 +98,7 @@ impl CodeNode {
         self
     }
 
-    pub fn with_code(self, code: &str) -> Self {
+    pub fn with_code(mut self, code: &str) -> Self {
         let val = CodeValue::new(
             code.to_string(),
             self.font_size.get(),
@@ -109,7 +106,7 @@ impl CodeNode {
             &self.theme,
             &self.font_family,
         );
-        self.code.set(val);
+        self.code = Signal::new(val);
         self
     }
 
@@ -124,17 +121,35 @@ impl CodeNode {
             &self.theme,
             &self.font_family,
         );
-        self.code.set(val);
+        self.code = Signal::new(val);
         self
     }
 
     pub fn with_theme(mut self, theme: &str) -> Self {
         self.theme = theme.to_string();
+        let current_text = self.code.get().text;
+        let val = CodeValue::new(
+            current_text,
+            self.font_size.get(),
+            &self.language,
+            &self.theme,
+            &self.font_family,
+        );
+        self.code = Signal::new(val);
         self
     }
 
     pub fn with_font(mut self, font: &str) -> Self {
         self.font_family = font.to_string();
+        let current_text = self.code.get().text;
+        let val = CodeValue::new(
+            current_text,
+            self.font_size.get(),
+            &self.language,
+            &self.theme,
+            &self.font_family,
+        );
+        self.code = Signal::new(val);
         self
     }
 
@@ -144,13 +159,13 @@ impl CodeNode {
         let current_text = self.code.get().text;
         let mut val = CodeValue::new(
             current_text,
-            self.font_size.get(),
+            size,
             &self.language,
             &self.theme,
             &self.font_family,
         );
         val.selection = self.code.get().selection;
-        self.code.set(val);
+        self.code = Signal::new(val);
         self
     }
 
@@ -171,7 +186,7 @@ impl CodeNode {
         let font = self.font_family.clone();
         self.code.to_lazy(
             move |current| {
-                let mut next_value = CodeValue::new(code, font_size, &lang, &theme, &font);
+                let mut next_value = CodeValue::new(code.clone(), font_size, &lang, &theme, &font);
                 next_value.selection = current.selection.clone();
                 next_value
             },
@@ -230,7 +245,7 @@ impl CodeNode {
             move |current| {
                 let mut next_value = current.clone();
                 next_value.transition = None; // Reset transition for the target
-                next_value.selection = lines;
+                next_value.selection = lines.clone();
                 next_value
             },
             duration,
@@ -388,5 +403,15 @@ impl Node for CodeNode {
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.code.reset();
+        self.font_size.reset();
+        self.opacity.reset();
+        self.dim_opacity.reset();
     }
 }

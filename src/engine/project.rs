@@ -1,5 +1,4 @@
 use crate::engine::scene::BaseScene;
-#[cfg(feature = "export")]
 use crate::engine::scene::Scene2D;
 use crate::render::AnimationWindow;
 #[cfg(feature = "export")]
@@ -42,6 +41,9 @@ pub struct Project {
     pub use_gpu: bool,
     pub background_color: Color,
     pub close_on_finish: bool,
+    pub current_time: std::time::Duration,
+    pub paused: bool,
+    pub speed: f32,
 }
 
 impl Project {
@@ -58,6 +60,9 @@ impl Project {
             use_gpu: DEFAULT_USE_GPU,
             background_color: DEFAULT_BACKGROUND_COLOR,
             close_on_finish: false,
+            current_time: std::time::Duration::ZERO,
+            paused: false,
+            speed: 1.0,
         }
     }
 }
@@ -381,6 +386,16 @@ impl Project {
     pub fn show(self) -> crate::Result<()> {
         let window = AnimationWindow::new(self)?;
         window.run()
+    }
+
+    pub fn seek_to(&mut self, target_time: std::time::Duration) {
+        self.scene.reset();
+        self.current_time = std::time::Duration::ZERO;
+        let dt = std::time::Duration::from_secs_f32(1.0 / self.fps as f32);
+        while self.current_time < target_time {
+            self.scene.update(dt);
+            self.current_time += dt;
+        }
     }
 
     fn sanitize_title(&self) -> String {

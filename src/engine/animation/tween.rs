@@ -118,6 +118,7 @@ impl Tweenable for Affine {
 /// to control it sequentially or in parallel without state interference.
 pub struct SignalData<T> {
     pub value: T,
+    pub initial: T,
 }
 
 #[derive(Clone)]
@@ -143,14 +144,14 @@ impl FromVec2 for Affine {
 
 pub enum Target<T> {
     Fixed(T),
-    Lazy(Box<dyn FnOnce(&T) -> T + Send + Sync>),
+    Lazy(Arc<dyn Fn(&T) -> T + Send + Sync>),
 }
 
 impl<T: Clone> Clone for Target<T> {
     fn clone(&self) -> Self {
         match self {
             Self::Fixed(v) => Self::Fixed(v.clone()),
-            Self::Lazy(_) => panic!("Cannot clone lazy target"),
+            Self::Lazy(f) => Self::Lazy(f.clone()),
         }
     }
 }
@@ -158,7 +159,10 @@ impl<T: Clone> Clone for Target<T> {
 impl<T: Tweenable + PartialEq> Signal<T> {
     pub fn new(value: T) -> Self {
         Self {
-            data: Arc::new(Mutex::new(SignalData { value })),
+            data: Arc::new(Mutex::new(SignalData {
+                value: value.clone(),
+                initial: value,
+            })),
         }
     }
 
@@ -177,6 +181,11 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         self.data.lock().unwrap().value.state_hash()
     }
 
+    pub fn reset(&self) {
+        let mut data = self.data.lock().unwrap();
+        data.value = data.initial.clone();
+    }
+
     pub fn to(&self, target: T, duration: Duration) -> SignalTween<T> {
         SignalTween {
             data: self.data.clone(),
@@ -191,12 +200,12 @@ impl<T: Tweenable + PartialEq> Signal<T> {
 
     pub fn to_lazy<F>(&self, factory: F, duration: Duration) -> SignalTween<T>
     where
-        F: FnOnce(&T) -> T + Send + Sync + 'static,
+        F: Fn(&T) -> T + Send + Sync + 'static,
     {
         SignalTween {
             data: self.data.clone(),
             start_value: None,
-            target: Target::Lazy(Box::new(factory)),
+            target: Target::Lazy(Arc::new(factory)),
             target_value: None,
             duration,
             elapsed: Duration::ZERO,
@@ -243,10 +252,12 @@ impl<T: Tweenable> Animation for SignalTween<T> {
             let current = self.data.lock().unwrap().value.clone();
             self.start_value = Some(current.clone());
 
-            // Evaluate lazy target if needed
-            match std::mem::replace(&mut self.target, Target::Fixed(current.clone())) {
-                Target::Fixed(v) => self.target_value = Some(v),
-                Target::Lazy(f) => self.target_value = Some(f(&current)),
+            // Evaluate target if needed
+            if self.target_value.is_none() {
+                match &self.target {
+                    Target::Fixed(v) => self.target_value = Some(v.clone()),
+                    Target::Lazy(f) => self.target_value = Some(f(&current)),
+                }
             }
         }
 
@@ -282,6 +293,15 @@ impl<T: Tweenable> Animation for SignalTween<T> {
 
     fn set_easing(&mut self, easing: fn(f32) -> f32) {
         self.easing = easing;
+    }
+
+    fn reset(&mut self) {
+        self.start_value = None;
+        self.target_value = None;
+        self.elapsed = Duration::ZERO;
+
+        let mut data = self.data.lock().unwrap();
+        data.value = data.initial.clone();
     }
 }
 
@@ -331,6 +351,12 @@ impl<T: Tweenable + FromVec2> Animation for FollowPath<T> {
 
     fn set_easing(&mut self, easing: fn(f32) -> f32) {
         self.easing = easing;
+    }
+
+    fn reset(&mut self) {
+        self.elapsed = Duration::ZERO;
+        let mut data = self.data.lock().unwrap();
+        data.value = data.initial.clone();
     }
 }
 

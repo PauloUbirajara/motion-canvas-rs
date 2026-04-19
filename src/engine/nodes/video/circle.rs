@@ -156,4 +156,15 @@ impl Node for Circle {
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.radius.reset();
+        self.fill_color.reset();
+        self.stroke_color.reset();
+        self.stroke_width.reset();
+        self.opacity.reset();
+    }
 }

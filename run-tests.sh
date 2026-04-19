@@ -17,4 +17,8 @@ done
 
 # Documentation (for coverage)
 echo "Running documentation..."
-cargo doc --no-deps --document-private-items
+time cargo doc --no-deps --document-private-items
+
+# Check if available to push
+echo "Checking if available to push..."
+time cargo publish --dry-run --allow-dirty

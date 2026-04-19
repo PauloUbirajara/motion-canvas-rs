@@ -156,4 +156,15 @@ impl Node for Line {
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.start.reset();
+        self.end.reset();
+        self.stroke_width.reset();
+        self.stroke_color.reset();
+        self.opacity.reset();
+    }
 }

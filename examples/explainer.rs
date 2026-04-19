@@ -1464,8 +1464,5 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         .audio_timeline
         .add(play!(AudioNode::new("background.mp3").with_volume(0.3)));
 
-    project
-        .with_ffmpeg(true)
-        .export()
-        .expect("Failed to render");
+    project.show().expect("Failed to render");
 }

@@ -20,6 +20,10 @@ impl Animation for Wait {
     fn duration(&self) -> Duration {
         self.duration
     }
+
+    fn reset(&mut self) {
+        self.elapsed = Duration::ZERO;
+    }
 }
 
 /// Creates an animation that waits for a duration.

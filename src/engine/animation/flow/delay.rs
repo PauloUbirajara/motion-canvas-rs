@@ -46,6 +46,11 @@ impl Animation for Delay {
             self.inner.collect_audio_events(current_time, events);
         }
     }
+
+    fn reset(&mut self) {
+        self.elapsed = Duration::ZERO;
+        self.inner.reset();
+    }
 }
 
 /// Creates an animation that waits for a duration before starting the inner animation.

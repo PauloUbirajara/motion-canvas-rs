@@ -234,6 +234,10 @@ impl crate::engine::animation::Animation for MathTransition {
     fn duration(&self) -> Duration {
         self.duration
     }
+
+    fn reset(&mut self) {
+        self.tween = None;
+    }
 }
 
 impl Node for MathNode {
@@ -313,5 +317,18 @@ impl Node for MathNode {
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.equation.reset();
+        self.font_size.reset();
+        self.fill_color.reset();
+        self.opacity.reset();
+        self.transition_progress.reset();
+        *self.cache.lock().unwrap() = None;
+        *self.prev_cache.lock().unwrap() = None;
     }
 }

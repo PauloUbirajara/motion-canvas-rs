@@ -120,4 +120,14 @@ impl Node for GroupNode {
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.opacity.reset();
+        for node in &mut self.nodes {
+            node.reset();
+        }
+    }
 }
