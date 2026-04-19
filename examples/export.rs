@@ -6,6 +6,7 @@ fn main() {
     let mut project = Project::default()
         .with_fps(30)
         .with_ffmpeg(true)
+        .with_title("Export")
         .with_output_path("output")
         .close_on_finish();
 
@@ -13,29 +14,22 @@ fn main() {
     let circle = Circle::default()
         .with_position(Vec2::new(400.0, 300.0))
         .with_radius(50.0)
-        .with_color(Color::rgb8(0x68, 0xab, 0xdf)); // Blue
+        .with_fill(Color::rgb8(0x68, 0xab, 0xdf)); // Blue
 
     let text = TextNode::default()
         .with_position(Vec2::new(200.0, 450.0))
         .with_text("Export Demo")
         .with_font_size(40.0)
-        .with_color(Color::rgb8(0xf2, 0xf2, 0xf2)); // White
-
-    let math = MathNode::default()
-        .with_position(Vec2::new(400.0, 200.0))
-        .with_equation("E = m c^2")
-        .with_font_size(40.0)
-        .with_color(Color::rgb8(0xe6, 0xa7, 0x00)); // Yellow
+        .with_fill(Color::rgb8(0xf2, 0xf2, 0xf2)); // White
 
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(text.clone()));
-    project.scene.add(Box::new(math.clone()));
 
     // 3. Define Animations (Color and Font Size)
     project.scene.video_timeline.add(flows::all![
         // Circle color and size
         circle
-            .color
+            .fill_color
             .to(Color::rgb8(0xf2, 0xf2, 0xf2), Duration::from_secs(2))
             .ease(easings::quad_in_out),
         circle
@@ -46,10 +40,6 @@ fn main() {
         text.font_size
             .to(80.0, Duration::from_secs(2))
             .ease(easings::cubic_out),
-        // Math color
-        math.color
-            .to(Color::rgb8(0xe1, 0x32, 0x38), Duration::from_secs(2))
-            .ease(easings::cubic_in),
     ]);
 
     // 4. Export (Renders frames and combines them into out.mkv)

@@ -10,18 +10,18 @@ fn main() {
     let rect = Rect::default()
         .with_position(Vec2::new(-50.0, -50.0))
         .with_size(Vec2::new(100.0, 100.0))
-        .with_color(Color::rgba8(100, 100, 255, 255))
+        .with_fill(Color::rgba8(100, 100, 255, 255))
         .with_radius(10.0);
 
     let circle1 = Circle::default()
         .with_position(Vec2::new(-40.0, -40.0))
         .with_radius(20.0)
-        .with_color(Color::rgba8(255, 100, 100, 255));
+        .with_fill(Color::rgba8(255, 100, 100, 255));
 
     let circle2 = Circle::default()
         .with_position(Vec2::new(40.0, 40.0))
         .with_radius(20.0)
-        .with_color(Color::rgba8(100, 255, 100, 255));
+        .with_fill(Color::rgba8(100, 255, 100, 255));
 
     // Create a GroupNode holding them
     let group = GroupNode::default()
@@ -37,28 +37,25 @@ fn main() {
 
     // Define animations and add them to the timeline
     project.scene.video_timeline.add(chain![
-        // 1. Move the whole group using a matrix
+        // 1. Move the whole group
         group
-            .transform
-            .to(Affine::translate((200.0, 150.0)), Duration::from_secs(2)),
-        // 2. Rotate the group using a matrix
-        group.transform.to(
-            Affine::translate((200.0, 150.0)) * Affine::rotate(std::f64::consts::PI),
-            Duration::from_secs(2)
-        ),
+            .position
+            .to(Vec2::new(200.0, 150.0), Duration::from_secs(2)),
+        // 2. Rotate the group
+        group.rotation.to(std::f32::consts::PI, Duration::from_secs(2)),
         // 3. Complex transform (move + scale)
         all![
-            group.transform.to(
-                Affine::translate((400.0, 450.0)) * Affine::scale(2.0),
-                Duration::from_secs(2)
-            ),
+            group.position.to(Vec2::new(400.0, 450.0), Duration::from_secs(2)),
+            group.scale.to(Vec2::splat(2.0), Duration::from_secs(2)),
             group.opacity.to(0.3, Duration::from_secs(2)),
         ],
-        // 4. Reset to identity (at the center)
+        // 4. Reset (at the center)
         all![
             group
-                .transform
-                .to(Affine::translate((400.0, 300.0)), Duration::from_secs(1)),
+                .position
+                .to(Vec2::new(400.0, 300.0), Duration::from_secs(1)),
+            group.scale.to(Vec2::ONE, Duration::from_secs(1)),
+            group.rotation.to(0.0, Duration::from_secs(1)),
             group.opacity.to(1.0, Duration::from_secs(1)),
         ],
     ]);

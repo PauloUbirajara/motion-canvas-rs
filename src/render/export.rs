@@ -1,5 +1,6 @@
 use vello::wgpu;
 use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
+use std::future::Future;
 
 pub struct Exporter {
     width: u32,
@@ -25,7 +26,19 @@ impl Exporter {
         background_color: vello::peniko::Color,
     ) -> Self {
         let mut context = RenderContext::new();
-        let device_id = pollster::block_on(context.device(None)).unwrap();
+        let device_id: usize = {
+            let mut future = std::pin::pin!(context.device(None));
+            let waker = std::task::Waker::noop();
+            let mut cx = std::task::Context::from_waker(&waker);
+
+            loop {
+                match future.as_mut().poll(&mut cx) {
+                    std::task::Poll::Ready(val) => break val.unwrap(),
+                    std::task::Poll::Pending => std::hint::spin_loop(),
+                }
+            }
+        };
+
         let device_handle = &context.devices[device_id];
         let device = &device_handle.device;
 

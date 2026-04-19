@@ -31,11 +31,11 @@ impl Animation for Wait {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
-/// # let target = Affine::translate((100.0, 100.0));
+/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let target = Vec2::new(100.0, 100.0);
 /// # let dur = Duration::from_secs(1);
 /// chain![
-///     node.transform.to(target, dur),
+///     node.position.to(target, dur),
 ///     wait(Duration::from_secs(1)), // Pause for 1s
 ///     node.opacity.to(0.0, dur),
 /// ];

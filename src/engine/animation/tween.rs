@@ -14,17 +14,28 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
 
 pub trait Tweenable: Clone + Send + Sync + std::fmt::Debug + 'static {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self;
+    fn state_hash(&self) -> u64;
 }
 
 impl Tweenable for f32 {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         lerp(*a, *b, t)
     }
+    fn state_hash(&self) -> u64 {
+        self.to_bits() as u64
+    }
 }
 
 impl Tweenable for Vec2 {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         Vec2::new(lerp(a.x, b.x, t), lerp(a.y, b.y, t))
+    }
+    fn state_hash(&self) -> u64 {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        use std::hash::{Hash, Hasher};
+        self.x.to_bits().hash(&mut hasher);
+        self.y.to_bits().hash(&mut hasher);
+        hasher.finish()
     }
 }
 
@@ -41,6 +52,13 @@ impl Tweenable for Vec<Vec2> {
             a.clone()
         }
     }
+    fn state_hash(&self) -> u64 {
+        let mut hash = 0u64;
+        for v in self {
+            hash ^= v.state_hash();
+        }
+        hash
+    }
 }
 
 impl Tweenable for String {
@@ -50,6 +68,13 @@ impl Tweenable for String {
         } else {
             a.clone()
         }
+    }
+    fn state_hash(&self) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut s = DefaultHasher::new();
+        self.hash(&mut s);
+        s.finish()
     }
 }
 
@@ -62,6 +87,9 @@ impl Tweenable for Color {
             lerp(a.b as f32, b.b as f32, t) as u8,
             lerp(a.a as f32, b.a as f32, t) as u8,
         )
+    }
+    fn state_hash(&self) -> u64 {
+        ((self.r as u64) << 24) | ((self.g as u64) << 16) | ((self.b as u64) << 8) | (self.a as u64)
     }
 }
 
@@ -78,6 +106,15 @@ impl Tweenable for Affine {
             c1[4] + (c2[4] - c1[4]) * t,
             c1[5] + (c2[5] - c1[5]) * t,
         ])
+    }
+    fn state_hash(&self) -> u64 {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        use std::hash::{Hash, Hasher};
+        let c = self.as_coeffs();
+        for val in c {
+            val.to_bits().hash(&mut hasher);
+        }
+        hasher.finish()
     }
 }
 
@@ -138,6 +175,10 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         if data.value != value {
             data.value = value;
         }
+    }
+
+    pub fn state_hash(&self) -> u64 {
+        self.data.lock().unwrap().value.state_hash()
     }
 
     pub fn to(&self, target: T, duration: Duration) -> SignalTween<T> {

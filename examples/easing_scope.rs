@@ -14,6 +14,7 @@ const WAIT_DURATION: Duration = Duration::from_secs(1);
 fn main() {
     let mut project = Project::default()
         .with_dimensions(CANVAS_WIDTH, CANVAS_HEIGHT)
+        .with_title("Easing Scope")
         .close_on_finish();
 
     let easing_configs = vec![
@@ -46,12 +47,12 @@ fn main() {
         let ball = Circle::default()
             .with_position(Vec2::new(START_X, y))
             .with_radius(20.0)
-            .with_color(colors[i % colors.len()]);
+            .with_fill(colors[i % colors.len()]);
         let label = TextNode::default()
             .with_position(Vec2::new(START_X - 130.0, y))
             .with_text(name)
             .with_font_size(18.0)
-            .with_color(Color::rgb8(0xcc, 0xcc, 0xcc));
+            .with_fill(Color::rgb8(0xcc, 0xcc, 0xcc));
 
         project.scene.add(Box::new(ball.clone()));
         project.scene.add(Box::new(label.clone()));
@@ -78,11 +79,8 @@ fn main() {
                         flows::with_easing(
                             *easing,
                             vec![balls[i]
-                                .transform
-                                .to(
-                                    Affine::translate((end_pos.x as f64, end_pos.y as f64)),
-                                    ANIM_DURATION_GO,
-                                )
+                                .position
+                                .to(end_pos, ANIM_DURATION_GO)
                                 .into()],
                         )
                     })
@@ -99,11 +97,8 @@ fn main() {
                         flows::with_easing(
                             *easing,
                             vec![balls[i]
-                                .transform
-                                .to(
-                                    Affine::translate((start_pos.x as f64, start_pos.y as f64)),
-                                    ANIM_DURATION_RETURN,
-                                )
+                                .position
+                                .to(start_pos, ANIM_DURATION_RETURN)
                                 .into()],
                         )
                     })

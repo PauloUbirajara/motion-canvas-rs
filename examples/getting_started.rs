@@ -6,19 +6,20 @@ fn main() {
     let mut project = Project::default()
         .with_fps(60)
         .with_cache(true)
+        .with_title("Getting Started")
         .close_on_finish();
 
     // 2. Define Nodes
     let circle = Circle::default()
         .with_position(Vec2::new(400.0, 300.0))
         .with_radius(50.0)
-        .with_color(Color::rgb8(0xe1, 0x32, 0x38)); // Red
+        .with_fill(Color::rgb8(0xe1, 0x32, 0x38)); // Red
 
     let text = TextNode::default()
         .with_position(Vec2::new(400.0, 450.0))
         .with_text("Hello Rust")
         .with_font_size(40.0)
-        .with_color(Color::rgb8(0xf2, 0xf2, 0xf2)); // White-ish
+        .with_fill(Color::rgb8(0xf2, 0xf2, 0xf2)); // White-ish
 
     // 3. Add Nodes to the Scene
     project.scene.add(Box::new(circle.clone()));
@@ -27,8 +28,8 @@ fn main() {
     // 4. Add Animations to the Timeline
     project.scene.video_timeline.add(flows::all![
         circle.radius.to(100.0, Duration::from_secs(1)),
-        text.transform
-            .to(Affine::translate((400.0, 500.0)), Duration::from_secs(1)),
+        text.position
+            .to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),
     ]);
 
     // 5. Show

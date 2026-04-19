@@ -9,13 +9,13 @@ use super::all::All;
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = nodes::Rect::new(Vec2::ZERO, Vec2::new(100.0, 100.0), Color::RED);
-/// # let target = Affine::translate((100.0, 100.0));
+/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let target = Vec2::new(100.0, 100.0);
 /// # let dur = Duration::from_secs(1);
 /// with_easing!(
 ///     easings::back_out,
 ///     [
-///         node.transform.to(target, dur),
+///         node.position.to(target, dur),
 ///         node.size.to(Vec2::new(200.0, 200.0), dur),
 ///     ]
 /// );

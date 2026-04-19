@@ -14,6 +14,12 @@ pub struct PathData {
     pub total_length: f32,
 }
 
+impl Default for PathData {
+    fn default() -> Self {
+        Self::new(BezPath::new())
+    }
+}
+
 impl PathData {
     pub fn new(path: BezPath) -> Self {
         let mut segments = Vec::new();
@@ -71,51 +77,61 @@ impl PathData {
     }
 }
 
+impl Default for PathNode {
+    fn default() -> Self {
+        Self {
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
+            data: Arc::new(PathData::default()),
+            stroke_color: Signal::new(Color::WHITE),
+            stroke_width: Signal::new(1.0),
+            opacity: Signal::new(1.0),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct PathNode {
-    pub transform: Signal<Affine>,
+    pub position: Signal<Vec2>,
+    pub rotation: Signal<f32>,
+    pub scale: Signal<Vec2>,
     pub data: Arc<PathData>,
-    pub color: Signal<Color>,
-    pub width: Signal<f32>,
+    pub stroke_color: Signal<Color>,
+    pub stroke_width: Signal<f32>,
     pub opacity: Signal<f32>,
 }
 
 impl PathNode {
     pub fn new(position: Vec2, path: BezPath, color: Color, width: f32) -> Self {
         Self {
-            transform: Signal::new(Affine::translate((position.x as f64, position.y as f64))),
+            position: Signal::new(position),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
             data: Arc::new(PathData::new(path)),
-            color: Signal::new(color),
-            width: Signal::new(width),
+            stroke_color: Signal::new(color),
+            stroke_width: Signal::new(width),
             opacity: Signal::new(1.0),
         }
     }
 
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = Signal::new(transform);
-        self
-    }
-
     pub fn with_position(mut self, position: Vec2) -> Self {
-        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self.position = Signal::new(position);
         self
     }
 
     pub fn with_rotation(mut self, angle: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self.rotation = Signal::new(angle);
         self
     }
 
     pub fn with_scale(mut self, scale: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
         self
     }
 
@@ -123,24 +139,48 @@ impl PathNode {
         self.opacity = Signal::new(opacity);
         self
     }
+
+    pub fn with_path(mut self, path: BezPath) -> Self {
+        self.data = Arc::new(PathData::new(path));
+        self
+    }
+
+    pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
+        self.stroke_color = Signal::new(color);
+        self.stroke_width = Signal::new(width);
+        self
+    }
+
+    #[deprecated(note = "use with_stroke instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        let width = self.stroke_width.get();
+        self.with_stroke(color, width)
+    }
 }
 
 impl Node for PathNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let color = self.color.get();
-        let width = self.width.get();
-        let local_transform = self.transform.get();
+        let stroke_color = self.stroke_color.get();
+        let stroke_width = self.stroke_width.get();
         let opacity = self.opacity.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let mut final_color = color;
-        final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+        let mut final_color = stroke_color;
+        final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
 
         let brush = Brush::Solid(final_color);
         scene.stroke(
-            &Stroke::new(width as f64),
+            &Stroke::new(stroke_width as f64),
             combined_transform,
             &brush,
             None,
@@ -149,23 +189,12 @@ impl Node for PathNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
-
-        let coeffs = self.transform.get().as_coeffs();
-        for c in coeffs {
-            c.to_bits().hash(&mut s);
-        }
-
-        self.width.get().to_bits().hash(&mut s);
-        let color = self.color.get();
-        color.r.hash(&mut s);
-        color.g.hash(&mut s);
-        color.b.hash(&mut s);
-        color.a.hash(&mut s);
-        self.opacity.get().to_bits().hash(&mut s);
-        s.finish()
+        self.position.state_hash()
+            ^ self.rotation.state_hash()
+            ^ self.scale.state_hash()
+            ^ self.stroke_color.state_hash()
+            ^ self.stroke_width.state_hash()
+            ^ self.opacity.state_hash()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

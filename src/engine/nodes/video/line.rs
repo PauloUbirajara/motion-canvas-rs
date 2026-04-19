@@ -7,28 +7,32 @@ use vello::Scene;
 
 const DEFAULT_START: Vec2 = Vec2::ZERO;
 const DEFAULT_END: Vec2 = Vec2::new(100.0, 0.0);
-const DEFAULT_COLOR: Color = Color::RED;
-const DEFAULT_WIDTH: f32 = 2.0;
+const DEFAULT_COLOR: Color = Color::rgba8(250, 250, 250, 25);
+const DEFAULT_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
 #[derive(Clone)]
 pub struct Line {
-    pub transform: Signal<Affine>,
+    pub position: Signal<Vec2>,
+    pub rotation: Signal<f32>,
+    pub scale: Signal<Vec2>,
     pub start: Signal<Vec2>,
     pub end: Signal<Vec2>,
-    pub color: Signal<Color>,
-    pub width: Signal<f32>,
+    pub stroke_color: Signal<Color>,
+    pub stroke_width: Signal<f32>,
     pub opacity: Signal<f32>,
 }
 
 impl Default for Line {
     fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::IDENTITY),
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
             start: Signal::new(DEFAULT_START),
             end: Signal::new(DEFAULT_END),
-            color: Signal::new(DEFAULT_COLOR),
-            width: Signal::new(DEFAULT_WIDTH),
+            stroke_color: Signal::new(DEFAULT_COLOR),
+            stroke_width: Signal::new(DEFAULT_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
         }
     }
@@ -39,35 +43,26 @@ impl Line {
         Self::default()
             .with_start(start)
             .with_end(end)
-            .with_color(color)
-            .with_width(width)
-    }
-
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = Signal::new(transform);
-        self
+            .with_stroke(color, width)
     }
 
     pub fn with_position(mut self, position: Vec2) -> Self {
-        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self.position = Signal::new(position);
         self
     }
 
     pub fn with_rotation(mut self, angle: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self.rotation = Signal::new(angle);
         self
     }
 
     pub fn with_scale(mut self, scale: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
         self
     }
 
@@ -86,13 +81,24 @@ impl Line {
         self
     }
 
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
+    pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
+        self.stroke_color = Signal::new(color);
+        self.stroke_width = Signal::new(width);
         self
     }
 
-    pub fn with_width(mut self, width: f32) -> Self {
-        self.width = Signal::new(width);
+    #[deprecated(note = "use with_stroke instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        self.with_stroke(color, 1.0)
+    }
+
+    #[deprecated(note = "use with_stroke_width instead")]
+    pub fn with_width(self, width: f32) -> Self {
+        self.with_stroke_width(width)
+    }
+
+    pub fn with_stroke_width(mut self, width: f32) -> Self {
+        self.stroke_width = Signal::new(width);
         self
     }
 }
@@ -101,21 +107,28 @@ impl Node for Line {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let start = self.start.get();
         let end = self.end.get();
-        let color = self.color.get();
-        let width = self.width.get();
-        let local_transform = self.transform.get();
+        let stroke_color = self.stroke_color.get();
+        let stroke_width = self.stroke_width.get();
         let opacity = self.opacity.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let mut final_color = color;
-        final_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+        let mut final_color = stroke_color;
+        final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
 
         let brush = Brush::Solid(final_color);
 
         scene.stroke(
-            &Stroke::new(width as f64),
+            &Stroke::new(stroke_width as f64),
             combined_transform,
             &brush,
             None,
@@ -127,26 +140,14 @@ impl Node for Line {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
-
-        let coeffs = self.transform.get().as_coeffs();
-        for c in coeffs {
-            c.to_bits().hash(&mut s);
-        }
-
-        self.start.get().x.to_bits().hash(&mut s);
-        self.start.get().y.to_bits().hash(&mut s);
-        self.end.get().x.to_bits().hash(&mut s);
-        self.end.get().y.to_bits().hash(&mut s);
-        self.width.get().to_bits().hash(&mut s);
-        let color = self.color.get();
-        color.r.hash(&mut s);
-        color.g.hash(&mut s);
-        color.b.hash(&mut s);
-        self.opacity.get().to_bits().hash(&mut s);
-        s.finish()
+        self.position.state_hash()
+            ^ self.rotation.state_hash()
+            ^ self.scale.state_hash()
+            ^ self.start.state_hash()
+            ^ self.end.state_hash()
+            ^ self.stroke_width.state_hash()
+            ^ self.stroke_color.state_hash()
+            ^ self.opacity.state_hash()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

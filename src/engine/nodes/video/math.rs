@@ -28,10 +28,12 @@ struct MathCacheKey {
 }
 
 pub struct MathNode {
-    pub transform: Signal<Affine>,
+    pub position: Signal<Vec2>,
+    pub rotation: Signal<f32>,
+    pub scale: Signal<Vec2>,
     pub equation: Signal<String>,
     pub font_size: Signal<f32>,
-    pub color: Signal<Color>,
+    pub fill_color: Signal<Color>,
     pub opacity: Signal<f32>,
     pub transition_progress: Signal<f32>,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
@@ -41,10 +43,12 @@ pub struct MathNode {
 impl Default for MathNode {
     fn default() -> Self {
         Self {
-            transform: Signal::new(Affine::IDENTITY),
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
             equation: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
-            color: Signal::new(DEFAULT_COLOR),
+            fill_color: Signal::new(DEFAULT_COLOR),
             opacity: Signal::new(DEFAULT_OPACITY),
             transition_progress: Signal::new(1.0),
             cache: Arc::new(Mutex::new(None)),
@@ -56,10 +60,12 @@ impl Default for MathNode {
 impl Clone for MathNode {
     fn clone(&self) -> Self {
         Self {
-            transform: self.transform.clone(),
+            position: self.position.clone(),
+            rotation: self.rotation.clone(),
+            scale: self.scale.clone(),
             equation: self.equation.clone(),
             font_size: self.font_size.clone(),
-            color: self.color.clone(),
+            fill_color: self.fill_color.clone(),
             opacity: self.opacity.clone(),
             transition_progress: self.transition_progress.clone(),
             cache: self.cache.clone(),
@@ -74,34 +80,26 @@ impl MathNode {
             .with_position(pos)
             .with_equation(equation)
             .with_font_size(size)
-            .with_color(color)
-    }
-
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = Signal::new(transform);
-        self
+            .with_fill(color)
     }
 
     pub fn with_position(mut self, position: Vec2) -> Self {
-        self.transform = Signal::new(Affine::translate((position.x as f64, position.y as f64)));
+        self.position = Signal::new(position);
         self
     }
 
     pub fn with_rotation(mut self, angle: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::rotate(angle as f64));
+        self.rotation = Signal::new(angle);
         self
     }
 
     pub fn with_scale(mut self, scale: f32) -> Self {
-        let current = self.transform.get();
-        let coeffs = current.as_coeffs();
-        let tx = coeffs[4];
-        let ty = coeffs[5];
-        self.transform = Signal::new(Affine::translate((tx, ty)) * Affine::scale(scale as f64));
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
         self
     }
 
@@ -133,11 +131,15 @@ impl MathNode {
         self
     }
 
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = Signal::new(color);
+    pub fn with_fill(mut self, color: Color) -> Self {
+        self.fill_color = Signal::new(color);
         self
     }
-    // ...
+
+    #[deprecated(note = "use with_fill instead")]
+    pub fn with_color(self, color: Color) -> Self {
+        self.with_fill(color)
+    }
 
     pub fn start_transition(&self, new_eq: &str) {
         let prev_eq = self.equation.get();
@@ -234,19 +236,25 @@ impl crate::engine::animation::Animation for MathTransition {
     }
 }
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-
 impl Node for MathNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let color = self.color.get();
+        let color = self.fill_color.get();
 
         self.rebuild_if_needed();
 
         let cache_guard = self.cache.lock().unwrap();
         let progress = self.transition_progress.get();
         let base_opacity = self.opacity.get();
-        let root_transform = parent_transform * self.transform.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+
+        let root_transform = parent_transform * local_transform;
 
         // 1. Draw previous equation if transitioning
         if progress < 1.0 {
@@ -290,23 +298,14 @@ impl Node for MathNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let mut s = DefaultHasher::new();
-
-        let coeffs = self.transform.get().as_coeffs();
-        for c in coeffs {
-            c.to_bits().hash(&mut s);
-        }
-
-        self.equation.get().hash(&mut s);
-        self.font_size.get().to_bits().hash(&mut s);
-        let color = self.color.get();
-        color.r.hash(&mut s);
-        color.g.hash(&mut s);
-        color.b.hash(&mut s);
-        color.a.hash(&mut s);
-        self.opacity.get().to_bits().hash(&mut s);
-        self.transition_progress.get().to_bits().hash(&mut s);
-        s.finish()
+        self.position.state_hash()
+            ^ self.rotation.state_hash()
+            ^ self.scale.state_hash()
+            ^ self.equation.state_hash()
+            ^ self.font_size.state_hash()
+            ^ self.fill_color.state_hash()
+            ^ self.opacity.state_hash()
+            ^ self.transition_progress.state_hash()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

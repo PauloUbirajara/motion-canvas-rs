@@ -2,7 +2,10 @@ use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
 fn main() {
-    let mut project = Project::default().with_fps(120).close_on_finish();
+    let mut project = Project::default()
+        .with_fps(120)
+        .with_title("Math Code")
+        .close_on_finish();
 
     let triangle = Polygon::default()
         .with_position(Vec2::ZERO)
@@ -17,18 +20,15 @@ fn main() {
         Line::default()
             .with_start(Vec2::new(0.0, 0.0))
             .with_end(Vec2::new(0.0, 200.0))
-            .with_color(Color::WHITE)
-            .with_width(10.0),
+            .with_stroke(Color::WHITE, 10.0),
         Line::default()
             .with_start(Vec2::new(0.0, 0.0))
             .with_end(Vec2::new(200.0, 200.0))
-            .with_color(Color::WHITE)
-            .with_width(10.0),
+            .with_stroke(Color::WHITE, 10.0),
         Line::default()
             .with_start(Vec2::new(0.0, 200.0))
             .with_end(Vec2::new(200.0, 200.0))
-            .with_color(Color::WHITE)
-            .with_width(10.0),
+            .with_stroke(Color::WHITE, 10.0),
     ];
 
     let triangle_line_group = GroupNode::default()
@@ -45,27 +45,31 @@ fn main() {
         .with_position(Vec2::new(50.0, 200.0))
         .with_equation("a^2 + b^2 = c^2")
         .with_font_size(10.0)
-        .with_color(Color::GRAY)
+        .with_fill(Color::GRAY)
         .with_opacity(0.0);
 
     project.scene.add(Box::new(triangle_line_group.clone()));
     project.scene.add(Box::new(pytagorean_theorem.clone()));
 
     project.scene.video_timeline.add(all![
-        triangle_line_group.transform.to(
-            Affine::translate((50.0, 200.0)) * Affine::scale(1.0),
-            Duration::from_secs(1),
-        ),
+        all![
+            triangle_line_group
+                .position
+                .to(Vec2::new(50.0, 200.0), Duration::from_secs(1)),
+            triangle_line_group
+                .scale
+                .to(Vec2::ONE, Duration::from_secs(1)),
+        ],
         all![
             pytagorean_theorem.opacity.to(1.0, Duration::from_secs(1)),
             pytagorean_theorem
                 .font_size
                 .to(32.0, Duration::from_secs(1)),
             pytagorean_theorem
-                .transform
-                .to(Affine::translate((150.0, 200.0)), Duration::from_secs(1)),
+                .position
+                .to(Vec2::new(150.0, 200.0), Duration::from_secs(1)),
         ]
     ]);
 
-    project.export().expect("Failed to render");
+    project.show().expect("Failed to render");
 }
