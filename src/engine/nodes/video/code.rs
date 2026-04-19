@@ -368,23 +368,22 @@ impl Node for CodeNode {
     fn update(&mut self, _dt: Duration) {}
 
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
 
-        s.write_u64(self.position.state_hash());
-        s.write_u64(self.rotation.state_hash());
-        s.write_u64(self.scale.state_hash());
-        s.write_u64(self.font_size.state_hash());
-        s.write_u64(self.code.state_hash());
-        s.write_u64(self.opacity.state_hash());
-        s.write_u64(self.dim_opacity.state_hash());
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.font_size.state_hash());
+        h.update_u64(self.code.state_hash());
+        h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.dim_opacity.state_hash());
 
-        self.language.hash(&mut s);
-        self.theme.hash(&mut s);
-        self.font_family.hash(&mut s);
+        h.update_bytes(self.language.as_bytes());
+        h.update_bytes(self.theme.as_bytes());
+        h.update_bytes(self.font_family.as_bytes());
 
-        s.finish()
+        h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

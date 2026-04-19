@@ -124,17 +124,15 @@ impl Node for ImageNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        let mut path_hash = 0u64;
-        for (i, b) in self.path.as_bytes().iter().enumerate() {
-            path_hash ^= (*b as u64).rotate_left((i % 64) as u32);
-        }
-
-        self.position.state_hash()
-            ^ self.rotation.state_hash()
-            ^ self.scale.state_hash()
-            ^ self.size.state_hash()
-            ^ self.opacity.state_hash()
-            ^ path_hash
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_bytes(self.path.as_bytes());
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.size.state_hash());
+        h.update_u64(self.opacity.state_hash());
+        h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

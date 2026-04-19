@@ -25,6 +25,7 @@ skrifa = "0.42.0"
 vello = "0.2.1"
 winit = "0.29"
 rayon = "1.11.0"
+seahash = "4.1.0"
 image = { version = "0.24", optional = true }
 resvg = { version = "0.45", optional = true }
 rodio = { version = "0.17", optional = true }

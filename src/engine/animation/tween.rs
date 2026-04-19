@@ -22,7 +22,7 @@ impl Tweenable for f32 {
         lerp(*a, *b, t)
     }
     fn state_hash(&self) -> u64 {
-        self.to_bits() as u64
+        crate::engine::util::hash::hash_f32(*self)
     }
 }
 
@@ -31,7 +31,10 @@ impl Tweenable for Vec2 {
         Vec2::new(lerp(a.x, b.x, t), lerp(a.y, b.y, t))
     }
     fn state_hash(&self) -> u64 {
-        (self.x.to_bits() as u64) ^ (self.y.to_bits() as u64).rotate_left(32)
+        crate::engine::util::hash::combine_hashes(
+            crate::engine::util::hash::hash_f32(self.x),
+            crate::engine::util::hash::hash_f32(self.y),
+        )
     }
 }
 
@@ -49,11 +52,11 @@ impl Tweenable for Vec<Vec2> {
         }
     }
     fn state_hash(&self) -> u64 {
-        let mut hash = 0u64;
+        let mut h = crate::engine::util::hash::Hasher::new();
         for v in self {
-            hash ^= v.state_hash();
+            h.update_u64(v.state_hash());
         }
-        hash
+        h.finish()
     }
 }
 
@@ -66,11 +69,7 @@ impl Tweenable for String {
         }
     }
     fn state_hash(&self) -> u64 {
-        let mut h = 0u64;
-        for (i, b) in self.as_bytes().iter().enumerate() {
-            h ^= (*b as u64).rotate_left((i % 64) as u32);
-        }
-        h
+        crate::engine::util::hash::hash_str(self)
     }
 }
 
@@ -85,7 +84,9 @@ impl Tweenable for Color {
         )
     }
     fn state_hash(&self) -> u64 {
-        ((self.r as u64) << 24) | ((self.g as u64) << 16) | ((self.b as u64) << 8) | (self.a as u64)
+        let mut h = crate::engine::util::hash::Hasher::new();
+        h.update_bytes(&[self.r, self.g, self.b, self.a]);
+        h.finish()
     }
 }
 
@@ -105,11 +106,11 @@ impl Tweenable for Affine {
     }
     fn state_hash(&self) -> u64 {
         let c = self.as_coeffs();
-        let mut h = 0u64;
-        for (i, val) in c.iter().enumerate() {
-            h ^= (val.to_bits() as u64).rotate_left((i * 8) as u32);
+        let mut h = crate::engine::util::hash::Hasher::new();
+        for val in c {
+            h.update_u64(val.to_bits() as u64);
         }
-        h
+        h.finish()
     }
 }
 

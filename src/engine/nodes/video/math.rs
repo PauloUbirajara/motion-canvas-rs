@@ -298,14 +298,17 @@ impl Node for MathNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        self.position.state_hash()
-            ^ self.rotation.state_hash()
-            ^ self.scale.state_hash()
-            ^ self.equation.state_hash()
-            ^ self.font_size.state_hash()
-            ^ self.fill_color.state_hash()
-            ^ self.opacity.state_hash()
-            ^ self.transition_progress.state_hash()
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.equation.state_hash());
+        h.update_u64(self.font_size.state_hash());
+        h.update_u64(self.fill_color.state_hash());
+        h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.transition_progress.state_hash());
+        h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

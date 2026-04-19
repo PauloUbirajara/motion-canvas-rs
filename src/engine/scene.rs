@@ -56,10 +56,10 @@ impl Scene2D for BaseScene {
             .par_iter()
             .enumerate()
             .map(|(i, node)| {
-                let h = node.state_hash();
-                // Mix in the index to avoid cancellations of identical nodes
-                (h ^ (i as u64).wrapping_mul(0x9E3779B97F4A7C15))
-                    .rotate_left((i % 64) as u32)
+                crate::engine::util::hash::combine_hashes(
+                    node.state_hash(),
+                    i as u64
+                )
             })
             .reduce(|| 0u64, |a, b| a.wrapping_add(b))
     }

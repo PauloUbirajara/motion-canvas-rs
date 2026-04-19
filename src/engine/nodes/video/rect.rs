@@ -149,15 +149,18 @@ impl Node for Rect {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        self.position.state_hash()
-            ^ self.rotation.state_hash()
-            ^ self.scale.state_hash()
-            ^ self.size.state_hash()
-            ^ self.radius.state_hash()
-            ^ self.fill_color.state_hash()
-            ^ self.stroke_color.state_hash()
-            ^ self.stroke_width.state_hash()
-            ^ self.opacity.state_hash()
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.size.state_hash());
+        h.update_u64(self.radius.state_hash());
+        h.update_u64(self.fill_color.state_hash());
+        h.update_u64(self.stroke_color.state_hash());
+        h.update_u64(self.stroke_width.state_hash());
+        h.update_u64(self.opacity.state_hash());
+        h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

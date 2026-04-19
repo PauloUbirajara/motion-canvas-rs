@@ -189,12 +189,17 @@ impl Node for PathNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        self.position.state_hash()
-            ^ self.rotation.state_hash()
-            ^ self.scale.state_hash()
-            ^ self.stroke_color.state_hash()
-            ^ self.stroke_width.state_hash()
-            ^ self.opacity.state_hash()
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.stroke_color.state_hash());
+        h.update_u64(self.stroke_width.state_hash());
+        h.update_u64(self.opacity.state_hash());
+        // For PathData, we could hash segments, but currently it's static Arc.
+        // If data changes, we should include it.
+        h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {
