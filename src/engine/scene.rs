@@ -29,8 +29,13 @@ impl BaseScene {
     }
 
     #[cfg(feature = "audio")]
-    pub fn collect_audio_events(&mut self, current_time: std::time::Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
-        self.audio_timeline.collect_audio_events(current_time, events);
+    pub fn collect_audio_events(
+        &mut self,
+        current_time: std::time::Duration,
+        events: &mut Vec<crate::engine::animation::base::AudioEvent>,
+    ) {
+        self.audio_timeline
+            .collect_audio_events(current_time, events);
     }
 }
 
@@ -55,12 +60,7 @@ impl Scene2D for BaseScene {
         self.nodes
             .par_iter()
             .enumerate()
-            .map(|(i, node)| {
-                crate::engine::util::hash::combine_hashes(
-                    node.state_hash(),
-                    i as u64
-                )
-            })
+            .map(|(i, node)| crate::engine::util::hash::combine_hashes(node.state_hash(), i as u64))
             .reduce(|| 0u64, |a, b| a.wrapping_add(b))
     }
 }

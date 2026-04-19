@@ -78,10 +78,7 @@ fn main() {
                         let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
                         flows::with_easing(
                             *easing,
-                            vec![balls[i]
-                                .position
-                                .to(end_pos, ANIM_DURATION_GO)
-                                .into()],
+                            vec![balls[i].position.to(end_pos, ANIM_DURATION_GO).into()],
                         )
                     })
                     .collect(),
@@ -96,10 +93,7 @@ fn main() {
                         let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
                         flows::with_easing(
                             *easing,
-                            vec![balls[i]
-                                .position
-                                .to(start_pos, ANIM_DURATION_RETURN)
-                                .into()],
+                            vec![balls[i].position.to(start_pos, ANIM_DURATION_RETURN).into()],
                         )
                     })
                     .collect(),

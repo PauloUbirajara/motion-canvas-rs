@@ -1,5 +1,5 @@
-use crate::engine::animation::base::Animation;
 use super::all::All;
+use crate::engine::animation::base::Animation;
 
 /// Runs multiple animations in parallel with a shared easing override.
 ///

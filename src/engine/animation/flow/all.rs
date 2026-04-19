@@ -38,7 +38,14 @@ impl Animation for All {
             }
         }
 
-        (all_finished, if all_finished { min_leftover } else { Duration::ZERO })
+        (
+            all_finished,
+            if all_finished {
+                min_leftover
+            } else {
+                Duration::ZERO
+            },
+        )
     }
 
     fn duration(&self) -> Duration {

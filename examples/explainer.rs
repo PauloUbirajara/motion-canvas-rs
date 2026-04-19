@@ -12,8 +12,8 @@ const YELLOW: Color = Color::rgb8(0xe6, 0xa7, 0x00);
 const GREEN: Color = Color::rgb8(0x25, 0xc2, 0x81);
 const TEAL: Color = Color::rgb8(0x20, 0xb2, 0xaa);
 
-const CANVAS_W: u32 = 1200;
-const CANVAS_H: u32 = 700;
+const CANVAS_W: u32 = 1280;
+const CANVAS_H: u32 = 720;
 const LEFT: f32 = 40.0;
 
 fn ms(n: u64) -> Duration {

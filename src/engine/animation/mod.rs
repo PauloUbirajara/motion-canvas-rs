@@ -47,7 +47,11 @@ impl Timeline {
             .fold(std::time::Duration::ZERO, |acc, d| acc + d)
     }
 
-    pub fn collect_audio_events(&mut self, current_time: std::time::Duration, events: &mut Vec<AudioEvent>) {
+    pub fn collect_audio_events(
+        &mut self,
+        current_time: std::time::Duration,
+        events: &mut Vec<AudioEvent>,
+    ) {
         if !self.animations.is_empty() {
             self.animations[0].collect_audio_events(current_time, events);
         }

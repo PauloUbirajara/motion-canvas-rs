@@ -55,13 +55,13 @@ pub mod prelude {
     // Glob-export for direct access (e.g. Circle, all!, quad_in)
     pub use crate::engine::animation::flow::*;
     pub use crate::engine::easings::*;
-    pub use crate::engine::nodes::Polygon;
-    #[cfg(feature = "math")]
-    pub use crate::engine::nodes::MathNode;
     #[cfg(feature = "code")]
     pub use crate::engine::nodes::CodeNode;
     #[cfg(feature = "image")]
     pub use crate::engine::nodes::ImageNode;
+    #[cfg(feature = "math")]
+    pub use crate::engine::nodes::MathNode;
+    pub use crate::engine::nodes::Polygon;
     pub use crate::engine::nodes::*;
     pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing};
     #[cfg(feature = "audio")]

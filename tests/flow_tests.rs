@@ -55,7 +55,10 @@ fn test_timeline_sequential_behavior() {
         .add(circle.radius.to(40.0, Duration::from_secs(1)));
 
     // Expected total duration: 3s
-    assert_eq!(project.scene.video_timeline.duration(), Duration::from_secs(3));
+    assert_eq!(
+        project.scene.video_timeline.duration(),
+        Duration::from_secs(3)
+    );
 
     // After 1.5s, only the second animation should be halfway done, or the first should be finished
     // If it's sequential:
@@ -63,7 +66,10 @@ fn test_timeline_sequential_behavior() {
     // 1-2s: anim 2
     // 2-3s: anim 3
 
-    project.scene.video_timeline.update(Duration::from_millis(1500));
+    project
+        .scene
+        .video_timeline
+        .update(Duration::from_millis(1500));
 
     // First anim should be gone, second anim should have had 0.5s of progress
     // circle.radius started at 10.0

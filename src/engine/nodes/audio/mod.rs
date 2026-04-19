@@ -77,8 +77,8 @@ pub struct AudioAnimation {
 
 impl AudioAnimation {
     pub fn new(node: AudioNode) -> Self {
-        let total_duration = AudioManager::get_duration(&node.path)
-            .unwrap_or(Duration::from_secs(1)); // Fallback if duration is unknown
+        let total_duration =
+            AudioManager::get_duration(&node.path).unwrap_or(Duration::from_secs(1)); // Fallback if duration is unknown
 
         Self {
             node,
@@ -160,7 +160,11 @@ impl Animation for AudioAnimation {
             .unwrap_or(Duration::ZERO)
     }
 
-    fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
+    fn collect_audio_events(
+        &mut self,
+        current_time: Duration,
+        events: &mut Vec<crate::engine::animation::base::AudioEvent>,
+    ) {
         if self.recorded {
             return;
         }

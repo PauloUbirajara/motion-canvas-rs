@@ -139,7 +139,11 @@ impl AnimationWindow {
                     ..
                 } => {
                     if let Some(ref mut renderer) = renderer_opt {
-                        renderer.render(&self.project.scene, self.project.width, self.project.height);
+                        renderer.render(
+                            &self.project.scene,
+                            self.project.width,
+                            self.project.height,
+                        );
                     }
                 }
 
