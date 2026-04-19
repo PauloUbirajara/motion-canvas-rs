@@ -54,6 +54,8 @@ pub struct Token {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CodeTransition {
+    pub from_text: String,
+    pub to_text: String,
     pub from_tokens: Vec<Token>,
     pub to_tokens: Vec<Token>,
     pub progress: f32,
@@ -160,6 +162,8 @@ impl Tweenable for CodeValue {
             text: b.text.clone(),
             tokens: b.tokens.clone(),
             transition: Some(CodeTransition {
+                from_text: a.text.clone(),
+                to_text: b.text.clone(),
                 from_tokens: a.tokens.clone(),
                 to_tokens: b.tokens.clone(),
                 progress: t,
@@ -178,7 +182,11 @@ impl Tweenable for CodeValue {
         self.text.hash(&mut s);
         self.selection.hash(&mut s);
         if let Some(trans) = &self.transition {
+            trans.from_text.hash(&mut s);
+            trans.to_text.hash(&mut s);
             trans.progress.to_bits().hash(&mut s);
+        } else {
+            self.text.hash(&mut s);
         }
         s.finish()
     }

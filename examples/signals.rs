@@ -9,11 +9,14 @@ struct SignalLink<T, S> {
     mapper: Box<dyn Fn(S) -> T + Send + Sync>,
 }
 
-impl<T, S> SignalLink<T, S> {
+impl<T: Tweenable + PartialEq, S: Tweenable + PartialEq> SignalLink<T, S> {
     fn new<F>(source: Signal<S>, target: Signal<T>, mapper: F) -> Self
     where
         F: Fn(S) -> T + Send + Sync + 'static,
     {
+        // Perform an immediate sync so the target has the correct value on the first frame
+        target.set(mapper(source.get()));
+
         Self {
             source,
             target,
@@ -24,13 +27,20 @@ impl<T, S> SignalLink<T, S> {
 
 impl<T: Tweenable + PartialEq, S: Tweenable + PartialEq> Node for SignalLink<T, S> {
     fn render(&self, _scene: &mut Scene, _parent_transform: Affine, _parent_opacity: f32) {
-        // Render doesn't need to do anything, update handles the sync
+        // Redraw check: ensure sync even if update hasn't run yet
+        let current = self.source.get();
+        let desired = (self.mapper)(current);
+        if self.target.get() != desired {
+            self.target.set(desired);
+        }
     }
 
     fn update(&mut self, _dt: Duration) {
         let current_source = self.source.get();
         let desired_target = (self.mapper)(current_source);
-        self.target.set(desired_target);
+        if self.target.get() != desired_target {
+            self.target.set(desired_target);
+        }
     }
 
     fn state_hash(&self) -> u64 {
@@ -136,7 +146,7 @@ fn main() {
             .to(200.0, Duration::from_secs(1))
             .ease(easings::cubic_out),
         // Wait
-        flows::wait(Duration::from_millis(500)),
+        wait(Duration::from_millis(500)),
         // Move Y
         y_var
             .to(-150.0, Duration::from_secs(1))
@@ -156,7 +166,7 @@ fn main() {
             y_var.to(0.0, Duration::from_secs(1)),
         ],
         // Final wait to see the result
-        flows::wait(Duration::from_secs(1)),
+        wait(Duration::from_secs(1)),
     ]);
 
     project.show().expect("Failed to render");
