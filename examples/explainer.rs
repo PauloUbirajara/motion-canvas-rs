@@ -86,7 +86,10 @@ fn hline(y: f32) -> Line {
 }
 // Shorthand for show/hide
 fn show(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
-    n.opacity_signal().to(1.0, d).ease(easings::cubic_out).into()
+    n.opacity_signal()
+        .to(1.0, d)
+        .ease(easings::cubic_out)
+        .into()
 }
 fn hide(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
     n.opacity_signal().to(0.0, d).ease(easings::cubic_in).into()
@@ -187,7 +190,7 @@ fn main() {
     // =====================================================================
     let s2_h = title("Every program follows 5 steps", 50.0);
     let steps = [
-        "1. Create a Project      — your canvas settings",
+        "1. Create a Project       — your canvas settings",
         "2. Create Nodes           — shapes, text, images",
         "3. Add Nodes to Scene     — what gets drawn",
         "4. Animate the Timeline   — how things move",
@@ -269,7 +272,7 @@ fn main() {
         "impl Project {
     pub fn with_fps(mut self, fps: u32) -> Self {
         self.fps = fps;   // set the value
-        self             // return yourself (builder pattern)
+        self              // return yourself (builder pattern)
     }
     pub fn with_title(mut self, title: &str) -> Self {
         self.title = title.to_string();
@@ -489,11 +492,11 @@ circle.radius.to(100.0, Duration::from_secs(1));
     let s8_code = code_block(
         "pub struct SignalTween<T> {
     data: Arc<Mutex<SignalData<T>>>,  // shared ref to signal
-    start_value: Option<T>,  // captured on FIRST update (lazy!)
-    target_value: Option<T>, // where we're going
-    duration: Duration,      // how long
-    elapsed: Duration,       // how much time passed
-    easing: fn(f32) -> f32,  // curve function
+    start_value: Option<T>,           // captured on FIRST update (lazy!)
+    target_value: Option<T>,          // where we're going
+    duration: Duration,               // how long
+    elapsed: Duration,                // how much time passed
+    easing: fn(f32) -> f32,           // curve function
 }",
         125.0,
     );
@@ -501,10 +504,10 @@ circle.radius.to(100.0, Duration::from_secs(1));
     let s8_how = h2("Each frame update:", 340.0);
     let s8_steps = [
         "1. elapsed += dt",
-        "2. t_linear = elapsed / duration        (0.0 to 1.0)",
-        "3. t_eased  = easing(t_linear)          (curved)",
-        "4. value    = lerp(start, target, t)     (interpolate)",
-        "5. Write value into Signal               (node sees it)",
+        "2. t_linear = elapsed / duration          (0.0 to 1.0)",
+        "3. t_eased  = easing(t_linear)            (curved)",
+        "4. value    = lerp(start, target, t)      (interpolate)",
+        "5. Write value into Signal                (node sees it)",
         "6. If elapsed >= duration: finished!      (return leftover dt)",
     ];
     let s8_step_texts: Vec<TextNode> = s8_steps
@@ -651,13 +654,13 @@ circle.radius.to(100.0, Duration::from_secs(1));
         .collect();
 
     let s10_code = code_block(
-        "chain![ a, b, c ]     // a then b then c
-all![ a, b, c ]       // a + b + c together
+        "chain![ a, b, c ]           // a then b then c
+all![ a, b, c ]             // a + b + c together
 sequence![ 200ms, a, b, c ] // staggered
-delay![ 500ms, a ]    // wait then play
-wait(1s)              // pause
-any![ a, b ]          // race: first wins
-loop_anim![ a, 3 ]   // repeat 3 times",
+delay![ 500ms, a ]          // wait then play
+wait(1s)                    // pause
+any![ a, b ]                // race: first wins
+loop_anim![ a, 3 ]          // repeat 3 times",
         510.0,
     );
 
@@ -691,7 +694,7 @@ impl Timeline {
             let (finished, leftover) = self.animations[0].update(dt);
             if finished {
                 self.animations.remove(0); // pop front
-                dt = leftover;  // pass leftover to next!
+                dt = leftover;             // pass leftover to next!
             } else { break; }
         }
     }
@@ -713,7 +716,7 @@ impl Timeline {
         "1. Timeline.update(dt)  =>  SignalTween writes to Signals",
         "2. Node.render()        =>  reads signals, draws shapes",
         "3. Vello GPU            =>  compiles scene => wgpu => pixels",
-        "4. state_hash()         =>  XOR of all values, skip if unchanged",
+        "4. state_hash()         =>  seahash for hashing scene state, skip if unchanged",
     ];
     let s11_render_texts: Vec<TextNode> = s11_steps
         .iter()
@@ -791,7 +794,7 @@ impl Timeline {
     renderer: Renderer,           // Vello
 }
 fn export_frame(&mut self, scene) -> Vec<u8> {
-    scene.render(&mut self.scene);          // 1. build shapes
+    scene.render(&mut self.scene);           // 1. build shapes
     renderer.render_to_texture(..);          // 2. GPU draws
     encoder.copy_texture_to_buffer(..);      // 3. GPU -> CPU
     output_buffer.map_async(Read, ..);       // 4. read pixels
@@ -836,6 +839,10 @@ image_manager.rs   // Loads PNG + SVG (via resvg)
 code_tokenizer.rs  // Syntax highlighting via Syntect
                    // Parses code -> colored spans for CodeNode
 
+hash.rs            // SeaHash: fast, deterministic fingerprints
+                   // Position-aware combination
+                   // Powers Rayon parallel state hashing
+
 export.rs          // FFmpeg pipe: rawvideo -> libx264
                    // Audio merging with filter_complex
                    // Title sanitization for filenames",
@@ -843,14 +850,18 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
     );
     let s14_lazy = note(
         "lazy_static + Mutex = global singleton, created once, cached forever.",
-        460.0,
+        495.0,
     );
     let s14_arc = body(
         "Arc<Image> lets multiple nodes share one decoded image without copies.",
-        495.0,
+        530.0,
+    );
+    let s14_hash = note(
+        "Rayon + SeaHash = Deterministic fingerprints across runs & threads.",
+        565.0,
     );
 
-    for n in [&s14_h, &s14_sub, &s14_lazy, &s14_arc] {
+    for n in [&s14_h, &s14_sub, &s14_lazy, &s14_arc, &s14_hash] {
         project.scene.add(Box::new(n.clone()));
     }
     project.scene.add(Box::new(s14_code.clone()));
@@ -866,8 +877,8 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         .with_font(FONT)
         .with_opacity(0.0);
     let fin_steps = [
-        "1.  struct         — data container",
-        "2.  impl           — methods / builder pattern",
+        "1.  struct          — data container",
+        "2.  impl            — methods / builder pattern",
         "3.  trait Node      — interface contract",
         "4.  Box<dyn Node>   — type-erased heap allocation",
         "5.  Signal<T>       — Arc<Mutex> shared reactive state",
@@ -1448,9 +1459,10 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
     ]);
 
     #[cfg(feature = "audio")]
-    project.scene.audio_timeline.add(
-        play!(AudioNode::new("tests/background.mp3").with_volume(0.3))
-    );
+    project
+        .scene
+        .audio_timeline
+        .add(play!(AudioNode::new("background.mp3").with_volume(0.3)));
 
     project
         .with_ffmpeg(true)
