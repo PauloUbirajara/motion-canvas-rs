@@ -2,6 +2,7 @@ use crate::engine::scene::BaseScene;
 #[cfg(feature = "export")]
 use crate::engine::scene::Scene2D;
 use crate::render::AnimationWindow;
+use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 #[cfg(feature = "export")]
@@ -23,6 +24,8 @@ const DEFAULT_USE_FFMPEG: bool = false;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct CacheManifest {
+    pub width: u32,
+    pub height: u32,
     pub frames: HashMap<u32, u64>, // frame_index -> state_hash
 }
 
@@ -129,7 +132,12 @@ impl Project {
                 .then(|| fs::read_to_string(&cache_file).ok())
                 .flatten()
                 .and_then(|c| serde_json::from_str(&c).ok())
-                .unwrap_or_default();
+                .filter(|m: &CacheManifest| m.width == self.width && m.height == self.height)
+                .unwrap_or(CacheManifest {
+                    width: self.width,
+                    height: self.height,
+                    frames: HashMap::new(),
+                });
 
             #[cfg(feature = "audio")]
             crate::engine::nodes::audio::set_audio_playback(false);
@@ -210,8 +218,17 @@ impl Project {
                     if let Some(ref mut stdin) = ffmpeg_process {
                         match image::open(&frame_path) {
                             Ok(img) => {
-                                let pixels = img.to_rgba8().into_raw();
-                                stdin.write_all(&pixels)?;
+                                let (w, h) = img.dimensions();
+                                if w == self.width && h == self.height {
+                                    let pixels = img.to_rgba8().into_raw();
+                                    stdin.write_all(&pixels)?;
+                                } else {
+                                    eprintln!("\nWarning: Cached frame resolution mismatch at {:?} (expected {}x{}, found {}x{}). Re-rendering...", frame_path, self.width, self.height, w, h);
+                                    let pixels = exporter.export_frame(&self.scene);
+                                    stdin.write_all(&pixels)?;
+                                    tx.send((pixels, frame_path)).unwrap();
+                                    rendered_count += 1;
+                                }
                             }
                             Err(e) => {
                                 eprintln!("\nCache corruption detected at {:?}: {}. Re-rendering...", frame_path, e);
