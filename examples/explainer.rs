@@ -86,10 +86,10 @@ fn hline(y: f32) -> Line {
 }
 // Shorthand for show/hide
 fn show(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
-    n.opacity_signal().to(1.0, d).ease(easings::quad_out).into()
+    n.opacity_signal().to(1.0, d).ease(easings::cubic_out).into()
 }
 fn hide(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
-    n.opacity_signal().to(0.0, d).ease(easings::quad_in).into()
+    n.opacity_signal().to(0.0, d).ease(easings::cubic_in).into()
 }
 
 // Trait to unify opacity access across different node types

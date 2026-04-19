@@ -108,10 +108,21 @@ impl Node for ImageNode {
             scene.push_layer(
                 vello::peniko::Mix::Normal,
                 final_opacity,
-                transform,
-                &vello::kurbo::Rect::new(0.0, 0.0, img.width as f64, img.height as f64),
+                parent_transform * local_transform,
+                &vello::kurbo::Rect::new(
+                    0.0,
+                    0.0,
+                    size.x as f64 / sc.x as f64,
+                    size.y as f64 / sc.y as f64,
+                ),
             );
-            scene.draw_image(img, Affine::IDENTITY);
+            scene.draw_image(
+                img,
+                Affine::scale_non_uniform(
+                    size.x as f64 / img.width as f64,
+                    size.y as f64 / img.height as f64,
+                ),
+            );
             scene.pop_layer();
             return;
         }

@@ -207,8 +207,19 @@ impl Project {
                     saved_count.fetch_add(1, Ordering::SeqCst);
                     // If we are skipping, we still need to feed FFmpeg the frame if it's open
                     if let Some(ref mut stdin) = ffmpeg_process {
-                        let pixels = image::open(&frame_path).unwrap().to_rgba8().into_raw();
-                        stdin.write_all(&pixels)?;
+                        match image::open(&frame_path) {
+                            Ok(img) => {
+                                let pixels = img.to_rgba8().into_raw();
+                                stdin.write_all(&pixels)?;
+                            }
+                            Err(e) => {
+                                eprintln!("\nCache corruption detected at {:?}: {}. Re-rendering...", frame_path, e);
+                                let pixels = exporter.export_frame(&self.scene);
+                                stdin.write_all(&pixels)?;
+                                tx.send((pixels, frame_path)).unwrap();
+                                rendered_count += 1;
+                            }
+                        }
                     }
                 } else {
                     let pixels = exporter.export_frame(&self.scene);

@@ -34,10 +34,10 @@ impl ImageManager {
             let data = Arc::new(pixmap.take());
             let peniko_img = Arc::new(PenikoImage {
                 data: Blob::new(data),
-                format: Format::Rgba8,
+                format: vello::peniko::Format::Rgba8,
                 width: size.width() as u32,
                 height: size.height() as u32,
-                extend: Extend::Pad,
+                extend: vello::peniko::Extend::Pad,
             });
             cache.insert(path.to_string(), peniko_img.clone());
             return Some(peniko_img);
@@ -45,7 +45,10 @@ impl ImageManager {
 
         #[cfg(not(feature = "svg"))]
         if path.ends_with(".svg") {
-            eprintln!("Error: SVG support is disabled. Enable the 'svg' feature to load '{}'", path);
+            eprintln!(
+                "Error: SVG support is disabled. Enable the 'svg' feature to load '{}'",
+                path
+            );
             return None;
         }
 

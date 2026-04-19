@@ -40,8 +40,19 @@ impl Animation for Sequence {
                 continue;
             }
 
-            let effective_dt = (self.elapsed - *start_time).min(dt);
-            let (finished, leftover) = anim.update(effective_dt);
+            let time_since_start = self.elapsed.saturating_sub(*start_time);
+            if time_since_start == Duration::ZERO {
+                all_finished = false;
+                continue;
+            }
+
+            let item_dt = if time_since_start < dt {
+                time_since_start
+            } else {
+                dt
+            };
+
+            let (finished, leftover) = anim.update(item_dt);
             if !finished {
                 all_finished = false;
                 continue;

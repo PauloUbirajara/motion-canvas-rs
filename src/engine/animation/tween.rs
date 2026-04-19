@@ -19,7 +19,7 @@ pub trait Tweenable: Clone + Send + Sync + std::fmt::Debug + 'static {
 
 impl Tweenable for f32 {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
-        lerp(*a, *b, t)
+        lerp(*a, *b, t).clamp(a.min(*b), a.max(*b))
     }
     fn state_hash(&self) -> u64 {
         self.to_bits() as u64
@@ -31,11 +31,7 @@ impl Tweenable for Vec2 {
         Vec2::new(lerp(a.x, b.x, t), lerp(a.y, b.y, t))
     }
     fn state_hash(&self) -> u64 {
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        use std::hash::{Hash, Hasher};
-        self.x.to_bits().hash(&mut hasher);
-        self.y.to_bits().hash(&mut hasher);
-        hasher.finish()
+        (self.x.to_bits() as u64) ^ (self.y.to_bits() as u64).rotate_left(32)
     }
 }
 
@@ -70,11 +66,11 @@ impl Tweenable for String {
         }
     }
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
-        self.hash(&mut s);
-        s.finish()
+        let mut h = 0u64;
+        for (i, b) in self.as_bytes().iter().enumerate() {
+            h ^= (*b as u64).rotate_left((i % 64) as u32);
+        }
+        h
     }
 }
 
@@ -108,13 +104,12 @@ impl Tweenable for Affine {
         ])
     }
     fn state_hash(&self) -> u64 {
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        use std::hash::{Hash, Hasher};
         let c = self.as_coeffs();
-        for val in c {
-            val.to_bits().hash(&mut hasher);
+        let mut h = 0u64;
+        for (i, val) in c.iter().enumerate() {
+            h ^= (val.to_bits() as u64).rotate_left((i * 8) as u32);
         }
-        hasher.finish()
+        h
     }
 }
 
