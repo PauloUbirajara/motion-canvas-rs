@@ -1,6 +1,6 @@
 [package]
 name = "motion-canvas-rs"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 authors = ["Paulo Ubirajara"]
 description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
@@ -65,6 +65,10 @@ name = "color_interpolation"
 
 [[example]]
 name = "easing_scope"
+
+[[example]]
+name = "explainer"
+required-features = ["image", "code", "svg"]
 
 [[example]]
 name = "export"

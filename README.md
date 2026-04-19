@@ -104,7 +104,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 15 examples that can be found in the [examples directory](./examples).
+The project includes 16 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -181,6 +181,15 @@ cargo run --example easing_scope
 https://github.com/user-attachments/assets/9b25225e-72d8-4c0e-9c62-6acd58d1e99d
 
 <img width="800" height="800" alt="Easing Scope" src="https://github.com/user-attachments/assets/817fb722-2262-4894-8b20-86315a5ff3b1" />
+
+</details>
+
+<details>
+<summary><b>Explainer</b> - Showcasing the library and some of its features.</summary>
+
+```sh
+cargo run --example explainer --release --features full
+```
 
 </details>
 
