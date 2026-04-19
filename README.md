@@ -112,7 +112,11 @@ The project includes 15 examples that can be found in the [examples directory](.
 ```sh
 cargo run --example advanced_flow --features=math,code,image,svg
 ```
-https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
+
+https://github.com/user-attachments/assets/0e89eafa-7075-4381-b676-7eb25f45d127
+
+<img width="800" height="600" alt="Advanced Flow" src="https://github.com/user-attachments/assets/251f877e-7993-457e-a2d0-6b9a56397a3e" />
+
 </details>
 
 <details>
@@ -121,7 +125,11 @@ https://github.com/user-attachments/assets/d283b03a-ae50-4011-9fab-77ced70a2632
 ```sh
 cargo run --example audio_demo --features audio
 ```
-https://github.com/user-attachments/assets/02670f39-8499-4202-8b22-c160d35f9031
+
+https://github.com/user-attachments/assets/022ef076-452a-47b9-9d5e-2d2edf555397
+
+<img width="800" height="450" alt="Audio Demo" src="https://github.com/user-attachments/assets/f547ba7c-ec5b-4b26-8e4e-227cf11d0328" />
+
 </details>
 
 <details>
@@ -130,7 +138,11 @@ https://github.com/user-attachments/assets/02670f39-8499-4202-8b22-c160d35f9031
 ```sh
 cargo run --example code_advanced --features code
 ```
-https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
+
+https://github.com/user-attachments/assets/960fbfd0-ddc9-49d9-bcdd-7b29ca4ffe93
+
+<img width="800" height="600" alt="Code Advanced" src="https://github.com/user-attachments/assets/ed2bd8db-7112-4c46-b49c-ecf2971e4237" />
+
 </details>
 
 <details>
@@ -139,7 +151,11 @@ https://github.com/user-attachments/assets/23ad4662-e499-42f0-8468-3e1666e33d84
 ```sh
 cargo run --example code_animation --features code
 ```
-https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
+
+https://github.com/user-attachments/assets/0579e41a-9cf0-42ce-9dba-d9c087be53d9
+
+<img width="800" height="800" alt="Code Animation" src="https://github.com/user-attachments/assets/3002c235-c4a3-486c-b47a-640f29d5dba6" />
+
 </details>
 
 <details>
@@ -148,7 +164,11 @@ https://github.com/user-attachments/assets/96135e70-b5d5-471f-9107-cc70f2b416fa
 ```sh
 cargo run --example color_interpolation
 ```
-https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
+
+https://github.com/user-attachments/assets/366308f8-2903-48dc-8609-79a661bba712
+
+<img width="400" height="400" alt="Color Interpolation" src="https://github.com/user-attachments/assets/7e8d1cd4-c0f4-44ca-849e-85c53d79be35" />
+
 </details>
 
 <details>
@@ -157,7 +177,11 @@ https://github.com/user-attachments/assets/cd002797-84ec-4bcb-af1f-0ab6e7c20433
 ```sh
 cargo run --example easing_scope
 ```
-https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
+
+https://github.com/user-attachments/assets/9b25225e-72d8-4c0e-9c62-6acd58d1e99d
+
+<img width="800" height="800" alt="Easing Scope" src="https://github.com/user-attachments/assets/817fb722-2262-4894-8b20-86315a5ff3b1" />
+
 </details>
 
 <details>
@@ -166,7 +190,11 @@ https://github.com/user-attachments/assets/f875086e-d927-42a4-9f21-e57afbdaaaa4
 ```sh
 cargo run --example export --features export
 ```
-https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
+
+https://github.com/user-attachments/assets/002e57f7-8d62-4dec-aea6-9107030352be
+
+<img width="800" height="600" alt="Export" src="https://github.com/user-attachments/assets/2ea09740-e70c-416d-8dc6-9e5c6d1c226a" />
+
 </details>
 
 <details>
@@ -175,7 +203,11 @@ https://github.com/user-attachments/assets/c01897a9-e744-43af-bfee-045f44549ba9
 ```sh
 cargo run --example getting_started
 ```
-https://github.com/user-attachments/assets/510d8aac-67ba-42d8-882a-b3c0ad969437
+
+https://github.com/user-attachments/assets/e36ae34c-a45c-4e99-8aec-f37a2c289639
+
+<img width="800" height="600" alt="Getting Started" src="https://github.com/user-attachments/assets/0d4e5a59-0b55-4a02-b73f-eea714f7e7fc" />
+
 </details>
 
 <details>
@@ -184,7 +216,11 @@ https://github.com/user-attachments/assets/510d8aac-67ba-42d8-882a-b3c0ad969437
 ```sh
 cargo run --example group_animation
 ```
-https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
+
+https://github.com/user-attachments/assets/2041e546-5af2-4ffd-9f73-2878ba87bd24
+
+<img width="800" height="600" alt="Group Animation" src="https://github.com/user-attachments/assets/c0866038-5232-4b56-a2bd-5c8e04e6f8f5" />
+
 </details>
 
 <details>
@@ -193,7 +229,11 @@ https://github.com/user-attachments/assets/75f078ba-51c2-4d26-8993-25e6b77372a9
 ```sh
 cargo run --example images --features image,svg
 ```
-https://github.com/user-attachments/assets/25248e66-ccc7-4422-9f2f-7b9ef361d8d9
+
+https://github.com/user-attachments/assets/467d48cf-f358-48cb-b07f-bfaaf8cd5f36
+
+<img width="600" height="600" alt="Images" src="https://github.com/user-attachments/assets/4b5cf1d7-e106-4b93-8936-b113713c182e" />
+
 </details>
 
 <details>
@@ -202,7 +242,11 @@ https://github.com/user-attachments/assets/25248e66-ccc7-4422-9f2f-7b9ef361d8d9
 ```sh
 cargo run --example math_animation --features math
 ```
-https://github.com/user-attachments/assets/f3d8e774-31f4-4e96-b7b7-9e6bda0ec16f
+
+https://github.com/user-attachments/assets/ef4e3573-5518-42bf-8359-3aed2cbcca59
+
+<img width="800" height="600" alt="Math Animation" src="https://github.com/user-attachments/assets/343c88dc-9889-468a-9a75-6373bb9d5615" />
+
 </details>
 
 <details>
@@ -211,7 +255,11 @@ https://github.com/user-attachments/assets/f3d8e774-31f4-4e96-b7b7-9e6bda0ec16f
 ```sh
 cargo run --example math_code --features math,code
 ```
-https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
+
+https://github.com/user-attachments/assets/f51268ee-87cf-4f6d-b261-a4aa1f2d4e07
+
+<img width="800" height="600" alt="Math & Code" src="https://github.com/user-attachments/assets/c0ce9ede-273d-498e-94ce-54f2d94ff25a" />
+
 </details>
 
 <details>
@@ -220,7 +268,11 @@ https://github.com/user-attachments/assets/967e0b47-a8de-4ab7-9b21-8758a2c7f508
 ```sh
 cargo run --example polygon
 ```
-https://github.com/user-attachments/assets/efc1e214-4297-47a2-b6e4-1eae0840b0c9
+
+https://github.com/user-attachments/assets/0dead3d2-60d4-41f9-86d1-b5eafcc70c4b
+
+<img width="800" height="600" alt="Polygon" src="https://github.com/user-attachments/assets/86254bf1-25a8-47b0-8b4c-9ef68fb87c1c" />
+
 </details>
 
 <details>
@@ -229,7 +281,11 @@ https://github.com/user-attachments/assets/efc1e214-4297-47a2-b6e4-1eae0840b0c9
 ```sh
 cargo run --example shapes
 ```
-<img width="400" height="200" alt="shapes" src="https://github.com/user-attachments/assets/24d3c9a4-6330-4d03-a0b0-6d0fed318ab7" />
+
+https://github.com/user-attachments/assets/132f310e-cbbb-4a11-8525-0c87a7017fbe
+
+<img width="648" height="193" alt="Shapes" src="https://github.com/user-attachments/assets/0d828a93-b14d-4c00-ad94-28f015178cc7" />
+
 </details>
 
 <details>
@@ -238,6 +294,11 @@ cargo run --example shapes
 ```sh
 cargo run --example signals
 ```
+
+https://github.com/user-attachments/assets/ec9568e3-5b66-42a2-85b2-70c59176b17d
+
+<img width="800" height="600" alt="Signals" src="https://github.com/user-attachments/assets/bd788c63-50e1-4ef4-8ad1-1f8a91c707e2" />
+
 </details>
 
 ## Requirements
