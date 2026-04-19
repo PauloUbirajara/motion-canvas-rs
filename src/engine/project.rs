@@ -142,6 +142,9 @@ impl Project {
             #[cfg(feature = "audio")]
             crate::engine::nodes::audio::set_audio_playback(false);
 
+            #[cfg(feature = "audio")]
+            crate::engine::nodes::audio::set_audio_playback(false);
+
             let mut exporter = crate::render::export::Exporter::new(
                 self.width,
                 self.height,
