@@ -9,6 +9,7 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 
 ## Installation
 
+
 Add the library to your `Cargo.toml`. To enable all features (math, code blocks, images, export), use the `full` flag:
 
 ```bash
@@ -190,6 +191,10 @@ https://github.com/user-attachments/assets/9b25225e-72d8-4c0e-9c62-6acd58d1e99d
 ```sh
 cargo run --example explainer --release --features full
 ```
+
+https://www.youtube.com/watch?v=v4W1Y_TrWew
+
+<img width="1200" height="700" alt="motion_canvas_rs_deep_dive_0404" src="https://github.com/user-attachments/assets/d5e10b0b-cc80-4a99-8347-c5d4c7354727" />
 
 </details>
 
