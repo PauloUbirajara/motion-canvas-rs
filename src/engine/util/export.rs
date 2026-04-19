@@ -97,7 +97,12 @@ pub fn merge_audio(title: &str, audio_events: &[AudioEvent]) -> io::Result<()> {
     let mut active_count = 0;
 
     for (i, event) in audio_events.iter().enumerate() {
-        if event.path.is_empty() || !Path::new(&event.path).exists() {
+        if event.path.is_empty() {
+            continue;
+        }
+
+        if !Path::new(&event.path).exists() {
+            eprintln!("Warning: Audio file not found: {}", event.path);
             continue;
         }
 
@@ -106,9 +111,9 @@ pub fn merge_audio(title: &str, audio_events: &[AudioEvent]) -> io::Result<()> {
         let delay_ms = (event.start_time.as_secs_f64() * 1000.0) as i64;
 
         filter.push_str(&format!(
-            "[{}:a]atrim=start_sample={},adelay={}|{}[a{}];",
+            "[{}:a]atrim=start={:.3},adelay={}|{}[a{}];",
             input_idx,
-            (event.start_crop.as_secs_f64() * 44100.0) as i64,
+            event.start_crop.as_secs_f64(),
             delay_ms,
             delay_ms,
             input_idx

@@ -16,6 +16,7 @@ pub struct ImageNode {
     pub size: Signal<Vec2>,
     pub image: Option<Arc<PenikoImage>>,
     pub opacity: Signal<f32>,
+    pub path: String,
 }
 
 impl Default for ImageNode {
@@ -27,6 +28,7 @@ impl Default for ImageNode {
             size: Signal::new(Vec2::ZERO),
             image: None,
             opacity: Signal::new(1.0),
+            path: String::new(),
         }
     }
 }
@@ -67,6 +69,7 @@ impl ImageNode {
     }
 
     pub fn with_path(mut self, path: &str) -> Self {
+        self.path = path.to_string();
         self.image = ImageManager::get_image(path);
         if let Some(ref img) = self.image {
             self.size = Signal::new(Vec2::new(img.width as f32, img.height as f32));
@@ -105,13 +108,14 @@ impl Node for ImageNode {
             );
 
         if final_opacity < 1.0 {
+            // Use Identity transform for the layer to avoid coordinate system confusion with clip rect
             scene.push_layer(
                 vello::peniko::Mix::Normal,
                 final_opacity,
-                transform,
-                &vello::kurbo::Rect::new(0.0, 0.0, img.width as f64, img.height as f64),
+                Affine::IDENTITY,
+                &vello::kurbo::Rect::new(-10000.0, -10000.0, 10000.0, 10000.0),
             );
-            scene.draw_image(img, Affine::IDENTITY);
+            scene.draw_image(img, transform);
             scene.pop_layer();
             return;
         }
@@ -120,11 +124,15 @@ impl Node for ImageNode {
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
-        self.position.state_hash()
-            ^ self.rotation.state_hash()
-            ^ self.scale.state_hash()
-            ^ self.size.state_hash()
-            ^ self.opacity.state_hash()
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_bytes(self.path.as_bytes());
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.size.state_hash());
+        h.update_u64(self.opacity.state_hash());
+        h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

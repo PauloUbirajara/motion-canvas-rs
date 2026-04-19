@@ -103,16 +103,18 @@ impl Node for GroupNode {
     }
 
     fn state_hash(&self) -> u64 {
-        let mut s = self.position.state_hash()
-            ^ self.rotation.state_hash()
-            ^ self.scale.state_hash()
-            ^ self.opacity.state_hash();
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.opacity.state_hash());
 
         for node in &self.nodes {
-            s ^= node.state_hash();
+            h.update_u64(node.state_hash());
         }
 
-        s
+        h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {

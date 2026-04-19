@@ -176,19 +176,18 @@ impl Tweenable for CodeValue {
     }
 
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
-        self.text.hash(&mut s);
-        self.selection.hash(&mut s);
-        if let Some(trans) = &self.transition {
-            trans.from_text.hash(&mut s);
-            trans.to_text.hash(&mut s);
-            trans.progress.to_bits().hash(&mut s);
-        } else {
-            self.text.hash(&mut s);
+        use crate::engine::util::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_bytes(self.text.as_bytes());
+        for &line in &self.selection {
+            h.update_u64(line as u64);
         }
-        s.finish()
+        if let Some(trans) = &self.transition {
+            h.update_bytes(trans.from_text.as_bytes());
+            h.update_bytes(trans.to_text.as_bytes());
+            h.update_u64(trans.progress.to_bits() as u64);
+        }
+        h.finish()
     }
 }
 

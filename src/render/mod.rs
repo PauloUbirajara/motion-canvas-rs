@@ -149,14 +149,18 @@ impl AnimationWindow {
                         return;
                     }
 
-                    if last_update.elapsed() < dt {
+                    let mut elapsed = last_update.elapsed();
+                    if elapsed < dt {
                         elwt.set_control_flow(ControlFlow::WaitUntil(last_update + dt));
                         return;
                     }
 
-                    // Process update
-                    self.project.scene.update(dt);
-                    last_update = Instant::now();
+                    // Process all pending updates (catch-up)
+                    while elapsed >= dt {
+                        self.project.scene.update(dt);
+                        elapsed -= dt;
+                        last_update += dt;
+                    }
 
                     let current_hash = self.project.scene.state_hash();
                     if current_hash != last_hash {

@@ -22,7 +22,7 @@ impl Tweenable for f32 {
         lerp(*a, *b, t)
     }
     fn state_hash(&self) -> u64 {
-        self.to_bits() as u64
+        crate::engine::util::hash::hash_f32(*self)
     }
 }
 
@@ -31,11 +31,10 @@ impl Tweenable for Vec2 {
         Vec2::new(lerp(a.x, b.x, t), lerp(a.y, b.y, t))
     }
     fn state_hash(&self) -> u64 {
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        use std::hash::{Hash, Hasher};
-        self.x.to_bits().hash(&mut hasher);
-        self.y.to_bits().hash(&mut hasher);
-        hasher.finish()
+        crate::engine::util::hash::combine_hashes(
+            crate::engine::util::hash::hash_f32(self.x),
+            crate::engine::util::hash::hash_f32(self.y),
+        )
     }
 }
 
@@ -53,11 +52,11 @@ impl Tweenable for Vec<Vec2> {
         }
     }
     fn state_hash(&self) -> u64 {
-        let mut hash = 0u64;
+        let mut h = crate::engine::util::hash::Hasher::new();
         for v in self {
-            hash ^= v.state_hash();
+            h.update_u64(v.state_hash());
         }
-        hash
+        h.finish()
     }
 }
 
@@ -70,11 +69,7 @@ impl Tweenable for String {
         }
     }
     fn state_hash(&self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        let mut s = DefaultHasher::new();
-        self.hash(&mut s);
-        s.finish()
+        crate::engine::util::hash::hash_str(self)
     }
 }
 
@@ -89,7 +84,9 @@ impl Tweenable for Color {
         )
     }
     fn state_hash(&self) -> u64 {
-        ((self.r as u64) << 24) | ((self.g as u64) << 16) | ((self.b as u64) << 8) | (self.a as u64)
+        let mut h = crate::engine::util::hash::Hasher::new();
+        h.update_bytes(&[self.r, self.g, self.b, self.a]);
+        h.finish()
     }
 }
 
@@ -108,13 +105,12 @@ impl Tweenable for Affine {
         ])
     }
     fn state_hash(&self) -> u64 {
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        use std::hash::{Hash, Hasher};
         let c = self.as_coeffs();
+        let mut h = crate::engine::util::hash::Hasher::new();
         for val in c {
-            val.to_bits().hash(&mut hasher);
+            h.update_u64(val.to_bits() as u64);
         }
-        hasher.finish()
+        h.finish()
     }
 }
 

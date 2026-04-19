@@ -57,13 +57,20 @@ lazy_static! {
         std::mem::forget(stream); // Keep the stream alive forever
         handle
     };
+    static ref AUDIO_PLAYBACK_ENABLED: AtomicBool = AtomicBool::new(true);
 }
+
+pub fn set_audio_playback(enabled: bool) {
+    AUDIO_PLAYBACK_ENABLED.store(enabled, Ordering::SeqCst);
+}
+
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// A wrapper for AudioNode that implements Animation for the audio timeline.
 pub struct AudioAnimation {
     pub node: AudioNode,
     pub elapsed: Duration,
-    pub started: bool,
+    pub started: AtomicBool,
     pub total_duration: Duration,
     pub recorded: bool,
 }
@@ -76,58 +83,61 @@ impl AudioAnimation {
         Self {
             node,
             elapsed: Duration::ZERO,
-            started: false,
+            started: AtomicBool::new(false),
             total_duration,
             recorded: false,
         }
+    }
+
+    fn play_audio(&self) {
+        let path = self.node.path.clone();
+        let volume = self.node.volume;
+        let start_crop = self.node.start_crop;
+        let end_crop = self.node.end_crop;
+        let total_dur = self.total_duration;
+
+        std::thread::spawn(move || {
+            let file = match File::open(&path) {
+                Ok(f) => f,
+                Err(e) => {
+                    eprintln!("Failed to open audio file {}: {}", path, e);
+                    return;
+                }
+            };
+
+            let source = match Decoder::new(BufReader::new(file)) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to decode audio file {}: {}", path, e);
+                    return;
+                }
+            };
+
+            let play_duration = total_dur
+                .checked_sub(start_crop)
+                .and_then(|d| d.checked_sub(end_crop))
+                .unwrap_or(Duration::ZERO);
+
+            if play_duration > Duration::ZERO {
+                let source = source
+                    .skip_duration(start_crop)
+                    .take_duration(play_duration)
+                    .amplify(volume);
+
+                let _ = AUDIO_HANDLE.play_raw(source.convert_samples());
+                std::thread::sleep(play_duration);
+            }
+        });
     }
 }
 
 impl Animation for AudioAnimation {
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
-        if !self.started {
-            self.started = true;
-            let path = self.node.path.clone();
-            let volume = self.node.volume;
-            let start_crop = self.node.start_crop;
-            let end_crop = self.node.end_crop;
-            let total_dur = self.total_duration;
-
-            std::thread::spawn(move || {
-                let file = match File::open(&path) {
-                    Ok(f) => f,
-                    Err(e) => {
-                        eprintln!("Failed to open audio file {}: {}", path, e);
-                        return;
-                    }
-                };
-
-                let source = match Decoder::new(BufReader::new(file)) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        eprintln!("Failed to decode audio file {}: {}", path, e);
-                        return;
-                    }
-                };
-
-                let play_duration = total_dur
-                    .checked_sub(start_crop)
-                    .and_then(|d| d.checked_sub(end_crop))
-                    .unwrap_or(Duration::ZERO);
-
-                if play_duration > Duration::ZERO {
-                    let source = source
-                        .skip_duration(start_crop)
-                        .take_duration(play_duration)
-                        .amplify(volume);
-
-                    let _ = AUDIO_HANDLE.play_raw(source.convert_samples());
-                    // Keep the thread alive while the sound plays if needed, or rodio handles it?
-                    // rodio's play_raw handles it as long as the sink/source is managed.
-                    // Actually, play_raw detaches it to the stream handle.
-                    std::thread::sleep(play_duration);
-                }
-            });
+        if !self.started.load(Ordering::SeqCst) {
+            self.started.store(true, Ordering::SeqCst);
+            if AUDIO_PLAYBACK_ENABLED.load(Ordering::SeqCst) {
+                self.play_audio();
+            }
         }
 
         self.elapsed += dt;
@@ -151,20 +161,22 @@ impl Animation for AudioAnimation {
     }
 
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
-        if self.started && !self.recorded {
-            self.recorded = true;
-            events.push(crate::engine::animation::base::AudioEvent {
-                path: self.node.path.clone(),
-                volume: self.node.volume,
-                start_crop: self.node.start_crop,
-                end_crop: self.node.end_crop,
-                start_time: if current_time > self.elapsed {
-                    current_time - self.elapsed
-                } else {
-                    Duration::ZERO
-                },
-            });
+        if self.recorded {
+            return;
         }
+
+        self.recorded = true;
+        events.push(crate::engine::animation::base::AudioEvent {
+            path: self.node.path.clone(),
+            volume: self.node.volume,
+            start_crop: self.node.start_crop,
+            end_crop: self.node.end_crop,
+            start_time: if current_time > self.elapsed {
+                current_time - self.elapsed
+            } else {
+                Duration::ZERO
+            },
+        });
     }
 }
 

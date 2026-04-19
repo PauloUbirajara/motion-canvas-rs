@@ -9,6 +9,7 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 
 ## Installation
 
+
 Add the library to your `Cargo.toml`. To enable all features (math, code blocks, images, export), use the `full` flag:
 
 ```bash
@@ -104,13 +105,13 @@ fn main() {
 
 ## Running Examples
 
-The project includes 15 examples that can be found in the [examples directory](./examples).
+The project includes 16 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
 
 ```sh
-cargo run --example advanced_flow --features=math,code,image,svg
+cargo run --example advanced_flow --features=full
 ```
 
 https://github.com/user-attachments/assets/0e89eafa-7075-4381-b676-7eb25f45d127
@@ -181,6 +182,19 @@ cargo run --example easing_scope
 https://github.com/user-attachments/assets/9b25225e-72d8-4c0e-9c62-6acd58d1e99d
 
 <img width="800" height="800" alt="Easing Scope" src="https://github.com/user-attachments/assets/817fb722-2262-4894-8b20-86315a5ff3b1" />
+
+</details>
+
+<details>
+<summary><b>Explainer</b> - Showcasing the library and some of its features.</summary>
+
+```sh
+cargo run --example explainer --release --features full
+```
+
+https://www.youtube.com/watch?v=v4W1Y_TrWew
+
+<img width="1200" height="700" alt="motion_canvas_rs_deep_dive_0404" src="https://github.com/user-attachments/assets/d5e10b0b-cc80-4a99-8347-c5d4c7354727" />
 
 </details>
 
