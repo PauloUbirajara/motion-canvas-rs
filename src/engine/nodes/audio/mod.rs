@@ -57,13 +57,20 @@ lazy_static! {
         std::mem::forget(stream); // Keep the stream alive forever
         handle
     };
+    static ref AUDIO_PLAYBACK_ENABLED: AtomicBool = AtomicBool::new(true);
 }
+
+pub fn set_audio_playback(enabled: bool) {
+    AUDIO_PLAYBACK_ENABLED.store(enabled, Ordering::SeqCst);
+}
+
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// A wrapper for AudioNode that implements Animation for the audio timeline.
 pub struct AudioAnimation {
     pub node: AudioNode,
     pub elapsed: Duration,
-    pub started: bool,
+    pub started: AtomicBool,
     pub total_duration: Duration,
     pub recorded: bool,
 }
@@ -76,7 +83,7 @@ impl AudioAnimation {
         Self {
             node,
             elapsed: Duration::ZERO,
-            started: false,
+            started: AtomicBool::new(false),
             total_duration,
             recorded: false,
         }
@@ -85,9 +92,12 @@ impl AudioAnimation {
 
 impl Animation for AudioAnimation {
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
-        if !self.started {
-            self.started = true;
-            let path = self.node.path.clone();
+        if !self.started.load(Ordering::SeqCst) {
+            self.started.store(true, Ordering::SeqCst);
+            
+            if AUDIO_PLAYBACK_ENABLED.load(Ordering::SeqCst) {
+                // eprintln!("[AUDIO] Starting playback for {}", self.node.path);
+                let path = self.node.path.clone();
             let volume = self.node.volume;
             let start_crop = self.node.start_crop;
             let end_crop = self.node.end_crop;
@@ -128,6 +138,7 @@ impl Animation for AudioAnimation {
                     std::thread::sleep(play_duration);
                 }
             });
+            }
         }
 
         self.elapsed += dt;
@@ -151,7 +162,7 @@ impl Animation for AudioAnimation {
     }
 
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<crate::engine::animation::base::AudioEvent>) {
-        if self.started && !self.recorded {
+        if self.started.load(Ordering::SeqCst) && !self.recorded {
             self.recorded = true;
             events.push(crate::engine::animation::base::AudioEvent {
                 path: self.node.path.clone(),

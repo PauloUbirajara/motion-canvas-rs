@@ -110,7 +110,7 @@ The project includes 16 examples that can be found in the [examples directory](.
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
 
 ```sh
-cargo run --example advanced_flow --features=math,code,image,svg
+cargo run --example advanced_flow --features=full
 ```
 
 https://github.com/user-attachments/assets/0e89eafa-7075-4381-b676-7eb25f45d127

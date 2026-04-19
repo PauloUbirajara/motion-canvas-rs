@@ -51,10 +51,16 @@ impl Scene2D for BaseScene {
     }
 
     fn state_hash(&self) -> u64 {
-        let mut hash = 0u64;
-        for node in &self.nodes {
-            hash ^= node.state_hash();
-        }
-        hash
+        use rayon::prelude::*;
+        self.nodes
+            .par_iter()
+            .enumerate()
+            .map(|(i, node)| {
+                let h = node.state_hash();
+                // Mix in the index to avoid cancellations of identical nodes
+                (h ^ (i as u64).wrapping_mul(0x9E3779B97F4A7C15))
+                    .rotate_left((i % 64) as u32)
+            })
+            .reduce(|| 0u64, |a, b| a.wrapping_add(b))
     }
 }

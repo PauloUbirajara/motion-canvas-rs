@@ -8,8 +8,6 @@ use std::collections::HashMap;
 use std::fs;
 #[cfg(feature = "export")]
 use std::io::{self, Write};
-#[cfg(feature = "export")]
-use std::path::Path;
 use std::path::PathBuf;
 use vello::peniko::Color;
 
@@ -126,12 +124,15 @@ impl Project {
             println!("Exporting project: {}", self.title);
             fs::create_dir_all(&self.output_path)?;
 
-            let cache_file = Path::new(".motion_canvas_cache");
+            let cache_file = self.output_path.join(".motion_canvas_cache");
             let mut manifest: CacheManifest = (self.use_cache && cache_file.exists())
-                .then(|| fs::read_to_string(cache_file).ok())
+                .then(|| fs::read_to_string(&cache_file).ok())
                 .flatten()
                 .and_then(|c| serde_json::from_str(&c).ok())
                 .unwrap_or_default();
+
+            #[cfg(feature = "audio")]
+            crate::engine::nodes::audio::set_audio_playback(false);
 
             let mut exporter = crate::render::export::Exporter::new(
                 self.width,
@@ -327,7 +328,7 @@ impl Project {
             // Save updated cache
             if self.use_cache {
                 let json = serde_json::to_string_pretty(&manifest)?;
-                fs::write(cache_file, json)?;
+                fs::write(self.output_path.join(".motion_canvas_cache"), json)?;
             }
 
             println!(
@@ -339,6 +340,9 @@ impl Project {
             if self.use_ffmpeg {
                 crate::engine::util::export::merge_audio(&self.title, &audio_events)?;
             }
+
+            #[cfg(feature = "audio")]
+            crate::engine::nodes::audio::set_audio_playback(true);
 
             Ok(())
         }

@@ -19,7 +19,7 @@ pub trait Tweenable: Clone + Send + Sync + std::fmt::Debug + 'static {
 
 impl Tweenable for f32 {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
-        lerp(*a, *b, t).clamp(a.min(*b), a.max(*b))
+        lerp(*a, *b, t)
     }
     fn state_hash(&self) -> u64 {
         self.to_bits() as u64
