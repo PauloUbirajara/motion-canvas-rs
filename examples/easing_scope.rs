@@ -66,46 +66,42 @@ fn main() {
     let configs_clone = easing_configs.clone();
 
     // Loop animation factory
-    project.scene.video_timeline.add(flows::loop_anim(
+    project.scene.video_timeline.add(loop_anim(
         move || {
             let balls = &balls_clone;
             let configs = &configs_clone;
 
             // 1. Move to right using individual scoped easings
-            let right_anims = flows::all(
-                configs
-                    .iter()
-                    .enumerate()
-                    .map(|(i, (_, easing))| {
-                        let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
-                        flows::with_easing(
-                            *easing,
-                            vec![balls[i].position.to(end_pos, ANIM_DURATION_GO).into()],
-                        )
-                    })
-                    .collect(),
-            );
+            let right_anims = all(configs
+                .iter()
+                .enumerate()
+                .map(|(i, (_, easing))| {
+                    let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
+                    with_easing(
+                        *easing,
+                        vec![balls[i].position.to(end_pos, ANIM_DURATION_GO).into()],
+                    )
+                })
+                .collect());
 
             // 2. Move back to left using the SAME scoped easings
-            let left_anims = flows::all(
-                configs
-                    .iter()
-                    .enumerate()
-                    .map(|(i, (_, easing))| {
-                        let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
-                        flows::with_easing(
-                            *easing,
-                            vec![balls[i].position.to(start_pos, ANIM_DURATION_RETURN).into()],
-                        )
-                    })
-                    .collect(),
-            );
+            let left_anims = all(configs
+                .iter()
+                .enumerate()
+                .map(|(i, (_, easing))| {
+                    let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
+                    with_easing(
+                        *easing,
+                        vec![balls[i].position.to(start_pos, ANIM_DURATION_RETURN).into()],
+                    )
+                })
+                .collect());
 
-            flows::chain(vec![
+            chain(vec![
                 right_anims,
-                flows::wait(WAIT_DURATION),
+                wait(WAIT_DURATION),
                 left_anims,
-                flows::wait(WAIT_DURATION),
+                wait(WAIT_DURATION),
             ])
         },
         None,

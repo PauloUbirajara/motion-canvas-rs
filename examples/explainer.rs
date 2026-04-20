@@ -381,7 +381,7 @@ fn main() {
         .with_fill(RED)
         .with_opacity(0.0);
     let demo_r = Rect::default()
-        .with_position(Vec2::new(260.0, 190.0))
+        .with_position(Vec2::new(293.0, 230.0))
         .with_size(Vec2::new(80.0, 80.0))
         .with_fill(ACCENT)
         .with_radius(8.0)
@@ -392,11 +392,11 @@ fn main() {
         .with_stroke(WHITE, 3.0)
         .with_opacity(0.0);
     let demo_p = Polygon::regular(5, 40.0)
-        .with_position(Vec2::new(610.0, 230.0))
+        .with_position(Vec2::new(606.0, 230.0))
         .with_fill(YELLOW)
         .with_opacity(0.0);
     let demo_t = TextNode::default()
-        .with_position(Vec2::new(740.0, 215.0))
+        .with_position(Vec2::new(765.0, 230.0))
         .with_text("Abc")
         .with_font_size(36.0)
         .with_fill(GREEN)

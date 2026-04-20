@@ -8,7 +8,7 @@ fn main() {
 
     // Create some child nodes
     let rect = Rect::default()
-        .with_position(Vec2::new(-50.0, -50.0))
+        .with_position(Vec2::new(0.0, 0.0))
         .with_size(Vec2::new(100.0, 100.0))
         .with_fill(Color::rgba8(100, 100, 255, 255))
         .with_radius(10.0);

@@ -19,8 +19,8 @@ lazy_static! {
 const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;
 const DEFAULT_OPACITY: f32 = 1.0;
-const DEFAULT_FONT_FAMILY: &str = "Inter";
-const FONT_FALLBACKS: &[&str] = &["Arial", "sans-serif"];
+const DEFAULT_FONT_FAMILY: &str = "JetBrains Mono";
+const FONT_FALLBACKS: &[&str] = &["Inter", "Arial", "sans-serif"];
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
 #[derive(Hash, Eq, PartialEq)]

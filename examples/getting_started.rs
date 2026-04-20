@@ -26,7 +26,7 @@ fn main() {
     project.scene.add(Box::new(text.clone()));
 
     // 4. Add Animations to the Timeline
-    project.scene.video_timeline.add(flows::all![
+    project.scene.video_timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
         text.position
             .to(Vec2::new(400.0, 500.0), Duration::from_secs(1)),

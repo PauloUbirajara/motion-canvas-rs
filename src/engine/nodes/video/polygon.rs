@@ -145,19 +145,13 @@ impl Node for Polygon {
         } else {
             Vec2::new(max_x - min_x, max_y - min_y)
         };
-        let center_offset = if min_x == f32::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
-        };
 
         let anchor_offset = anchor * size_vec * 0.5;
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
             * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
-            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
-            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
