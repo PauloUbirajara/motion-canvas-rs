@@ -533,13 +533,13 @@ circle.radius.to(100.0, Duration::from_secs(1));
 
     // Progress bar
     let prog_bg = Rect::default()
-        .with_position(Vec2::new(700.0, 150.0))
+        .with_position(Vec2::new(895.0, 150.0))
         .with_size(Vec2::new(400.0, 16.0))
         .with_fill(Color::rgba8(255, 255, 255, 15))
         .with_radius(8.0)
         .with_opacity(0.0);
     let prog_fill = Rect::default()
-        .with_position(Vec2::new(700.0, 150.0))
+        .with_position(Vec2::new(895.0, 150.0))
         .with_size(Vec2::new(0.0, 16.0))
         .with_fill(ACCENT)
         .with_radius(8.0)
@@ -876,6 +876,7 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
     //  S15: FINALE
     // =====================================================================
     let fin = TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, 200.0))
         .with_text("That's how it works!")
         .with_font_size(48.0)

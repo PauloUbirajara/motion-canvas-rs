@@ -86,7 +86,7 @@ fn main() {
         .with_color(Color::RED);
 
     let text = TextNode::default()
-        .with_position(Vec2::new(200.0, 300.0))
+        .with_position(Vec2::new(400.0, 150.0))
         .with_text("Hello Motion Canvas!")
         .with_font_size(48.0)
         .with_color(Color::WHITE);
@@ -96,7 +96,7 @@ fn main() {
 
     project.scene.video_timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
-        text.position.to(Vec2::new(200.0, 400.0), Duration::from_secs(1)),
+        text.position.to(Vec2::new(400.0, 400.0), Duration::from_secs(1)),
     ]);
 
     project.show().expect("Failed to render");
