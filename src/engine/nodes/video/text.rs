@@ -258,6 +258,7 @@ impl Node for TextNode {
         } else {
             Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
         };
+
         let center_offset = if min_x == f64::MAX {
             Vec2::ZERO
         } else {

@@ -14,8 +14,8 @@ fn main() {
 
     // 2. Create the Axis lines (Fixed)
     let x_axis = Line::default()
-        .with_start(Vec2::new(-300.0, 0.0))
-        .with_end(Vec2::new(300.0, 0.0))
+        .with_start(Vec2::new(-200.0, 0.0))
+        .with_end(Vec2::new(200.0, 0.0))
         .with_stroke(Color::rgba8(255, 255, 255, 100), 2.0);
 
     let y_axis = Line::default()
@@ -54,22 +54,18 @@ fn main() {
     });
 
     // X Label follows X but stays at bottom
-    let x_label_pos_link = x_label.position.bind(x_var.clone(), |x| {
-        Vec2::new(x + 400.0, 550.0)
-    });
+    let x_label_pos_link = x_label
+        .position
+        .bind(x_var.clone(), |x| Vec2::new(x + 400.0, 550.0));
 
     // Y Label stays at left but follows Y
-    let y_label_pos_link = y_label.position.bind(y_var.clone(), |y| {
-        Vec2::new(50.0, y + 300.0)
-    });
+    let y_label_pos_link = y_label
+        .position
+        .bind(y_var.clone(), |y| Vec2::new(75.0, y + 300.0));
 
     // Dynamic text update for labels
-    let x_text_link = x_label.text.bind(x_var.clone(), |x| {
-        format!("X: {:.1}", x)
-    });
-    let y_text_link = y_label.text.bind(y_var.clone(), |y| {
-        format!("Y: {:.1}", y)
-    });
+    let x_text_link = x_label.text.bind(x_var.clone(), |x| format!("X: {:.1}", x));
+    let y_text_link = y_label.text.bind(y_var.clone(), |y| format!("Y: {:.1}", y));
 
     // Add everything to the scene
     project.scene.add(Box::new(axes));

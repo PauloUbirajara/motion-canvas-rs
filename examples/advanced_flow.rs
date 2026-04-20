@@ -60,10 +60,6 @@ fn main() {
         .with_path("./examples/images/motion-canvas-logo.png")
         .with_size(Vec2::new(150.0, 150.0));
 
-    let bg_size = background_rect.size.clone();
-    let bg_pos = background_rect.position.clone();
-    let text_pos = title_text.position.clone();
-
     project.scene.video_timeline.add(all![
         // Show code
         chain![

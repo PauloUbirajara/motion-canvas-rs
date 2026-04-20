@@ -280,6 +280,22 @@ impl Node for MathNode {
             }
         }
 
+        // Use the union of current and previous bounding boxes during transition for absolute stability
+        if progress < 1.0 {
+            let prev_cache = self.prev_cache.lock().unwrap();
+            if let Some(prev) = prev_cache.as_ref() {
+                for (glyph_transform, pb) in prev.as_ref() {
+                    let bounds = pb.bounding_box();
+                    let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+                    let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+                    min_x = min_x.min(p0.x).min(p1.x);
+                    min_y = min_y.min(p0.y).min(p1.y);
+                    max_x = max_x.max(p0.x).max(p1.x);
+                    max_y = max_y.max(p0.y).max(p1.y);
+                }
+            }
+        }
+
         let size_vec = if min_x == f64::MAX {
             Vec2::ZERO
         } else {

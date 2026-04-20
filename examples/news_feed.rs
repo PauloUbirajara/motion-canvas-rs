@@ -45,19 +45,17 @@ fn hide(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
 }
 
 // Helper for boxes to ensure they start completely hidden and slightly scaled down
-fn create_box(label: &str, center: Vec2, size: Vec2, is_db: bool) -> (Rect, TextNode) {
-    let top_left = Vec2::new(center.x - size.x / 2.0, center.y - size.y / 2.0);
+fn create_box(label: &str, center: Vec2, size: Vec2) -> (Rect, TextNode) {
+    let box_center = Vec2::new(center.x, center.y);
 
-    // approx text size: ~10.5px per char width, 20px height
-    let text_width = label.len() as f32 * 10.5;
-    let text_pos = Vec2::new(center.x - text_width / 2.0, center.y - 12.0);
+    let text_pos = Vec2::new(center.x, center.y);
 
     let r = Rect::default()
-        .with_position(top_left)
+        .with_position(box_center)
         .with_size(size)
         .with_scale(0.95)
         .with_opacity(0.0)
-        .with_radius(if is_db { 30.0 } else { 8.0 })
+        .with_radius(8.0)
         .with_stroke(ACCENT, 2.0)
         .with_fill(Color::rgb8(0x26, 0x26, 0x2a));
 
@@ -95,6 +93,7 @@ fn main() {
     // -- Title --
     let title = TextNode::default()
         .with_position(Vec2::new(80.0, 50.0))
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_text("News Feed Architecture")
         .with_font_size(52.0)
         .with_font("JetBrains Mono")
@@ -107,7 +106,6 @@ fn main() {
         "User (Web/App)",
         Vec2::new(960.0, 130.0),
         Vec2::new(200.0, 60.0),
-        false,
     );
 
     let (line_lb, lb_end) = create_line(Vec2::new(960.0, 130.0), Vec2::new(960.0, 260.0));
@@ -115,7 +113,6 @@ fn main() {
         "Load Balancer",
         Vec2::new(960.0, 260.0),
         Vec2::new(160.0, 60.0),
-        false,
     );
 
     let (line_ws, ws_end) = create_line(Vec2::new(960.0, 260.0), Vec2::new(960.0, 390.0));
@@ -123,7 +120,6 @@ fn main() {
         "Web Servers",
         Vec2::new(960.0, 390.0),
         Vec2::new(300.0, 80.0),
-        false,
     );
 
     // -- Services Tier --
@@ -132,7 +128,6 @@ fn main() {
         "Post Service",
         Vec2::new(600.0, 520.0),
         Vec2::new(160.0, 60.0),
-        false,
     );
 
     let (line_fanout, fanout_end) = create_line(Vec2::new(960.0, 390.0), Vec2::new(960.0, 520.0));
@@ -140,7 +135,6 @@ fn main() {
         "Fanout Service",
         Vec2::new(960.0, 520.0),
         Vec2::new(180.0, 60.0),
-        false,
     );
 
     let (line_notif, notif_end) = create_line(Vec2::new(960.0, 390.0), Vec2::new(1320.0, 520.0));
@@ -148,7 +142,6 @@ fn main() {
         "Notification Service",
         Vec2::new(1320.0, 520.0),
         Vec2::new(240.0, 60.0),
-        false,
     );
 
     // -- Post Caches & DB --
@@ -158,16 +151,11 @@ fn main() {
         "Post Cache",
         Vec2::new(450.0, 720.0),
         Vec2::new(160.0, 80.0),
-        true,
     );
 
     let (line_post_db, post_db_end) = create_line(Vec2::new(600.0, 520.0), Vec2::new(750.0, 720.0));
-    let (post_db_box, post_db_label) = create_box(
-        "Post DB",
-        Vec2::new(750.0, 720.0),
-        Vec2::new(140.0, 80.0),
-        true,
-    );
+    let (post_db_box, post_db_label) =
+        create_box("Post DB", Vec2::new(750.0, 720.0), Vec2::new(140.0, 80.0));
 
     // -- NF Cache --
     let (line_nf_cache, nf_cache_end) =
@@ -176,18 +164,13 @@ fn main() {
         "News Feed Cache",
         Vec2::new(960.0, 720.0),
         Vec2::new(200.0, 80.0),
-        true,
     );
 
     // -- Fanout DBs Flow --
     let (line_graph_db, graph_db_end) =
         create_line(Vec2::new(960.0, 520.0), Vec2::new(1280.0, 620.0));
-    let (graph_db_box, graph_db_label) = create_box(
-        "Graph DB",
-        Vec2::new(1280.0, 620.0),
-        Vec2::new(140.0, 60.0),
-        true,
-    );
+    let (graph_db_box, graph_db_label) =
+        create_box("Graph DB", Vec2::new(1280.0, 620.0), Vec2::new(140.0, 60.0));
 
     let (line_user_cache, user_cache_end) =
         create_line(Vec2::new(960.0, 520.0), Vec2::new(1200.0, 720.0));
@@ -195,22 +178,18 @@ fn main() {
         "User Cache",
         Vec2::new(1200.0, 720.0),
         Vec2::new(160.0, 80.0),
-        true,
     );
 
     let (line_user_db, user_db_end) =
         create_line(Vec2::new(1200.0, 720.0), Vec2::new(1200.0, 860.0));
-    let (user_db_box, user_db_label) = create_box(
-        "User DB",
-        Vec2::new(1200.0, 860.0),
-        Vec2::new(140.0, 80.0),
-        true,
-    );
+    let (user_db_box, user_db_label) =
+        create_box("User DB", Vec2::new(1200.0, 860.0), Vec2::new(140.0, 80.0));
 
     // -- Case Indicators --
     let case1 = TextNode::default()
         .with_position(Vec2::new(80.0, 110.0))
         .with_text("Scenario 1: Cache Miss (Data Fallback)")
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_font_size(24.0)
         .with_font("JetBrains Mono")
         .with_fill(YELLOW)
@@ -219,6 +198,7 @@ fn main() {
     let case2 = TextNode::default()
         .with_position(Vec2::new(80.0, 110.0))
         .with_text("Scenario 2: Cache Hit (Fast Path)")
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_font_size(24.0)
         .with_font("JetBrains Mono")
         .with_fill(GREEN)
@@ -228,6 +208,7 @@ fn main() {
         .with_position(Vec2::new(80.0, 110.0))
         .with_text("Scenario 3: Rate Limited (Packet Dropped)")
         .with_font_size(24.0)
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_font("JetBrains Mono")
         .with_fill(RED)
         .with_opacity(0.0);
@@ -238,6 +219,7 @@ fn main() {
         .with_position(Vec2::new(80.0, 110.0))
         .with_text("Scenario 4: Full Publish (Parallel)")
         .with_font_size(24.0)
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_font("JetBrains Mono")
         .with_fill(GREEN)
         .with_opacity(0.0);
@@ -251,7 +233,7 @@ fn main() {
         .with_opacity(0.0);
 
     let step2 = TextNode::default()
-        .with_position(Vec2::new(1000.0, 620.0))
+        .with_position(Vec2::new(1060.0, 600.0))
         .with_text("2: Get Friend Data")
         .with_font_size(16.0)
         .with_font("JetBrains Mono")
@@ -259,7 +241,7 @@ fn main() {
         .with_opacity(0.0);
 
     let step3 = TextNode::default()
-        .with_position(Vec2::new(760.0, 620.0))
+        .with_position(Vec2::new(960.0, 620.0))
         .with_text("3: Update Feed")
         .with_font_size(16.0)
         .with_font("JetBrains Mono")

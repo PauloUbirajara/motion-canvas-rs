@@ -21,34 +21,28 @@ fn main() {
     project.scene.add(Box::new(png.clone()));
     project.scene.add(Box::new(svg.clone()));
 
+    const MOVE_DUR: Duration = Duration::from_secs(2);
+
     project.scene.video_timeline.add(loop_anim(
         move || {
             with_easing(
                 bounce_out,
                 vec![chain![
                     all!(
-                        png.position
-                            .to(Vec2::new(150.0, 450.0), Duration::from_secs(1)),
-                        svg.position
-                            .to(Vec2::new(450.0, 150.0), Duration::from_secs(1)),
+                        png.position.to(Vec2::new(150.0, 450.0), MOVE_DUR),
+                        svg.position.to(Vec2::new(450.0, 150.0), MOVE_DUR),
                     ),
                     all!(
-                        png.position
-                            .to(Vec2::new(150.0, 150.0), Duration::from_secs(1)),
-                        svg.position
-                            .to(Vec2::new(450.0, 450.0), Duration::from_secs(1)),
+                        png.position.to(Vec2::new(150.0, 150.0), MOVE_DUR),
+                        svg.position.to(Vec2::new(450.0, 450.0), MOVE_DUR),
                     ),
                     all!(
-                        png.position
-                            .to(Vec2::new(450.0, 150.0), Duration::from_secs(1)),
-                        svg.position
-                            .to(Vec2::new(150.0, 450.0), Duration::from_secs(1)),
+                        png.position.to(Vec2::new(450.0, 150.0), MOVE_DUR),
+                        svg.position.to(Vec2::new(150.0, 450.0), MOVE_DUR),
                     ),
                     all!(
-                        png.position
-                            .to(Vec2::new(450.0, 450.0), Duration::from_secs(1)),
-                        svg.position
-                            .to(Vec2::new(150.0, 150.0), Duration::from_secs(1)),
+                        png.position.to(Vec2::new(450.0, 450.0), MOVE_DUR),
+                        svg.position.to(Vec2::new(150.0, 150.0), MOVE_DUR),
                     ),
                 ]],
             )
