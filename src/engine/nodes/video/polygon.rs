@@ -20,6 +20,7 @@ pub struct Polygon {
     pub stroke_color: Signal<Color>,
     pub stroke_width: Signal<f32>,
     pub opacity: Signal<f32>,
+    pub anchor: Signal<Vec2>,
 }
 
 impl Default for Polygon {
@@ -33,6 +34,7 @@ impl Default for Polygon {
             stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
+            anchor: Signal::new(Vec2::ZERO),
         }
     }
 }
@@ -73,6 +75,11 @@ impl Polygon {
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);
+        self
+    }
+
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
         self
     }
 
@@ -118,10 +125,39 @@ impl Node for Polygon {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
+
+        // Calculate bounding box for centering and anchor
+        let mut min_x = f32::MAX;
+        let mut min_y = f32::MAX;
+        let mut max_x = f32::MIN;
+        let mut max_y = f32::MIN;
+
+        for p in &points {
+            min_x = min_x.min(p.x);
+            min_y = min_y.min(p.y);
+            max_x = max_x.max(p.x);
+            max_y = max_y.max(p.y);
+        }
+
+        let size_vec = if min_x == f32::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new(max_x - min_x, max_y - min_y)
+        };
+        let center_offset = if min_x == f32::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((min_x + max_x) * 0.5, (min_y + max_y) * 0.5)
+        };
+
+        let anchor_offset = anchor * size_vec * 0.5;
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -172,6 +208,7 @@ impl Node for Polygon {
         h.update_u64(self.stroke_color.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
         h.finish()
     }
 
@@ -188,5 +225,6 @@ impl Node for Polygon {
         self.stroke_color.reset();
         self.stroke_width.reset();
         self.opacity.reset();
+        self.anchor.reset();
     }
 }

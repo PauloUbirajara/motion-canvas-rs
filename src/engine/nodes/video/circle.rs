@@ -21,6 +21,7 @@ pub struct Circle {
     pub stroke_color: Signal<Color>,
     pub stroke_width: Signal<f32>,
     pub opacity: Signal<f32>,
+    pub anchor: Signal<Vec2>,
 }
 
 impl Default for Circle {
@@ -34,6 +35,7 @@ impl Default for Circle {
             stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
+            anchor: Signal::new(Vec2::ZERO),
         }
     }
 }
@@ -91,6 +93,11 @@ impl Circle {
         self.stroke_width = Signal::new(width);
         self
     }
+
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
+        self
+    }
 }
 
 impl Node for Circle {
@@ -104,10 +111,19 @@ impl Node for Circle {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
+
+        let anchor_offset = anchor * Vec2::splat(radius) * 1.0; // Anchor is relative to center, so offset is anchor * radius
+        // Wait, if anchor is (-1, -1) for top-left, and radius is 50, then top-left is (-50, -50) from center.
+        // So anchor_offset = (-1, -1) * 50 = (-50, -50).
+        // Translate(-anchor_offset) = (50, 50).
+        // Since circle is drawn at (0,0), this moves the center to (50,50), effectively making (-50,-50) the new local origin.
+        // This is correct.
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -150,6 +166,7 @@ impl Node for Circle {
         h.update_u64(self.stroke_color.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
         h.finish()
     }
 
@@ -166,5 +183,6 @@ impl Node for Circle {
         self.stroke_color.reset();
         self.stroke_width.reset();
         self.opacity.reset();
+        self.anchor.reset();
     }
 }

@@ -23,6 +23,7 @@ pub struct Rect {
     pub stroke_width: Signal<f32>,
     pub radius: Signal<f32>,
     pub opacity: Signal<f32>,
+    pub anchor: Signal<Vec2>,
 }
 
 impl Default for Rect {
@@ -37,6 +38,7 @@ impl Default for Rect {
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             radius: Signal::new(DEFAULT_RADIUS),
             opacity: Signal::new(DEFAULT_OPACITY),
+            anchor: Signal::new(Vec2::ZERO),
         }
     }
 }
@@ -99,6 +101,11 @@ impl Rect {
         self.stroke_width = Signal::new(width);
         self
     }
+
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
+        self
+    }
 }
 
 impl Node for Rect {
@@ -111,17 +118,27 @@ impl Node for Rect {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
 
         let opacity = self.opacity.get();
 
+        let anchor_offset = anchor * size * 0.5;
+
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let rect = KurboRoundedRect::new(0.0, 0.0, size.x as f64, size.y as f64, radius as f64);
+        let rect = KurboRoundedRect::new(
+            -size.x as f64 / 2.0,
+            -size.y as f64 / 2.0,
+            size.x as f64 / 2.0,
+            size.y as f64 / 2.0,
+            radius as f64,
+        );
 
         // Fill
         let mut final_color = fill_color_val;
@@ -160,6 +177,7 @@ impl Node for Rect {
         h.update_u64(self.stroke_color.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
         h.finish()
     }
 
@@ -177,5 +195,6 @@ impl Node for Rect {
         self.stroke_color.reset();
         self.stroke_width.reset();
         self.opacity.reset();
+        self.anchor.reset();
     }
 }

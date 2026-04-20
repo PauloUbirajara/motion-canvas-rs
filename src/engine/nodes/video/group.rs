@@ -10,6 +10,8 @@ pub struct GroupNode {
     pub rotation: Signal<f32>,
     pub scale: Signal<Vec2>,
     pub opacity: Signal<f32>,
+    pub size: Signal<Vec2>,
+    pub anchor: Signal<Vec2>,
 }
 
 impl Default for GroupNode {
@@ -20,6 +22,8 @@ impl Default for GroupNode {
             rotation: Signal::new(0.0),
             scale: Signal::new(Vec2::ONE),
             opacity: Signal::new(1.0),
+            size: Signal::new(Vec2::ZERO),
+            anchor: Signal::new(Vec2::ZERO),
         }
     }
 }
@@ -54,6 +58,16 @@ impl GroupNode {
         self
     }
 
+    pub fn with_size(mut self, size: Vec2) -> Self {
+        self.size = Signal::new(size);
+        self
+    }
+
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
+        self
+    }
+
     pub fn with_nodes(mut self, nodes: Vec<Box<dyn Node>>) -> Self {
         self.nodes = nodes;
         self
@@ -68,6 +82,8 @@ impl Clone for GroupNode {
             rotation: self.rotation.clone(),
             scale: self.scale.clone(),
             opacity: self.opacity.clone(),
+            size: self.size.clone(),
+            anchor: self.anchor.clone(),
         }
     }
 }
@@ -79,10 +95,15 @@ impl Node for GroupNode {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
+        let size = self.size.get();
+
+        let anchor_offset = anchor * size * 0.5;
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -109,6 +130,8 @@ impl Node for GroupNode {
         h.update_u64(self.rotation.state_hash());
         h.update_u64(self.scale.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.size.state_hash());
+        h.update_u64(self.anchor.state_hash());
 
         for node in &self.nodes {
             h.update_u64(node.state_hash());
@@ -126,6 +149,8 @@ impl Node for GroupNode {
         self.rotation.reset();
         self.scale.reset();
         self.opacity.reset();
+        self.size.reset();
+        self.anchor.reset();
         for node in &mut self.nodes {
             node.reset();
         }

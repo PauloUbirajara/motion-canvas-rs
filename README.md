@@ -105,7 +105,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 17 examples that can be found in the [examples directory](./examples).
+The project includes 18 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -117,6 +117,15 @@ cargo run --example advanced_flow --features=full
 https://github.com/user-attachments/assets/0e89eafa-7075-4381-b676-7eb25f45d127
 
 <img width="800" height="600" alt="Advanced Flow" src="https://github.com/user-attachments/assets/251f877e-7993-457e-a2d0-6b9a56397a3e" />
+
+</details>
+
+<details>
+<summary><b>Anchors</b> - Reactive transformation origins for precise positioning.</summary>
+
+```sh
+cargo run --example anchors
+```
 
 </details>
 
