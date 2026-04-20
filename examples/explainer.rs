@@ -26,6 +26,7 @@ fn secs(n: u64) -> Duration {
 // ── Text Helpers ───────────────────────────────────────────────────────────
 fn title(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, y))
         .with_text(text)
         .with_font_size(36.0)
@@ -35,6 +36,7 @@ fn title(text: &str, y: f32) -> TextNode {
 }
 fn h2(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, y))
         .with_text(text)
         .with_font_size(22.0)
@@ -44,6 +46,7 @@ fn h2(text: &str, y: f32) -> TextNode {
 }
 fn body(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, y))
         .with_text(text)
         .with_font_size(17.0)
@@ -53,6 +56,7 @@ fn body(text: &str, y: f32) -> TextNode {
 }
 fn dim(text: &str, x: f32, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(x, y))
         .with_text(text)
         .with_font_size(13.0)
@@ -62,6 +66,7 @@ fn dim(text: &str, x: f32, y: f32) -> TextNode {
 }
 fn note(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT + 20.0, y))
         .with_text(text)
         .with_font_size(14.0)
@@ -153,6 +158,7 @@ fn main() {
     // =====================================================================
     let s1_line = hline(100.0);
     let s1_title = TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, 120.0))
         .with_text("motion-canvas-rs")
         .with_font_size(52.0)

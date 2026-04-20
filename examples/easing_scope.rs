@@ -3,12 +3,13 @@ use std::time::Duration;
 
 const CANVAS_WIDTH: u32 = 800;
 const CANVAS_HEIGHT: u32 = 800;
-const START_X: f32 = 150.0;
+const START_X: f32 = 250.0;
 const END_X: f32 = 750.0;
 const START_Y: f32 = 100.0;
 const SPACING_Y: f32 = 80.0;
 const ANIM_DURATION_GO: Duration = Duration::from_secs(2);
 const ANIM_DURATION_RETURN: Duration = Duration::from_secs(2);
+const LABEL_FONT: &str = "JetBrains Mono";
 const WAIT_DURATION: Duration = Duration::from_secs(1);
 
 fn main() {
@@ -49,6 +50,7 @@ fn main() {
             .with_radius(20.0)
             .with_fill(colors[i % colors.len()]);
         let label = TextNode::default()
+            .with_font(LABEL_FONT)
             .with_position(Vec2::new(START_X - 130.0, y))
             .with_text(name)
             .with_font_size(18.0)

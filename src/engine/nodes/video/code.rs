@@ -36,6 +36,7 @@ impl Default for CodeNode {
 
         Self {
             position: Signal::new(Vec2::ZERO),
+            anchor: Signal::new(Vec2::new(-1.0, -1.0)),
             rotation: Signal::new(0.0),
             scale: Signal::new(Vec2::ONE),
             code: Signal::new(val),
@@ -45,7 +46,6 @@ impl Default for CodeNode {
             language,
             theme,
             font_family,
-            anchor: Signal::new(Vec2::ZERO),
         }
     }
 }

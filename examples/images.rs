@@ -9,44 +9,52 @@ fn main() {
 
     // Using the sample logo path from the project
     let png = ImageNode::default()
-        .with_position(Vec2::new(350.0, 350.0))
+        .with_position(Vec2::new(450.0, 450.0))
         .with_path("./examples/images/motion-canvas-logo.png")
         .with_size(Vec2::new(200.0, 200.0));
 
     let svg = ImageNode::default()
-        .with_position(Vec2::new(50.0, 50.0))
+        .with_position(Vec2::new(150.0, 150.0))
         .with_path("./examples/images/motion-canvas-rs.svg")
         .with_size(Vec2::new(200.0, 200.0));
 
-    project.scene.video_timeline.add(chain!(
-        all!(
-            png.position
-                .to(Vec2::new(50.0, 350.0), Duration::from_secs(1)),
-            svg.position
-                .to(Vec2::new(350.0, 50.0), Duration::from_secs(1)),
-        ),
-        all!(
-            png.position
-                .to(Vec2::new(50.0, 50.0), Duration::from_secs(1)),
-            svg.position
-                .to(Vec2::new(350.0, 350.0), Duration::from_secs(1)),
-        ),
-        all!(
-            png.position
-                .to(Vec2::new(350.0, 50.0), Duration::from_secs(1)),
-            svg.position
-                .to(Vec2::new(50.0, 350.0), Duration::from_secs(1)),
-        ),
-        all!(
-            png.position
-                .to(Vec2::new(350.0, 350.0), Duration::from_secs(1)),
-            svg.position
-                .to(Vec2::new(50.0, 50.0), Duration::from_secs(1)),
-        ),
-    ));
-
     project.scene.add(Box::new(png.clone()));
     project.scene.add(Box::new(svg.clone()));
+
+    project.scene.video_timeline.add(loop_anim(
+        move || {
+            with_easing(
+                bounce_out,
+                vec![chain![
+                    all!(
+                        png.position
+                            .to(Vec2::new(150.0, 450.0), Duration::from_secs(1)),
+                        svg.position
+                            .to(Vec2::new(450.0, 150.0), Duration::from_secs(1)),
+                    ),
+                    all!(
+                        png.position
+                            .to(Vec2::new(150.0, 150.0), Duration::from_secs(1)),
+                        svg.position
+                            .to(Vec2::new(450.0, 450.0), Duration::from_secs(1)),
+                    ),
+                    all!(
+                        png.position
+                            .to(Vec2::new(450.0, 150.0), Duration::from_secs(1)),
+                        svg.position
+                            .to(Vec2::new(150.0, 450.0), Duration::from_secs(1)),
+                    ),
+                    all!(
+                        png.position
+                            .to(Vec2::new(450.0, 450.0), Duration::from_secs(1)),
+                        svg.position
+                            .to(Vec2::new(150.0, 150.0), Duration::from_secs(1)),
+                    ),
+                ]],
+            )
+        },
+        None,
+    ));
 
     project.show().expect("Failed to render");
 }
