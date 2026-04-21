@@ -1,4 +1,3 @@
-use std::time::Duration;
 use motion_canvas_rs::prelude::*;
 
 fn main() {
