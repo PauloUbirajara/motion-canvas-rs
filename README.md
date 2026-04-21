@@ -292,6 +292,8 @@ https://github.com/user-attachments/assets/0eec990c-66a8-40f6-b816-15e2636c6fd0
 <details>
 <summary><b>News Feed</b> - A simple architectural visualization of a news feed system.</summary>
 
+> Based on the "News Feed System" architecture from **"System Design Interview: An Insider's Guide" (Second Edition)** by **Alex Xu**.
+
 ```sh
 cargo run --example news_feed
 ```
@@ -352,3 +354,4 @@ This project is heavily inspired by the original [Motion Canvas](https://github.
 Special thanks to:
 - [easings.net](https://easings.net/) for the standardized easing function library.
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
+- **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.

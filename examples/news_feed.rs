@@ -1,3 +1,6 @@
+// News Feed System Architecture Animation
+// Inspired by "System Design Interview: An Insider's Guide" (Second Edition) by Alex Xu.
+
 use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
