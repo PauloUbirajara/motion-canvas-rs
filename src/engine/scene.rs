@@ -28,12 +28,23 @@ impl BaseScene {
         self.nodes.push(node);
     }
 
+    pub fn reset(&mut self) {
+        self.video_timeline.reset();
+        #[cfg(feature = "audio")]
+        self.audio_timeline.reset();
+        for node in &mut self.nodes {
+            node.reset();
+        }
+    }
+
     #[cfg(feature = "audio")]
     pub fn collect_audio_events(
         &mut self,
         current_time: std::time::Duration,
         events: &mut Vec<crate::engine::animation::base::AudioEvent>,
     ) {
+        self.video_timeline
+            .collect_audio_events(current_time, events);
         self.audio_timeline
             .collect_audio_events(current_time, events);
     }

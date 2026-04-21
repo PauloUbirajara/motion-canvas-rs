@@ -11,16 +11,28 @@ const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_STROKE_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
+/// A circular visual node.
 #[derive(Clone)]
 pub struct Circle {
+    /// The absolute position of the circle's transformation origin.
     pub position: Signal<Vec2>,
+    /// The rotation in radians.
     pub rotation: Signal<f32>,
+    /// The scale factor.
     pub scale: Signal<Vec2>,
+    /// The radius of the circle.
     pub radius: Signal<f32>,
+    /// The background fill color.
     pub fill_color: Signal<Color>,
+    /// The border stroke color.
     pub stroke_color: Signal<Color>,
+    /// The width of the border stroke.
     pub stroke_width: Signal<f32>,
+    /// The opacity of the node (0.0 to 1.0).
     pub opacity: Signal<f32>,
+    /// The relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    pub anchor: Signal<Vec2>,
 }
 
 impl Default for Circle {
@@ -34,6 +46,7 @@ impl Default for Circle {
             stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
+            anchor: Signal::new(Vec2::ZERO),
         }
     }
 }
@@ -91,6 +104,13 @@ impl Circle {
         self.stroke_width = Signal::new(width);
         self
     }
+
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
+        self
+    }
 }
 
 impl Node for Circle {
@@ -104,10 +124,14 @@ impl Node for Circle {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
+
+        let anchor_offset = anchor * Vec2::splat(radius);
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
 
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -150,10 +174,23 @@ impl Node for Circle {
         h.update_u64(self.stroke_color.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
         h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.radius.reset();
+        self.fill_color.reset();
+        self.stroke_color.reset();
+        self.stroke_width.reset();
+        self.opacity.reset();
+        self.anchor.reset();
     }
 }

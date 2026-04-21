@@ -55,6 +55,12 @@ impl Animation for Any {
             anim.collect_audio_events(current_time, events);
         }
     }
+
+    fn reset(&mut self) {
+        for anim in &mut self.animations {
+            anim.reset();
+        }
+    }
 }
 
 /// Creates an animation that runs multiple animations in parallel and finishes

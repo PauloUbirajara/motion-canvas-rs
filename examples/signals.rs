@@ -1,61 +1,6 @@
 use motion_canvas_rs::prelude::*;
 use std::time::Duration;
 
-/// A simple helper node that synchronizes two signals every frame with a mapping function.
-/// This allows "derived" properties that react to a source signal.
-struct SignalLink<T, S> {
-    source: Signal<S>,
-    target: Signal<T>,
-    mapper: Box<dyn Fn(S) -> T + Send + Sync>,
-}
-
-impl<T: Tweenable + PartialEq, S: Tweenable + PartialEq> SignalLink<T, S> {
-    fn new<F>(source: Signal<S>, target: Signal<T>, mapper: F) -> Self
-    where
-        F: Fn(S) -> T + Send + Sync + 'static,
-    {
-        // Perform an immediate sync so the target has the correct value on the first frame
-        target.set(mapper(source.get()));
-
-        Self {
-            source,
-            target,
-            mapper: Box::new(mapper),
-        }
-    }
-}
-
-impl<T: Tweenable + PartialEq, S: Tweenable + PartialEq> Node for SignalLink<T, S> {
-    fn render(&self, _scene: &mut Scene, _parent_transform: Affine, _parent_opacity: f32) {
-        // Redraw check: ensure sync even if update hasn't run yet
-        let current = self.source.get();
-        let desired = (self.mapper)(current);
-        if self.target.get() != desired {
-            self.target.set(desired);
-        }
-    }
-
-    fn update(&mut self, _dt: Duration) {
-        let current_source = self.source.get();
-        let desired_target = (self.mapper)(current_source);
-        if self.target.get() != desired_target {
-            self.target.set(desired_target);
-        }
-    }
-
-    fn state_hash(&self) -> u64 {
-        // Hashing the source signal ensures the scene knows it needs a redraw
-        // when the source value changes, even if no other node has updated yet.
-        self.source.state_hash()
-    }
-
-    fn clone_node(&self) -> Box<dyn Node> {
-        // Cloned link will still point to same signals but closure needs to be handled
-        // For simplicity in this example, we don't clone the links.
-        panic!("LinkNode cloning not implemented for this example");
-    }
-}
-
 fn main() {
     let mut project = Project::default()
         .with_title("Signals")
@@ -69,8 +14,8 @@ fn main() {
 
     // 2. Create the Axis lines (Fixed)
     let x_axis = Line::default()
-        .with_start(Vec2::new(-300.0, 0.0))
-        .with_end(Vec2::new(300.0, 0.0))
+        .with_start(Vec2::new(-200.0, 0.0))
+        .with_end(Vec2::new(200.0, 0.0))
         .with_stroke(Color::rgba8(255, 255, 255, 100), 2.0);
 
     let y_axis = Line::default()
@@ -99,32 +44,28 @@ fn main() {
         .with_font_size(24.0)
         .with_fill(Color::WHITE);
 
-    // 5. Use SignalLink to derive node properties from our variables
-    // This is the "magic" that makes node positions react to x_var and y_var.
+    // 5. Use .bind() to derive node properties from our variables
+    // This makes node properties react to x_var and y_var.
 
     // Circle position follows both
     let y_clone = y_var.clone();
-    let circle_pos_link = SignalLink::new(x_var.clone(), point.position.clone(), move |x| {
+    let circle_pos_link = point.position.bind(x_var.clone(), move |x| {
         Vec2::new(x + 400.0, y_clone.get() + 300.0)
     });
 
     // X Label follows X but stays at bottom
-    let x_label_pos_link = SignalLink::new(x_var.clone(), x_label.position.clone(), |x| {
-        Vec2::new(x + 400.0, 550.0)
-    });
+    let x_label_pos_link = x_label
+        .position
+        .bind(x_var.clone(), |x| Vec2::new(x + 400.0, 550.0));
 
     // Y Label stays at left but follows Y
-    let y_label_pos_link = SignalLink::new(y_var.clone(), y_label.position.clone(), |y| {
-        Vec2::new(50.0, y + 300.0)
-    });
+    let y_label_pos_link = y_label
+        .position
+        .bind(y_var.clone(), |y| Vec2::new(75.0, y + 300.0));
 
     // Dynamic text update for labels
-    let x_text_link = SignalLink::new(x_var.clone(), x_label.text.clone(), |x| {
-        format!("X: {:.1}", x)
-    });
-    let y_text_link = SignalLink::new(y_var.clone(), y_label.text.clone(), |y| {
-        format!("Y: {:.1}", y)
-    });
+    let x_text_link = x_label.text.bind(x_var.clone(), |x| format!("X: {:.1}", x));
+    let y_text_link = y_label.text.bind(y_var.clone(), |y| format!("Y: {:.1}", y));
 
     // Add everything to the scene
     project.scene.add(Box::new(axes));

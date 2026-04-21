@@ -26,6 +26,7 @@ fn secs(n: u64) -> Duration {
 // ── Text Helpers ───────────────────────────────────────────────────────────
 fn title(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, y))
         .with_text(text)
         .with_font_size(36.0)
@@ -35,6 +36,7 @@ fn title(text: &str, y: f32) -> TextNode {
 }
 fn h2(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, y))
         .with_text(text)
         .with_font_size(22.0)
@@ -44,6 +46,7 @@ fn h2(text: &str, y: f32) -> TextNode {
 }
 fn body(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, y))
         .with_text(text)
         .with_font_size(17.0)
@@ -53,6 +56,7 @@ fn body(text: &str, y: f32) -> TextNode {
 }
 fn dim(text: &str, x: f32, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(x, y))
         .with_text(text)
         .with_font_size(13.0)
@@ -62,6 +66,7 @@ fn dim(text: &str, x: f32, y: f32) -> TextNode {
 }
 fn note(text: &str, y: f32) -> TextNode {
     TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT + 20.0, y))
         .with_text(text)
         .with_font_size(14.0)
@@ -153,6 +158,7 @@ fn main() {
     // =====================================================================
     let s1_line = hline(100.0);
     let s1_title = TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, 120.0))
         .with_text("motion-canvas-rs")
         .with_font_size(52.0)
@@ -375,7 +381,7 @@ fn main() {
         .with_fill(RED)
         .with_opacity(0.0);
     let demo_r = Rect::default()
-        .with_position(Vec2::new(260.0, 190.0))
+        .with_position(Vec2::new(293.0, 230.0))
         .with_size(Vec2::new(80.0, 80.0))
         .with_fill(ACCENT)
         .with_radius(8.0)
@@ -386,11 +392,11 @@ fn main() {
         .with_stroke(WHITE, 3.0)
         .with_opacity(0.0);
     let demo_p = Polygon::regular(5, 40.0)
-        .with_position(Vec2::new(610.0, 230.0))
+        .with_position(Vec2::new(606.0, 230.0))
         .with_fill(YELLOW)
         .with_opacity(0.0);
     let demo_t = TextNode::default()
-        .with_position(Vec2::new(740.0, 215.0))
+        .with_position(Vec2::new(765.0, 230.0))
         .with_text("Abc")
         .with_font_size(36.0)
         .with_fill(GREEN)
@@ -527,13 +533,13 @@ circle.radius.to(100.0, Duration::from_secs(1));
 
     // Progress bar
     let prog_bg = Rect::default()
-        .with_position(Vec2::new(700.0, 150.0))
+        .with_position(Vec2::new(895.0, 150.0))
         .with_size(Vec2::new(400.0, 16.0))
         .with_fill(Color::rgba8(255, 255, 255, 15))
         .with_radius(8.0)
         .with_opacity(0.0);
     let prog_fill = Rect::default()
-        .with_position(Vec2::new(700.0, 150.0))
+        .with_position(Vec2::new(895.0, 150.0))
         .with_size(Vec2::new(0.0, 16.0))
         .with_fill(ACCENT)
         .with_radius(8.0)
@@ -870,6 +876,7 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
     //  S15: FINALE
     // =====================================================================
     let fin = TextNode::default()
+        .with_anchor(Vec2::new(-1.0, -1.0))
         .with_position(Vec2::new(LEFT, 200.0))
         .with_text("That's how it works!")
         .with_font_size(48.0)
@@ -1464,8 +1471,5 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         .audio_timeline
         .add(play!(AudioNode::new("background.mp3").with_volume(0.3)));
 
-    project
-        .with_ffmpeg(true)
-        .export()
-        .expect("Failed to render");
+    project.show().expect("Failed to render");
 }

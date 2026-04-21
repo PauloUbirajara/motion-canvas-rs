@@ -19,7 +19,7 @@ fn main() {
 
     project.scene.add(Box::new(code.clone()));
 
-    project.scene.video_timeline.add(flows::sequence![
+    project.scene.video_timeline.add(sequence![
         Duration::from_secs(1),
         // 1. Select line 2 (println) - using 1-based index string
         code.select_string("2", Duration::from_millis(300)),

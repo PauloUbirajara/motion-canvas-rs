@@ -17,7 +17,7 @@ fn main() {
         .with_fill(Color::rgb8(0x68, 0xab, 0xdf)); // Blue
 
     let text = TextNode::default()
-        .with_position(Vec2::new(200.0, 450.0))
+        .with_position(Vec2::new(400.0, 50.0))
         .with_text("Export Demo")
         .with_font_size(40.0)
         .with_fill(Color::rgb8(0xf2, 0xf2, 0xf2)); // White
@@ -26,7 +26,7 @@ fn main() {
     project.scene.add(Box::new(text.clone()));
 
     // 3. Define Animations (Color and Font Size)
-    project.scene.video_timeline.add(flows::all![
+    project.scene.video_timeline.add(all![
         // Circle color and size
         circle
             .fill_color
@@ -38,7 +38,7 @@ fn main() {
             .ease(easings::elastic_out),
         // Text font size
         text.font_size
-            .to(80.0, Duration::from_secs(2))
+            .to(50.0, Duration::from_secs(2))
             .ease(easings::cubic_out),
     ]);
 

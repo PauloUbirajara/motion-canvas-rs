@@ -8,12 +8,14 @@ pub use tween::*;
 
 pub struct Timeline {
     pub animations: Vec<Box<dyn Animation>>,
+    pub index: usize,
 }
 
 impl Timeline {
     pub fn new() -> Self {
         Self {
             animations: Vec::new(),
+            index: 0,
         }
     }
 
@@ -22,10 +24,10 @@ impl Timeline {
     }
 
     pub fn update(&mut self, mut dt: std::time::Duration) {
-        while !self.animations.is_empty() {
-            let (finished, leftover) = self.animations[0].update(dt);
+        while let Some(anim) = self.animations.get_mut(self.index) {
+            let (finished, leftover) = anim.update(dt);
             if finished {
-                self.animations.remove(0);
+                self.index += 1;
                 dt = leftover;
                 if dt == std::time::Duration::ZERO {
                     break;
@@ -37,7 +39,7 @@ impl Timeline {
     }
 
     pub fn finished(&self) -> bool {
-        self.animations.is_empty()
+        self.index >= self.animations.len()
     }
 
     pub fn duration(&self) -> std::time::Duration {
@@ -52,9 +54,16 @@ impl Timeline {
         current_time: std::time::Duration,
         events: &mut Vec<AudioEvent>,
     ) {
-        if !self.animations.is_empty() {
-            self.animations[0].collect_audio_events(current_time, events);
+        if let Some(anim) = self.animations.get_mut(self.index) {
+            anim.collect_audio_events(current_time, events);
         }
+    }
+
+    pub fn reset(&mut self) {
+        for anim in &mut self.animations {
+            anim.reset();
+        }
+        self.index = 0;
     }
 }
 

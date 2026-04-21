@@ -3,12 +3,13 @@ use std::time::Duration;
 
 const CANVAS_WIDTH: u32 = 800;
 const CANVAS_HEIGHT: u32 = 800;
-const START_X: f32 = 150.0;
+const START_X: f32 = 250.0;
 const END_X: f32 = 750.0;
 const START_Y: f32 = 100.0;
 const SPACING_Y: f32 = 80.0;
 const ANIM_DURATION_GO: Duration = Duration::from_secs(2);
 const ANIM_DURATION_RETURN: Duration = Duration::from_secs(2);
+const LABEL_FONT: &str = "JetBrains Mono";
 const WAIT_DURATION: Duration = Duration::from_secs(1);
 
 fn main() {
@@ -49,6 +50,7 @@ fn main() {
             .with_radius(20.0)
             .with_fill(colors[i % colors.len()]);
         let label = TextNode::default()
+            .with_font(LABEL_FONT)
             .with_position(Vec2::new(START_X - 130.0, y))
             .with_text(name)
             .with_font_size(18.0)
@@ -64,46 +66,42 @@ fn main() {
     let configs_clone = easing_configs.clone();
 
     // Loop animation factory
-    project.scene.video_timeline.add(flows::loop_anim(
+    project.scene.video_timeline.add(loop_anim(
         move || {
             let balls = &balls_clone;
             let configs = &configs_clone;
 
             // 1. Move to right using individual scoped easings
-            let right_anims = flows::all(
-                configs
-                    .iter()
-                    .enumerate()
-                    .map(|(i, (_, easing))| {
-                        let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
-                        flows::with_easing(
-                            *easing,
-                            vec![balls[i].position.to(end_pos, ANIM_DURATION_GO).into()],
-                        )
-                    })
-                    .collect(),
-            );
+            let right_anims = all(configs
+                .iter()
+                .enumerate()
+                .map(|(i, (_, easing))| {
+                    let end_pos = Vec2::new(END_X, START_Y + i as f32 * SPACING_Y);
+                    with_easing(
+                        *easing,
+                        vec![balls[i].position.to(end_pos, ANIM_DURATION_GO).into()],
+                    )
+                })
+                .collect());
 
             // 2. Move back to left using the SAME scoped easings
-            let left_anims = flows::all(
-                configs
-                    .iter()
-                    .enumerate()
-                    .map(|(i, (_, easing))| {
-                        let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
-                        flows::with_easing(
-                            *easing,
-                            vec![balls[i].position.to(start_pos, ANIM_DURATION_RETURN).into()],
-                        )
-                    })
-                    .collect(),
-            );
+            let left_anims = all(configs
+                .iter()
+                .enumerate()
+                .map(|(i, (_, easing))| {
+                    let start_pos = Vec2::new(START_X, START_Y + i as f32 * SPACING_Y);
+                    with_easing(
+                        *easing,
+                        vec![balls[i].position.to(start_pos, ANIM_DURATION_RETURN).into()],
+                    )
+                })
+                .collect());
 
-            flows::chain(vec![
+            chain(vec![
                 right_anims,
-                flows::wait(WAIT_DURATION),
+                wait(WAIT_DURATION),
                 left_anims,
-                flows::wait(WAIT_DURATION),
+                wait(WAIT_DURATION),
             ])
         },
         None,

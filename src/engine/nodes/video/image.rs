@@ -16,6 +16,7 @@ pub struct ImageNode {
     pub size: Signal<Vec2>,
     pub image: Option<Arc<PenikoImage>>,
     pub opacity: Signal<f32>,
+    pub anchor: Signal<Vec2>,
     pub path: String,
 }
 
@@ -28,6 +29,7 @@ impl Default for ImageNode {
             size: Signal::new(Vec2::ZERO),
             image: None,
             opacity: Signal::new(1.0),
+            anchor: Signal::new(Vec2::ZERO),
             path: String::new(),
         }
     }
@@ -76,6 +78,13 @@ impl ImageNode {
         }
         self
     }
+
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
+        self
+    }
 }
 
 impl Node for ImageNode {
@@ -88,10 +97,14 @@ impl Node for ImageNode {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
+
+        let anchor_offset = anchor * size * 0.5;
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
 
         let opacity = self.opacity.get();
         let final_opacity = opacity * parent_opacity;
@@ -102,6 +115,7 @@ impl Node for ImageNode {
 
         let transform = parent_transform
             * local_transform
+            * Affine::translate((-size.x as f64 / 2.0, -size.y as f64 / 2.0))
             * Affine::scale_non_uniform(
                 size.x as f64 / img.width as f64,
                 size.y as f64 / img.height as f64,
@@ -132,10 +146,20 @@ impl Node for ImageNode {
         h.update_u64(self.scale.state_hash());
         h.update_u64(self.size.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
         h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.size.reset();
+        self.opacity.reset();
+        self.anchor.reset();
     }
 }

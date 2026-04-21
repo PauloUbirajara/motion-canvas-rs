@@ -3,7 +3,7 @@ use glam::Vec2;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use vello::kurbo::{Affine, BezPath};
+use vello::kurbo::{Affine, BezPath, Shape};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 
@@ -27,15 +27,31 @@ struct MathCacheKey {
     font_size_bits: u32,
 }
 
+/// A mathematical formula node powered by Typst.
+#[derive(Clone)]
 pub struct MathNode {
+    /// The absolute position of the formula's transformation origin.
     pub position: Signal<Vec2>,
+    /// The rotation in radians.
     pub rotation: Signal<f32>,
+    /// The scale factor.
     pub scale: Signal<Vec2>,
+    /// The Typst-syntax mathematical equation.
     pub equation: Signal<String>,
+    /// The font size in points.
     pub font_size: Signal<f32>,
+    /// The fill color of the glyphs.
     pub fill_color: Signal<Color>,
+    /// The opacity of the node (0.0 to 1.0).
     pub opacity: Signal<f32>,
+    /// Internal transition progress signal (0.0 to 1.0).
     pub transition_progress: Signal<f32>,
+    /// The relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    ///
+    /// NOTE: During transitions, MathNode uses a union of the previous and current
+    /// bounding boxes to ensure the anchor point remains stable.
+    pub anchor: Signal<Vec2>,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
     prev_cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
@@ -51,6 +67,7 @@ impl Default for MathNode {
             fill_color: Signal::new(DEFAULT_COLOR),
             opacity: Signal::new(DEFAULT_OPACITY),
             transition_progress: Signal::new(1.0),
+            anchor: Signal::new(Vec2::ZERO),
             cache: Arc::new(Mutex::new(None)),
             prev_cache: Arc::new(Mutex::new(None)),
         }
@@ -68,6 +85,7 @@ impl Clone for MathNode {
             fill_color: self.fill_color.clone(),
             opacity: self.opacity.clone(),
             transition_progress: self.transition_progress.clone(),
+            anchor: self.anchor.clone(),
             cache: self.cache.clone(),
             prev_cache: self.prev_cache.clone(),
         }
@@ -133,6 +151,16 @@ impl MathNode {
 
     pub fn with_fill(mut self, color: Color) -> Self {
         self.fill_color = Signal::new(color);
+        self
+    }
+
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    ///
+    /// NOTE: During transitions, MathNode uses a union of the previous and current
+    /// bounding boxes to ensure the anchor point remains perfectly stable.
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
         self
     }
 
@@ -234,6 +262,10 @@ impl crate::engine::animation::Animation for MathTransition {
     fn duration(&self) -> Duration {
         self.duration
     }
+
+    fn reset(&mut self) {
+        self.tween = None;
+    }
 }
 
 impl Node for MathNode {
@@ -249,10 +281,59 @@ impl Node for MathNode {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
+
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+
+        if let Some(c) = cache_guard.as_ref() {
+            for (glyph_transform, pb) in c.as_ref() {
+                let bounds = pb.bounding_box();
+                let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+                let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+                min_x = min_x.min(p0.x).min(p1.x);
+                min_y = min_y.min(p0.y).min(p1.y);
+                max_x = max_x.max(p0.x).max(p1.x);
+                max_y = max_y.max(p0.y).max(p1.y);
+            }
+        }
+
+        // Use the union of current and previous bounding boxes during transition for absolute stability
+        if progress < 1.0 {
+            let prev_cache = self.prev_cache.lock().unwrap();
+            if let Some(prev) = prev_cache.as_ref() {
+                for (glyph_transform, pb) in prev.as_ref() {
+                    let bounds = pb.bounding_box();
+                    let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+                    let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+                    min_x = min_x.min(p0.x).min(p1.x);
+                    min_y = min_y.min(p0.y).min(p1.y);
+                    max_x = max_x.max(p0.x).max(p1.x);
+                    max_y = max_y.max(p0.y).max(p1.y);
+                }
+            }
+        }
+
+        let size_vec = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
+        };
+        let center_offset = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
+        };
+
+        let anchor_offset = anchor * size_vec * 0.5;
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
 
         let root_transform = parent_transform * local_transform;
 
@@ -308,10 +389,25 @@ impl Node for MathNode {
         h.update_u64(self.fill_color.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.transition_progress.state_hash());
+        h.update_u64(self.anchor.state_hash());
         h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.equation.reset();
+        self.font_size.reset();
+        self.fill_color.reset();
+        self.opacity.reset();
+        self.transition_progress.reset();
+        self.anchor.reset();
+        *self.cache.lock().unwrap() = None;
+        *self.prev_cache.lock().unwrap() = None;
     }
 }

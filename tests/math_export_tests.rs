@@ -19,12 +19,12 @@ fn test_math_animation_export() {
     );
     project.scene.add(Box::new(tex.clone()));
 
-    project.scene.video_timeline.add(flows::chain![
-        flows::wait(Duration::from_millis(100)),
+    project.scene.video_timeline.add(chain![
+        wait(Duration::from_millis(100)),
         tex.tex("y = a x^2 + b x", Duration::from_millis(200)),
-        flows::wait(Duration::from_millis(100)),
+        wait(Duration::from_millis(100)),
         tex.tex("e^(i pi) + 1 = 0", Duration::from_millis(200)),
-        flows::wait(Duration::from_millis(100)),
+        wait(Duration::from_millis(100)),
         tex.tex("y = a x^2", Duration::from_millis(200)),
     ]);
 

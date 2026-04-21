@@ -9,7 +9,9 @@ fn main() {
         .close_on_finish();
 
     // Setup Video Timeline
-    let rect = Rect::new(Vec2::new(100.0, 100.0), Vec2::new(200.0, 200.0), Color::RED);
+    let rect = Rect::new(Vec2::new(100.0, 100.0), Vec2::new(200.0, 200.0), Color::RED)
+        .with_anchor(Vec2::new(-1.0, -1.0));
+
     project.scene.add(Box::new(rect.clone()));
 
     project.scene.video_timeline.add(chain!(

@@ -93,6 +93,16 @@ impl Animation for Sequence {
             }
         }
     }
+
+    fn reset(&mut self) {
+        for (_, anim) in &mut self.items {
+            anim.reset();
+        }
+        for f in &mut self.finished {
+            *f = false;
+        }
+        self.elapsed = Duration::ZERO;
+    }
 }
 
 /// Creates an animation that runs multiple animations in parallel with a staggered start.

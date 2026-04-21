@@ -7,7 +7,7 @@ use skrifa::MetadataProvider;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use vello::kurbo::{Affine, BezPath};
+use vello::kurbo::{Affine, BezPath, Shape};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 
@@ -19,8 +19,8 @@ lazy_static! {
 const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;
 const DEFAULT_OPACITY: f32 = 1.0;
-const DEFAULT_FONT_FAMILY: &str = "Inter";
-const FONT_FALLBACKS: &[&str] = &["Arial", "sans-serif"];
+const DEFAULT_FONT_FAMILY: &str = "JetBrains Mono";
+const FONT_FALLBACKS: &[&str] = &["Inter", "Arial", "sans-serif"];
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
 #[derive(Hash, Eq, PartialEq)]
@@ -38,6 +38,7 @@ pub struct TextNode {
     pub font_size: Signal<f32>,
     pub fill_color: Signal<Color>,
     pub opacity: Signal<f32>,
+    pub anchor: Signal<Vec2>,
     pub font_family: String,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
@@ -52,6 +53,7 @@ impl Default for TextNode {
             font_size: Signal::new(DEFAULT_FONT_SIZE),
             fill_color: Signal::new(DEFAULT_COLOR),
             opacity: Signal::new(DEFAULT_OPACITY),
+            anchor: Signal::new(Vec2::ZERO),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
             cache: Arc::new(Mutex::new(None)),
         }
@@ -112,6 +114,13 @@ impl TextNode {
         self
     }
 
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
+        self
+    }
+
     #[deprecated(note = "use with_fill instead")]
     pub fn with_color(self, color: Color) -> Self {
         self.with_fill(color)
@@ -128,6 +137,7 @@ impl Clone for TextNode {
             font_size: self.font_size.clone(),
             fill_color: self.fill_color.clone(),
             opacity: self.opacity.clone(),
+            anchor: self.anchor.clone(),
             font_family: self.font_family.clone(),
             cache: self.cache.clone(),
         }
@@ -169,10 +179,7 @@ impl Node for TextNode {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
-
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+        let anchor = self.anchor.get();
 
         let key = TextCacheKey {
             text: text.clone(),
@@ -232,6 +239,42 @@ impl Node for TextNode {
             return;
         };
 
+        // Calculate bounding box for centering and anchor
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+
+        for (glyph_transform, pb) in c.as_ref() {
+            let bounds = pb.bounding_box();
+            let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+            let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+            min_x = min_x.min(p0.x).min(p1.x);
+            min_y = min_y.min(p0.y).min(p1.y);
+            max_x = max_x.max(p0.x).max(p1.x);
+            max_y = max_y.max(p0.y).max(p1.y);
+        }
+
+        let size_vec = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
+        };
+
+        let center_offset = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
+        };
+
+        let anchor_offset = anchor * size_vec * 0.5;
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
+
         let root_transform = parent_transform * local_transform;
         let mut render_color = color;
         render_color.a = (color.a as f32 * opacity * parent_opacity).clamp(0.0, 255.0) as u8;
@@ -257,11 +300,23 @@ impl Node for TextNode {
         h.update_u64(self.font_size.state_hash());
         h.update_u64(self.fill_color.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
         h.update_bytes(self.font_family.as_bytes());
         h.finish()
     }
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.text.reset();
+        self.font_size.reset();
+        self.fill_color.reset();
+        self.opacity.reset();
+        self.anchor.reset();
     }
 }

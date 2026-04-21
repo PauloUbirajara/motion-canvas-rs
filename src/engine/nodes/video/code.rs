@@ -22,32 +22,31 @@ pub struct CodeNode {
     pub language: String,
     pub theme: String,
     pub font_family: String,
+    pub anchor: Signal<Vec2>,
 }
 
 impl Default for CodeNode {
     fn default() -> Self {
-        let node = Self {
+        let font_size = crate::engine::util::code_tokenizer::DEFAULT_FONT_SIZE;
+        let language = crate::engine::util::code_tokenizer::DEFAULT_LANGUAGE.to_string();
+        let theme = crate::engine::util::code_tokenizer::DEFAULT_THEME.to_string();
+        let font_family = crate::engine::util::code_tokenizer::DEFAULT_FONT_FAMILY.to_string();
+
+        let val = CodeValue::new("".to_string(), font_size, &language, &theme, &font_family);
+
+        Self {
             position: Signal::new(Vec2::ZERO),
+            anchor: Signal::new(Vec2::new(-1.0, -1.0)),
             rotation: Signal::new(0.0),
             scale: Signal::new(Vec2::ONE),
-            code: Signal::new(CodeValue::default()),
-            font_size: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_FONT_SIZE),
+            code: Signal::new(val),
+            font_size: Signal::new(font_size),
             opacity: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_OPACITY),
             dim_opacity: Signal::new(crate::engine::util::code_tokenizer::DEFAULT_DIM_OPACITY),
-            language: crate::engine::util::code_tokenizer::DEFAULT_LANGUAGE.to_string(),
-            theme: crate::engine::util::code_tokenizer::DEFAULT_THEME.to_string(),
-            font_family: crate::engine::util::code_tokenizer::DEFAULT_FONT_FAMILY.to_string(),
-        };
-        // Initialize with empty code
-        let val = CodeValue::new(
-            "".to_string(),
-            node.font_size.get(),
-            &node.language,
-            &node.theme,
-            &node.font_family,
-        );
-        node.code.set(val);
-        node
+            language,
+            theme,
+            font_family,
+        }
     }
 }
 
@@ -64,6 +63,7 @@ impl Clone for CodeNode {
             language: self.language.clone(),
             theme: self.theme.clone(),
             font_family: self.font_family.clone(),
+            anchor: self.anchor.clone(),
         }
     }
 }
@@ -101,7 +101,7 @@ impl CodeNode {
         self
     }
 
-    pub fn with_code(self, code: &str) -> Self {
+    pub fn with_code(mut self, code: &str) -> Self {
         let val = CodeValue::new(
             code.to_string(),
             self.font_size.get(),
@@ -109,7 +109,7 @@ impl CodeNode {
             &self.theme,
             &self.font_family,
         );
-        self.code.set(val);
+        self.code = Signal::new(val);
         self
     }
 
@@ -124,17 +124,35 @@ impl CodeNode {
             &self.theme,
             &self.font_family,
         );
-        self.code.set(val);
+        self.code = Signal::new(val);
         self
     }
 
     pub fn with_theme(mut self, theme: &str) -> Self {
         self.theme = theme.to_string();
+        let current_text = self.code.get().text;
+        let val = CodeValue::new(
+            current_text,
+            self.font_size.get(),
+            &self.language,
+            &self.theme,
+            &self.font_family,
+        );
+        self.code = Signal::new(val);
         self
     }
 
     pub fn with_font(mut self, font: &str) -> Self {
         self.font_family = font.to_string();
+        let current_text = self.code.get().text;
+        let val = CodeValue::new(
+            current_text,
+            self.font_size.get(),
+            &self.language,
+            &self.theme,
+            &self.font_family,
+        );
+        self.code = Signal::new(val);
         self
     }
 
@@ -144,18 +162,25 @@ impl CodeNode {
         let current_text = self.code.get().text;
         let mut val = CodeValue::new(
             current_text,
-            self.font_size.get(),
+            size,
             &self.language,
             &self.theme,
             &self.font_family,
         );
         val.selection = self.code.get().selection;
-        self.code.set(val);
+        self.code = Signal::new(val);
         self
     }
 
     pub fn with_dim_opacity(mut self, dim: f32) -> Self {
         self.dim_opacity = Signal::new(dim);
+        self
+    }
+
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
         self
     }
 
@@ -171,7 +196,7 @@ impl CodeNode {
         let font = self.font_family.clone();
         self.code.to_lazy(
             move |current| {
-                let mut next_value = CodeValue::new(code, font_size, &lang, &theme, &font);
+                let mut next_value = CodeValue::new(code.clone(), font_size, &lang, &theme, &font);
                 next_value.selection = current.selection.clone();
                 next_value
             },
@@ -230,7 +255,7 @@ impl CodeNode {
             move |current| {
                 let mut next_value = current.clone();
                 next_value.transition = None; // Reset transition for the target
-                next_value.selection = lines;
+                next_value.selection = lines.clone();
                 next_value
             },
             duration,
@@ -257,10 +282,42 @@ impl Node for CodeNode {
         let pos = self.position.get();
         let rot = self.rotation.get();
         let sc = self.scale.get();
+        let anchor = self.anchor.get();
+
+        // Calculate bounding box for centering and anchor
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+
+        for token in &code_val.tokens {
+            // Find bounds of each token. We can estimate based on token.pos and font size
+            // or just use token.pos for simplicity if accurate bounds aren't available.
+            // code_tokenizer gives us token.pos.
+            min_x = min_x.min(token.pos.x as f64);
+            min_y = min_y.min(token.pos.y as f64);
+            max_x = max_x.max((token.pos.x + token.size) as f64); // Assume square-ish? No, width varies.
+            max_y = max_y.max((token.pos.y + token.size) as f64);
+        }
+
+        let size_vec = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
+        };
+        let center_offset = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
+        };
+
+        let anchor_offset = anchor * size_vec * 0.5;
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
 
         let root_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
@@ -378,6 +435,7 @@ impl Node for CodeNode {
         h.update_u64(self.code.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.dim_opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
 
         h.update_bytes(self.language.as_bytes());
         h.update_bytes(self.theme.as_bytes());
@@ -388,5 +446,16 @@ impl Node for CodeNode {
 
     fn clone_node(&self) -> Box<dyn Node> {
         Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.code.reset();
+        self.font_size.reset();
+        self.opacity.reset();
+        self.dim_opacity.reset();
+        self.anchor.reset();
     }
 }
