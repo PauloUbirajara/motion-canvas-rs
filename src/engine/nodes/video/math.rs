@@ -28,7 +28,6 @@ struct MathCacheKey {
 }
 
 /// A mathematical formula node powered by Typst.
-#[derive(Clone)]
 pub struct MathNode {
     /// The absolute position of the formula's transformation origin.
     pub position: Signal<Vec2>,
