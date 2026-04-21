@@ -45,16 +45,16 @@ cargo add motion-canvas-rs --features math,image,audio
 | Node | Description | Transform Properties |
 |:---|:---|:---|
 | `AudioNode` | Independent audio clip playback. | `volume`, `crop` |
-| `Circle` | Basic circle primitive. | `position`, `rotation`, `scale`, `radius` |
-| `CodeNode` | Syntax-highlighted code with transitions. | `position`, `rotation`, `scale`, `code` |
-| `GroupNode` | Hierarchical grouping of any nodes. | `position`, `rotation`, `scale`, `children` |
-| `ImageNode` | Bitmap and SVG image display. | `position`, `rotation`, `scale`, `size` |
-| `Line` | Simple line between two points. | `position`, `rotation`, `scale`, `start`, `end` |
-| `MathNode` | Typst-powered mathematical formulas. | `position`, `rotation`, `scale`, `equation` |
-| `PathNode` | Complex path sampling and animation. | `position`, `rotation`, `scale`, `arc-length` |
-| `Polygon` | Regular and custom polygon shapes. | `position`, `rotation`, `scale`, `points` |
-| `Rect` | Rectangle with optional corner radius. | `position`, `rotation`, `scale`, `size`, `radius` |
-| `TextNode` | High-quality text rendering (skrifa). | `position`, `rotation`, `scale`, `text` |
+| `Circle` | Basic circle primitive. | `position`, `rotation`, `scale`, `radius`, `anchor` |
+| `CodeNode` | Syntax-highlighted code with transitions. | `position`, `rotation`, `scale`, `code`, `anchor` |
+| `GroupNode` | Hierarchical grouping of any nodes. | `position`, `rotation`, `scale`, `children`, `anchor` |
+| `ImageNode` | Bitmap and SVG image display. | `position`, `rotation`, `scale`, `size`, `anchor` |
+| `Line` | Simple line between two points. | `position`, `rotation`, `scale`, `start`, `end`, `anchor` |
+| `MathNode` | Typst-powered mathematical formulas. | `position`, `rotation`, `scale`, `equation`, `anchor` |
+| `PathNode` | Complex path sampling and animation. | `position`, `rotation`, `scale`, `arc-length`, `anchor` |
+| `Polygon` | Regular and custom polygon shapes. | `position`, `rotation`, `scale`, `points`, `anchor` |
+| `Rect` | Rectangle with optional corner radius. | `position`, `rotation`, `scale`, `size`, `radius`, `anchor` |
+| `TextNode` | High-quality text rendering (skrifa). | `position`, `rotation`, `scale`, `text`, `anchor` |
 
 ## Project Structure
 

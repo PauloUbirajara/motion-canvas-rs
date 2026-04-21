@@ -27,15 +27,30 @@ struct MathCacheKey {
     font_size_bits: u32,
 }
 
+/// A mathematical formula node powered by Typst.
+#[derive(Clone)]
 pub struct MathNode {
+    /// The absolute position of the formula's transformation origin.
     pub position: Signal<Vec2>,
+    /// The rotation in radians.
     pub rotation: Signal<f32>,
+    /// The scale factor.
     pub scale: Signal<Vec2>,
+    /// The Typst-syntax mathematical equation.
     pub equation: Signal<String>,
+    /// The font size in points.
     pub font_size: Signal<f32>,
+    /// The fill color of the glyphs.
     pub fill_color: Signal<Color>,
+    /// The opacity of the node (0.0 to 1.0).
     pub opacity: Signal<f32>,
+    /// Internal transition progress signal (0.0 to 1.0).
     pub transition_progress: Signal<f32>,
+    /// The relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    ///
+    /// NOTE: During transitions, MathNode uses a union of the previous and current
+    /// bounding boxes to ensure the anchor point remains stable.
     pub anchor: Signal<Vec2>,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
     prev_cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
@@ -139,6 +154,11 @@ impl MathNode {
         self
     }
 
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    ///
+    /// NOTE: During transitions, MathNode uses a union of the previous and current
+    /// bounding boxes to ensure the anchor point remains perfectly stable.
     pub fn with_anchor(mut self, anchor: Vec2) -> Self {
         self.anchor = Signal::new(anchor);
         self

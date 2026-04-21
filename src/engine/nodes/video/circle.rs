@@ -11,16 +11,27 @@ const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_STROKE_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
+/// A circular visual node.
 #[derive(Clone)]
 pub struct Circle {
+    /// The absolute position of the circle's transformation origin.
     pub position: Signal<Vec2>,
+    /// The rotation in radians.
     pub rotation: Signal<f32>,
+    /// The scale factor.
     pub scale: Signal<Vec2>,
+    /// The radius of the circle.
     pub radius: Signal<f32>,
+    /// The background fill color.
     pub fill_color: Signal<Color>,
+    /// The border stroke color.
     pub stroke_color: Signal<Color>,
+    /// The width of the border stroke.
     pub stroke_width: Signal<f32>,
+    /// The opacity of the node (0.0 to 1.0).
     pub opacity: Signal<f32>,
+    /// The relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
     pub anchor: Signal<Vec2>,
 }
 
@@ -94,6 +105,8 @@ impl Circle {
         self
     }
 
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
     pub fn with_anchor(mut self, anchor: Vec2) -> Self {
         self.anchor = Signal::new(anchor);
         self
@@ -113,12 +126,7 @@ impl Node for Circle {
         let sc = self.scale.get();
         let anchor = self.anchor.get();
 
-        let anchor_offset = anchor * Vec2::splat(radius) * 1.0; // Anchor is relative to center, so offset is anchor * radius
-        // Wait, if anchor is (-1, -1) for top-left, and radius is 50, then top-left is (-50, -50) from center.
-        // So anchor_offset = (-1, -1) * 50 = (-50, -50).
-        // Translate(-anchor_offset) = (50, 50).
-        // Since circle is drawn at (0,0), this moves the center to (50,50), effectively making (-50,-50) the new local origin.
-        // This is correct.
+        let anchor_offset = anchor * Vec2::splat(radius);
 
         let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
             * Affine::rotate(rot as f64)

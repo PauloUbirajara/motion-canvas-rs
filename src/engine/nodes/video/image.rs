@@ -79,6 +79,8 @@ impl ImageNode {
         self
     }
 
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
     pub fn with_anchor(mut self, anchor: Vec2) -> Self {
         self.anchor = Signal::new(anchor);
         self

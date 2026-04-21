@@ -43,8 +43,10 @@ impl BaseScene {
         current_time: std::time::Duration,
         events: &mut Vec<crate::engine::animation::base::AudioEvent>,
     ) {
-        self.video_timeline.collect_audio_events(current_time, events);
-        self.audio_timeline.collect_audio_events(current_time, events);
+        self.video_timeline
+            .collect_audio_events(current_time, events);
+        self.audio_timeline
+            .collect_audio_events(current_time, events);
     }
 }
 

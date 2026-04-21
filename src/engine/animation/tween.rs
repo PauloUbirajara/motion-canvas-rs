@@ -226,7 +226,11 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         }
     }
 
-    pub fn bind<S: Tweenable + PartialEq, F>(&self, source: Signal<S>, mapper: F) -> crate::engine::nodes::video::BindingNode<T, S>
+    pub fn bind<S: Tweenable + PartialEq, F>(
+        &self,
+        source: Signal<S>,
+        mapper: F,
+    ) -> crate::engine::nodes::video::BindingNode<T, S>
     where
         F: Fn(S) -> T + Send + Sync + 'static,
     {

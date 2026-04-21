@@ -3,8 +3,7 @@ use motion_canvas_rs::prelude::*;
 fn main() {
     let mut project = Project::default()
         .with_dimensions(800, 300)
-        .with_title("Shapes")
-        .close_on_finish();
+        .with_title("Shapes");
 
     // Configuration
     let y_shapes = 150.0;
