@@ -114,9 +114,9 @@ The project includes 18 examples that can be found in the [examples directory](.
 cargo run --example advanced_flow --features=full
 ```
 
-https://github.com/user-attachments/assets/0e89eafa-7075-4381-b676-7eb25f45d127
+https://github.com/user-attachments/assets/66b01caf-103c-4ef6-bc5f-893a654ebed9
 
-<img width="800" height="600" alt="Advanced Flow" src="https://github.com/user-attachments/assets/251f877e-7993-457e-a2d0-6b9a56397a3e" />
+<img width="800" height="600" alt="Advanced Flow" src="https://github.com/user-attachments/assets/ee55d3a0-229f-42ec-b56b-d254194044bc" />
 
 </details>
 
@@ -127,6 +127,10 @@ https://github.com/user-attachments/assets/0e89eafa-7075-4381-b676-7eb25f45d127
 cargo run --example anchors
 ```
 
+https://github.com/user-attachments/assets/1ef59b41-e1d9-4c18-96ec-eb5c3bc61cfb
+
+<img width="1200" height="800" alt="Anchors" src="https://github.com/user-attachments/assets/09a1a37f-78f9-4d2c-839c-26668edf5756" />
+
 </details>
 
 <details>
@@ -136,9 +140,9 @@ cargo run --example anchors
 cargo run --example audio_demo --features audio
 ```
 
-https://github.com/user-attachments/assets/022ef076-452a-47b9-9d5e-2d2edf555397
+https://github.com/user-attachments/assets/f280e6e7-b718-44bc-bf90-f0d7acec507e
 
-<img width="800" height="450" alt="Audio Demo" src="https://github.com/user-attachments/assets/f547ba7c-ec5b-4b26-8e4e-227cf11d0328" />
+<img width="800" height="450" alt="Audio Demo" src="https://github.com/user-attachments/assets/5a91416d-753a-4ee5-9e0f-7438e9ced426" />
 
 </details>
 
@@ -149,9 +153,9 @@ https://github.com/user-attachments/assets/022ef076-452a-47b9-9d5e-2d2edf555397
 cargo run --example code_advanced --features code
 ```
 
-https://github.com/user-attachments/assets/960fbfd0-ddc9-49d9-bcdd-7b29ca4ffe93
+https://github.com/user-attachments/assets/331ce753-ced8-4a9b-aec2-c01b52f8194c
 
-<img width="800" height="600" alt="Code Advanced" src="https://github.com/user-attachments/assets/ed2bd8db-7112-4c46-b49c-ecf2971e4237" />
+<img width="800" height="600" alt="Code Advanced" src="https://github.com/user-attachments/assets/43349bbb-5a24-43da-b249-cf5046eb95c5" />
 
 </details>
 
@@ -162,9 +166,9 @@ https://github.com/user-attachments/assets/960fbfd0-ddc9-49d9-bcdd-7b29ca4ffe93
 cargo run --example code_animation --features code
 ```
 
-https://github.com/user-attachments/assets/0579e41a-9cf0-42ce-9dba-d9c087be53d9
+https://github.com/user-attachments/assets/15698738-738a-4aad-bee7-73dfcb64a88c
 
-<img width="800" height="800" alt="Code Animation" src="https://github.com/user-attachments/assets/3002c235-c4a3-486c-b47a-640f29d5dba6" />
+<img width="800" height="800" alt="Code Animation" src="https://github.com/user-attachments/assets/54f22334-c59b-4477-a12e-9b026b946fc9" />
 
 </details>
 
@@ -175,9 +179,9 @@ https://github.com/user-attachments/assets/0579e41a-9cf0-42ce-9dba-d9c087be53d9
 cargo run --example color_interpolation
 ```
 
-https://github.com/user-attachments/assets/366308f8-2903-48dc-8609-79a661bba712
+https://github.com/user-attachments/assets/a73a9995-ad63-4aca-b797-7f13f160f923
 
-<img width="400" height="400" alt="Color Interpolation" src="https://github.com/user-attachments/assets/7e8d1cd4-c0f4-44ca-849e-85c53d79be35" />
+<img width="300" height="300" alt="Color Interpolation" src="https://github.com/user-attachments/assets/2e4576fb-c612-45b9-8608-559282e080d7" />
 
 </details>
 
@@ -188,9 +192,9 @@ https://github.com/user-attachments/assets/366308f8-2903-48dc-8609-79a661bba712
 cargo run --example easing_scope
 ```
 
-https://github.com/user-attachments/assets/9b25225e-72d8-4c0e-9c62-6acd58d1e99d
+https://github.com/user-attachments/assets/0efc6e66-94b9-4392-958d-b2e077fe9ce5
 
-<img width="800" height="800" alt="Easing Scope" src="https://github.com/user-attachments/assets/817fb722-2262-4894-8b20-86315a5ff3b1" />
+<img width="800" height="800" alt="Easing Scope" src="https://github.com/user-attachments/assets/537e87f9-bdc6-42e5-a198-ae89bf08490c" />
 
 </details>
 
@@ -214,9 +218,9 @@ https://www.youtube.com/watch?v=v4W1Y_TrWew
 cargo run --example export --features export
 ```
 
-https://github.com/user-attachments/assets/002e57f7-8d62-4dec-aea6-9107030352be
+https://github.com/user-attachments/assets/9cf41b9e-f17b-407e-9817-8423e787e844
 
-<img width="800" height="600" alt="Export" src="https://github.com/user-attachments/assets/2ea09740-e70c-416d-8dc6-9e5c6d1c226a" />
+<img width="800" height="600" alt="Export" src="https://github.com/user-attachments/assets/005076d6-f616-4420-8187-2916b9634467" />
 
 </details>
 
@@ -227,9 +231,9 @@ https://github.com/user-attachments/assets/002e57f7-8d62-4dec-aea6-9107030352be
 cargo run --example getting_started
 ```
 
-https://github.com/user-attachments/assets/e36ae34c-a45c-4e99-8aec-f37a2c289639
+https://github.com/user-attachments/assets/6bfaa089-7cbe-4b5b-936b-4d8e6d537e25
 
-<img width="800" height="600" alt="Getting Started" src="https://github.com/user-attachments/assets/0d4e5a59-0b55-4a02-b73f-eea714f7e7fc" />
+<img width="800" height="600" alt="Getting Started" src="https://github.com/user-attachments/assets/7d4b1f72-28ed-4f6b-9d55-ca3d721c6f55" />
 
 </details>
 
@@ -240,9 +244,9 @@ https://github.com/user-attachments/assets/e36ae34c-a45c-4e99-8aec-f37a2c289639
 cargo run --example group_animation
 ```
 
-https://github.com/user-attachments/assets/2041e546-5af2-4ffd-9f73-2878ba87bd24
+https://github.com/user-attachments/assets/bd3e429a-9f8b-4126-adba-f65435d3944e
 
-<img width="800" height="600" alt="Group Animation" src="https://github.com/user-attachments/assets/c0866038-5232-4b56-a2bd-5c8e04e6f8f5" />
+<img width="800" height="600" alt="Group Animation" src="https://github.com/user-attachments/assets/900f761d-b78f-443f-81fb-c3a7fb9c65cf" />
 
 </details>
 
@@ -253,9 +257,9 @@ https://github.com/user-attachments/assets/2041e546-5af2-4ffd-9f73-2878ba87bd24
 cargo run --example images --features image,svg
 ```
 
-https://github.com/user-attachments/assets/467d48cf-f358-48cb-b07f-bfaaf8cd5f36
+https://github.com/user-attachments/assets/a46363a9-f681-4cc3-89c1-10506e59518d
 
-<img width="600" height="600" alt="Images" src="https://github.com/user-attachments/assets/4b5cf1d7-e106-4b93-8936-b113713c182e" />
+<img width="600" height="600" alt="Images" src="https://github.com/user-attachments/assets/0c899a89-0935-4721-8b41-41c7acadc3e3" />
 
 </details>
 
@@ -266,9 +270,9 @@ https://github.com/user-attachments/assets/467d48cf-f358-48cb-b07f-bfaaf8cd5f36
 cargo run --example math_animation --features math
 ```
 
-https://github.com/user-attachments/assets/ef4e3573-5518-42bf-8359-3aed2cbcca59
+https://github.com/user-attachments/assets/b64f00db-0950-45cf-834d-1f0e74845cab
 
-<img width="800" height="600" alt="Math Animation" src="https://github.com/user-attachments/assets/343c88dc-9889-468a-9a75-6373bb9d5615" />
+<img width="500" height="500" alt="Math Animation" src="https://github.com/user-attachments/assets/5c10b547-8487-465a-abe6-8fda5dfe64e4" />
 
 </details>
 
@@ -279,9 +283,9 @@ https://github.com/user-attachments/assets/ef4e3573-5518-42bf-8359-3aed2cbcca59
 cargo run --example math_code --features math,code
 ```
 
-https://github.com/user-attachments/assets/f51268ee-87cf-4f6d-b261-a4aa1f2d4e07
+https://github.com/user-attachments/assets/0eec990c-66a8-40f6-b816-15e2636c6fd0
 
-<img width="800" height="600" alt="Math & Code" src="https://github.com/user-attachments/assets/c0ce9ede-273d-498e-94ce-54f2d94ff25a" />
+<img width="800" height="600" alt="Math Code" src="https://github.com/user-attachments/assets/77c1b82f-b36b-4cc7-88f9-56519f996c86" />
 
 </details>
 
@@ -292,6 +296,10 @@ https://github.com/user-attachments/assets/f51268ee-87cf-4f6d-b261-a4aa1f2d4e07
 cargo run --example news_feed
 ```
 
+https://github.com/user-attachments/assets/933f4cca-f3f2-4a0e-bc2d-f39fa5b1fc46
+
+<img width="1920" height="1080" alt="News Feed" src="https://github.com/user-attachments/assets/48a6f524-31a0-45f1-a7a5-21c56faaa531" />
+
 </details>
 
 <details>
@@ -301,9 +309,9 @@ cargo run --example news_feed
 cargo run --example polygon
 ```
 
-https://github.com/user-attachments/assets/0dead3d2-60d4-41f9-86d1-b5eafcc70c4b
+https://github.com/user-attachments/assets/262fbc60-ab83-4b21-85d5-ebbfb77fe22c
 
-<img width="800" height="600" alt="Polygon" src="https://github.com/user-attachments/assets/86254bf1-25a8-47b0-8b4c-9ef68fb87c1c" />
+<img width="800" height="600" alt="Polygon" src="https://github.com/user-attachments/assets/c5d7f1d7-86e8-40df-a51e-e75f9633dc5f" />
 
 </details>
 
@@ -314,9 +322,7 @@ https://github.com/user-attachments/assets/0dead3d2-60d4-41f9-86d1-b5eafcc70c4b
 cargo run --example shapes
 ```
 
-https://github.com/user-attachments/assets/132f310e-cbbb-4a11-8525-0c87a7017fbe
-
-<img width="648" height="193" alt="Shapes" src="https://github.com/user-attachments/assets/0d828a93-b14d-4c00-ad94-28f015178cc7" />
+<img width="800" height="300" alt="Shapes" src="https://github.com/user-attachments/assets/ee548b7b-39e3-4e23-9149-e91dd670cea1" />
 
 </details>
 
@@ -327,9 +333,9 @@ https://github.com/user-attachments/assets/132f310e-cbbb-4a11-8525-0c87a7017fbe
 cargo run --example signals
 ```
 
-https://github.com/user-attachments/assets/ec9568e3-5b66-42a2-85b2-70c59176b17d
+https://github.com/user-attachments/assets/5a6fdd0f-4da2-418c-8615-b30e50e86b14
 
-<img width="800" height="600" alt="Signals" src="https://github.com/user-attachments/assets/bd788c63-50e1-4ef4-8ad1-1f8a91c707e2" />
+<img width="800" height="600" alt="Signals" src="https://github.com/user-attachments/assets/718cc644-b24a-43b3-b7a3-de04eeb292fc" />
 
 </details>
 
