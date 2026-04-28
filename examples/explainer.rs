@@ -539,7 +539,8 @@ circle.radius.to(100.0, Duration::from_secs(1));
         .with_radius(8.0)
         .with_opacity(0.0);
     let prog_fill = Rect::default()
-        .with_position(Vec2::new(895.0, 150.0))
+        .with_position(Vec2::new(695.0, 154.0))
+        .with_anchor(Vec2::new(-1.0, 0.5))
         .with_size(Vec2::new(0.0, 16.0))
         .with_fill(ACCENT)
         .with_radius(8.0)

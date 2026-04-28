@@ -150,12 +150,6 @@ impl PathNode {
         self.stroke_width = Signal::new(width);
         self
     }
-
-    #[deprecated(note = "use with_stroke instead")]
-    pub fn with_color(self, color: Color) -> Self {
-        let width = self.stroke_width.get();
-        self.with_stroke(color, width)
-    }
 }
 
 impl Node for PathNode {

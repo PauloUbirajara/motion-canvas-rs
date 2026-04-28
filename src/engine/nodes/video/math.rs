@@ -163,11 +163,6 @@ impl MathNode {
         self
     }
 
-    #[deprecated(note = "use with_fill instead")]
-    pub fn with_color(self, color: Color) -> Self {
-        self.with_fill(color)
-    }
-
     pub fn start_transition(&self, new_eq: &str) {
         let prev_eq = self.equation.get();
         if prev_eq == new_eq {

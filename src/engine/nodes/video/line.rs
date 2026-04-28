@@ -96,16 +96,6 @@ impl Line {
         self
     }
 
-    #[deprecated(note = "use with_stroke instead")]
-    pub fn with_color(self, color: Color) -> Self {
-        self.with_stroke(color, 1.0)
-    }
-
-    #[deprecated(note = "use with_stroke_width instead")]
-    pub fn with_width(self, width: f32) -> Self {
-        self.with_stroke_width(width)
-    }
-
     pub fn with_stroke_width(mut self, width: f32) -> Self {
         self.stroke_width = Signal::new(width);
         self

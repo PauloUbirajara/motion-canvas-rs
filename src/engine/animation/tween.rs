@@ -60,6 +60,23 @@ impl Tweenable for Vec<Vec2> {
     }
 }
 
+impl Tweenable for bool {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        if t >= 1.0 {
+            *b
+        } else {
+            *a
+        }
+    }
+    fn state_hash(&self) -> u64 {
+        if *self {
+            1
+        } else {
+            0
+        }
+    }
+}
+
 impl Tweenable for String {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         if t >= 1.0 {

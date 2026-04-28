@@ -91,11 +91,6 @@ impl Rect {
         self
     }
 
-    #[deprecated(note = "use with_fill instead")]
-    pub fn with_color(self, color: Color) -> Self {
-        self.with_fill(color)
-    }
-
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);
