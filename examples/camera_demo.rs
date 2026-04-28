@@ -27,6 +27,13 @@ fn main() {
         }
     }
 
+    // Create the camera and add our nodes to it
+    let camera = CameraNode::new(nodes)
+        .with_position(Vec2::new(0.0, 0.0))
+        .with_zoom(1.0);
+
+    project.scene.add(Box::new(camera.clone()));
+
     // Add HUD text (NOT in camera, so it stays fixed)
     project.scene.add(Box::new(
         TextNode::default()
@@ -36,13 +43,6 @@ fn main() {
             .with_fill(Color::WHITE)
             .with_anchor(Vec2::ZERO),
     ));
-
-    // Create the camera and add our nodes to it
-    let camera = CameraNode::new(nodes)
-        .with_position(Vec2::ZERO)
-        .with_zoom(1.0);
-
-    project.scene.add(Box::new(camera.clone()));
 
     // Animation: Pan, Zoom, and Rotate the camera
     project.scene.video_timeline.add(loop_anim!(
