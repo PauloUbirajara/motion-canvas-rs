@@ -1,4 +1,5 @@
 pub mod binding;
+pub mod camera;
 pub mod circle;
 #[cfg(feature = "code")]
 pub mod code;
@@ -14,6 +15,7 @@ pub mod rect;
 pub mod text;
 
 pub use binding::*;
+pub use camera::*;
 pub use circle::*;
 #[cfg(feature = "code")]
 pub use code::*;
