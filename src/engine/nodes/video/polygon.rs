@@ -95,11 +95,6 @@ impl Polygon {
         self
     }
 
-    #[deprecated(note = "use with_fill instead")]
-    pub fn with_color(self, color: Color) -> Self {
-        self.with_fill(color)
-    }
-
     /// Convenience method to create a regular polygon.
     pub fn regular(sides: u32, radius: f32) -> Self {
         let mut points = Vec::new();

@@ -120,11 +120,6 @@ impl TextNode {
         self.anchor = Signal::new(anchor);
         self
     }
-
-    #[deprecated(note = "use with_fill instead")]
-    pub fn with_color(self, color: Color) -> Self {
-        self.with_fill(color)
-    }
 }
 
 impl Clone for TextNode {
