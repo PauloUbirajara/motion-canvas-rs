@@ -9,7 +9,6 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 
 ## Installation
 
-
 Add the library to your `Cargo.toml`. To enable all features (math, code blocks, images, export), use the `full` flag:
 
 ```bash
@@ -106,7 +105,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 18 examples that can be found in the [examples directory](./examples).
+The project includes 20 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -166,6 +165,10 @@ https://github.com/user-attachments/assets/331ce753-ced8-4a9b-aec2-c01b52f8194c
 ```sh
 cargo run --example camera_demo
 ```
+
+https://github.com/user-attachments/assets/62b1a691-c49e-44e6-9bb0-a8f1b46bf1b5
+
+<img width="800" height="600" alt="Camera Control" src="https://github.com/user-attachments/assets/3952bd99-204f-44af-b539-74297fe9fc4e" />
 
 </details>
 
@@ -305,6 +308,10 @@ https://github.com/user-attachments/assets/0eec990c-66a8-40f6-b816-15e2636c6fd0
 ```sh
 cargo run --example nested_cameras
 ```
+
+https://github.com/user-attachments/assets/c362012f-4e56-450d-aa21-08015a955d29
+
+<img width="800" height="600" alt="Nested Cameras" src="https://github.com/user-attachments/assets/8bab09a3-c113-46bc-a058-18d2451a1b6b" />
 
 </details>
 
