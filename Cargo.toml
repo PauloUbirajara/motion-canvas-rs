@@ -57,6 +57,9 @@ name = "audio_demo"
 required-features = ["audio"]
 
 [[example]]
+name = "camera_demo"
+
+[[example]]
 name = "code_advanced"
 required-features = ["code"]
 
@@ -95,6 +98,9 @@ required-features = ["math"]
 [[example]]
 name = "math_code"
 required-features = ["math", "code"]
+
+[[example]]
+name = "nested_cameras"
 
 [[example]]
 name = "news_feed"

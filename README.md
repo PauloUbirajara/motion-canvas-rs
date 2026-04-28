@@ -45,6 +45,7 @@ cargo add motion-canvas-rs --features math,image,audio
 | Node | Description | Transform Properties |
 |:---|:---|:---|
 | `AudioNode` | Independent audio clip playback. | `volume`, `crop` |
+| `CameraNode` | Viewport transformation (pan, zoom, rotate). | `position`, `rotation`, `zoom`, `centered` |
 | `Circle` | Basic circle primitive. | `position`, `rotation`, `scale`, `radius`, `anchor` |
 | `CodeNode` | Syntax-highlighted code with transitions. | `position`, `rotation`, `scale`, `code`, `anchor` |
 | `GroupNode` | Hierarchical grouping of any nodes. | `position`, `rotation`, `scale`, `children`, `anchor` |
@@ -83,13 +84,13 @@ fn main() {
     let circle = Circle::default()
         .with_position(Vec2::new(400.0, 300.0))
         .with_radius(100.0)
-        .with_color(Color::RED);
+        .with_fill(Color::RED);
 
     let text = TextNode::default()
         .with_position(Vec2::new(400.0, 150.0))
         .with_text("Hello Motion Canvas!")
         .with_font_size(48.0)
-        .with_color(Color::WHITE);
+        .with_fill(Color::WHITE);
 
     project.scene.add(Box::new(circle.clone()));
     project.scene.add(Box::new(text.clone()));
@@ -156,6 +157,15 @@ cargo run --example code_advanced --features code
 https://github.com/user-attachments/assets/331ce753-ced8-4a9b-aec2-c01b52f8194c
 
 <img width="800" height="600" alt="Code Advanced" src="https://github.com/user-attachments/assets/43349bbb-5a24-43da-b249-cf5046eb95c5" />
+
+</details>
+
+<details>
+<summary><b>Camera Control</b> - Viewport-level panning, zooming, and rotation.</summary>
+
+```sh
+cargo run --example camera_demo
+```
 
 </details>
 
@@ -286,6 +296,15 @@ cargo run --example math_code --features math,code
 https://github.com/user-attachments/assets/0eec990c-66a8-40f6-b816-15e2636c6fd0
 
 <img width="800" height="600" alt="Math Code" src="https://github.com/user-attachments/assets/77c1b82f-b36b-4cc7-88f9-56519f996c86" />
+
+</details>
+
+<details>
+<summary><b>Nested Cameras</b> - Hierarchical viewport control and coordinate shifting.</summary>
+
+```sh
+cargo run --example nested_cameras
+```
 
 </details>
 
