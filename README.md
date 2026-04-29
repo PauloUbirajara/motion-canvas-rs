@@ -228,7 +228,7 @@ cargo run --example explainer --release --features full
 
 | Preview |
 | - |
-| ![Explainer](./assets/examples/export.png) |
+| ![Explainer](./assets/examples/explainer.png) |
 | [Explainer Video](https://www.youtube.com/watch?v=v4W1Y_TrWew) |
 
 </details>
