@@ -73,4 +73,7 @@ pub mod prelude {
     pub use vello::kurbo::{Affine, BezPath};
     pub use vello::peniko::Color;
     pub use vello::Scene;
+
+    // Utility Types
+    pub use crate::engine::util::palette::Palette;
 }
