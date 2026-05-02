@@ -1,6 +1,6 @@
 [package]
 name = "motion-canvas-rs"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 authors = ["Paulo Ubirajara"]
 description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
@@ -83,6 +83,9 @@ required-features = ["export"]
 
 [[example]]
 name = "getting_started"
+
+[[example]]
+name = "grid"
 
 [[example]]
 name = "group_animation"
