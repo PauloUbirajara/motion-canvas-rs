@@ -7,6 +7,11 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 > [!IMPORTANT]
 > **Prototype Status**: This project is a functional prototype and proof-of-concept. It is **not** a 1:1 implementation of the original Motion Canvas API or features.
 
+## Links
+
+- [https://docs.rs/motion-canvas-rs](https://docs.rs/motion-canvas-rs)
+- [https://crates.io/crates/motion-canvas-rs](https://crates.io/crates/motion-canvas-rs)
+
 ## Installation
 
 Add the library to your `Cargo.toml`. To enable all features (math, code blocks, images, export), use the `full` flag:
@@ -105,7 +110,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 20 examples that can be found in the [examples directory](./examples).
+The project includes 21 examples that can be found in the [examples directory](./examples).
 
 <details>
 <summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -258,6 +263,20 @@ cargo run --example getting_started
 | - |
 | ![Getting Started](./assets/examples/getting_started.png) |
 | [Getting Started Video](./assets/examples/getting_started.mp4) |
+
+</details>
+
+<details>
+<summary><b>Grid</b> - Procedural grid</summary>
+
+```sh
+cargo run --example grid
+```
+
+| Preview |
+| - |
+| ![Grid](./assets/examples/grid.png) |
+| [Grid Video](./assets/examples/grid.mp4) |
 
 </details>
 

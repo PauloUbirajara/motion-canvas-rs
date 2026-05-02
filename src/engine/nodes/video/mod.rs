@@ -3,6 +3,7 @@ pub mod camera;
 pub mod circle;
 #[cfg(feature = "code")]
 pub mod code;
+pub mod grid;
 pub mod group;
 #[cfg(feature = "image")]
 pub mod image;
@@ -19,6 +20,7 @@ pub use camera::*;
 pub use circle::*;
 #[cfg(feature = "code")]
 pub use code::*;
+pub use grid::*;
 pub use group::*;
 #[cfg(feature = "image")]
 pub use image::*;

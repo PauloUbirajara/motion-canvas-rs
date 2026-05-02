@@ -23,11 +23,38 @@ const DEFAULT_FONT_FAMILY: &str = "JetBrains Mono";
 const FONT_FALLBACKS: &[&str] = &["Inter", "Arial", "sans-serif"];
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum TextAlign {
+    Left,
+    Center,
+    Right,
+}
+
+impl crate::engine::animation::tween::Tweenable for TextAlign {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        if t >= 1.0 {
+            return *b;
+        }
+        *a
+    }
+
+    fn state_hash(&self) -> u64 {
+        *self as u64
+    }
+}
+
+impl Default for TextAlign {
+    fn default() -> Self {
+        Self::Center
+    }
+}
+
 #[derive(Hash, Eq, PartialEq)]
 struct TextCacheKey {
     text: String,
     font_size_bits: u32,
     font_family: String,
+    text_align: TextAlign,
 }
 
 pub struct TextNode {
@@ -39,6 +66,7 @@ pub struct TextNode {
     pub fill_color: Signal<Color>,
     pub opacity: Signal<f32>,
     pub anchor: Signal<Vec2>,
+    pub text_align: Signal<TextAlign>,
     pub font_family: String,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
@@ -54,6 +82,7 @@ impl Default for TextNode {
             fill_color: Signal::new(DEFAULT_COLOR),
             opacity: Signal::new(DEFAULT_OPACITY),
             anchor: Signal::new(Vec2::ZERO),
+            text_align: Signal::new(TextAlign::Center),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
             cache: Arc::new(Mutex::new(None)),
         }
@@ -114,6 +143,11 @@ impl TextNode {
         self
     }
 
+    pub fn with_text_align(mut self, align: TextAlign) -> Self {
+        self.text_align = Signal::new(align);
+        self
+    }
+
     /// Sets the relative transformation origin (anchor).
     /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
     pub fn with_anchor(mut self, anchor: Vec2) -> Self {
@@ -133,6 +167,7 @@ impl Clone for TextNode {
             fill_color: self.fill_color.clone(),
             opacity: self.opacity.clone(),
             anchor: self.anchor.clone(),
+            text_align: self.text_align.clone(),
             font_family: self.font_family.clone(),
             cache: self.cache.clone(),
         }
@@ -175,11 +210,13 @@ impl Node for TextNode {
         let rot = self.rotation.get();
         let sc = self.scale.get();
         let anchor = self.anchor.get();
+        let text_align = self.text_align.get();
 
         let key = TextCacheKey {
             text: text.clone(),
             font_size_bits: size.to_bits(),
             font_family: self.font_family.clone(),
+            text_align,
         };
 
         // 1. Check global cache
@@ -197,30 +234,64 @@ impl Node for TextNode {
                 let font_ref = FontManager::get_font_ref(&font_data);
                 let charmap = font_ref.charmap();
                 let outlines = font_ref.outline_glyphs();
-                let mut x_offset = 0.0;
 
-                for c in text.chars() {
-                    let glyph_id = charmap.map(c).unwrap_or_default();
-                    let mut pb = BezPath::new();
-                    let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
+                let lines: Vec<&str> = text.split('\n').collect();
+                let line_height = size * 1.2;
 
-                    if let Some(glyph) = outlines.get(glyph_id) {
-                        let mut sink = PathSink(&mut pb);
-                        let font_size = Size::new(size);
-                        let _ = glyph.draw(font_size, &mut sink);
-
+                // Measure line widths
+                let mut line_widths = Vec::with_capacity(lines.len());
+                for line in &lines {
+                    let mut width = 0.0;
+                    for c in line.chars() {
+                        let glyph_id = charmap.map(c).unwrap_or_default();
+                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
                         if let Some(metrics) = font_ref
-                            .glyph_metrics(font_size, LocationRef::default())
+                            .glyph_metrics(Size::new(size), LocationRef::default())
                             .advance_width(glyph_id)
                         {
                             advance = metrics as f64;
                         }
+                        width += advance;
                     }
+                    line_widths.push(width);
+                }
 
-                    let base_transform = Affine::translate((x_offset, size as f64))
-                        * Affine::scale_non_uniform(1.0, -1.0);
-                    paths.push((base_transform, pb));
-                    x_offset += advance;
+                let max_width = line_widths.iter().copied().fold(0.0f64, f64::max);
+                let mut y_offset = 0.0;
+
+                for (i, line) in lines.iter().enumerate() {
+                    let line_width = line_widths[i];
+                    let mut x_offset = match text_align {
+                        TextAlign::Left => 0.0,
+                        TextAlign::Center => (max_width - line_width) / 2.0,
+                        TextAlign::Right => max_width - line_width,
+                    };
+
+                    for c in line.chars() {
+                        let glyph_id = charmap.map(c).unwrap_or_default();
+                        let mut pb = BezPath::new();
+                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
+
+                        if let Some(glyph) = outlines.get(glyph_id) {
+                            let mut sink = PathSink(&mut pb);
+                            let font_size = Size::new(size);
+                            let _ = glyph.draw(font_size, &mut sink);
+
+                            if let Some(metrics) = font_ref
+                                .glyph_metrics(font_size, LocationRef::default())
+                                .advance_width(glyph_id)
+                            {
+                                advance = metrics as f64;
+                            }
+                        }
+
+                        let base_transform =
+                            Affine::translate((x_offset, size as f64 + y_offset as f64))
+                                * Affine::scale_non_uniform(1.0, -1.0);
+                        paths.push((base_transform, pb));
+                        x_offset += advance;
+                    }
+                    y_offset += line_height;
                 }
             }
             let arc_paths = Arc::new(paths);
@@ -296,6 +367,7 @@ impl Node for TextNode {
         h.update_u64(self.fill_color.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.anchor.state_hash());
+        h.update_u64(self.text_align.state_hash());
         h.update_bytes(self.font_family.as_bytes());
         h.finish()
     }
@@ -313,5 +385,6 @@ impl Node for TextNode {
         self.fill_color.reset();
         self.opacity.reset();
         self.anchor.reset();
+        self.text_align.reset();
     }
 }
