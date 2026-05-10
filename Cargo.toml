@@ -116,3 +116,7 @@ name = "shapes"
 
 [[example]]
 name = "signals"
+
+[[example]]
+name = "world_map"
+required-features = ["image", "svg"]

@@ -23,11 +23,14 @@ impl ImageManager {
             let tree = usvg::Tree::from_data(&svg_data, &opt).ok()?;
 
             let size = tree.size();
-            let mut pixmap =
-                resvg::tiny_skia::Pixmap::new(size.width() as u32, size.height() as u32)?;
+            // Rasterize at 4x native resolution for crispness when zoomed
+            let scale = 4u32;
+            let raster_w = (size.width() as u32) * scale;
+            let raster_h = (size.height() as u32) * scale;
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(raster_w, raster_h)?;
             resvg::render(
                 &tree,
-                resvg::tiny_skia::Transform::default(),
+                resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
                 &mut pixmap.as_mut(),
             );
 
@@ -35,8 +38,8 @@ impl ImageManager {
             let peniko_img = Arc::new(PenikoImage {
                 data: Blob::new(data),
                 format: vello::peniko::Format::Rgba8,
-                width: size.width() as u32,
-                height: size.height() as u32,
+                width: raster_w,
+                height: raster_h,
                 extend: vello::peniko::Extend::Pad,
             });
             cache.insert(path.to_string(), peniko_img.clone());
