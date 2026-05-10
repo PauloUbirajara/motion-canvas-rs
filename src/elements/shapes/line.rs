@@ -11,16 +11,38 @@ const DEFAULT_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
+/// A straight line between two points.
+///
+/// `Line` is used to draw paths, connections, or as a simple linear highlight.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let line = Line::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_start(Vec2::ZERO)
+///     .with_end(Vec2::new(100.0, 100.0))
+///     .with_stroke(Color::WHITE, 2.0);
+/// ```
 #[derive(Clone)]
 pub struct Line {
+    /// The absolute position of the line (before anchor adjustment).
     pub position: Signal<Vec2>,
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
+    /// Scaling factor for the line.
     pub scale: Signal<Vec2>,
+    /// The starting point of the line relative to its position.
     pub start: Signal<Vec2>,
+    /// The ending point of the line relative to its position.
     pub end: Signal<Vec2>,
+    /// The color of the line stroke.
     pub stroke_color: Signal<Color>,
+    /// The width of the line stroke.
     pub stroke_width: Signal<f32>,
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
 }
 
@@ -41,6 +63,7 @@ impl Default for Line {
 }
 
 impl Line {
+    /// Creates a new line with given start/end points, color, and width.
     pub fn new(start: Vec2, end: Vec2, color: Color, width: f32) -> Self {
         Self::default()
             .with_start(start)
@@ -48,41 +71,49 @@ impl Line {
             .with_stroke(color, width)
     }
 
+    /// Sets the absolute position of the line.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation of the line in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor for both axes.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling factors for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the opacity of the line (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Sets the relative starting point of the line.
     pub fn with_start(mut self, start: Vec2) -> Self {
         self.start = Signal::new(start);
         self
     }
 
+    /// Sets the relative ending point of the line.
     pub fn with_end(mut self, end: Vec2) -> Self {
         self.end = Signal::new(end);
         self
     }
 
+    /// Sets the stroke color and width for the line.
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);
@@ -96,6 +127,7 @@ impl Line {
         self
     }
 
+    /// Sets the width of the line stroke.
     pub fn with_stroke_width(mut self, width: f32) -> Self {
         self.stroke_width = Signal::new(width);
         self

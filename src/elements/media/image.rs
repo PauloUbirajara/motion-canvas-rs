@@ -8,15 +8,36 @@ use vello::Scene;
 
 use crate::assets::image_manager::ImageManager;
 
+/// A visual node that renders a bitmap image from a file path.
+///
+/// `ImageNode` automatically loads and caches images using the global `ImageManager`.
+/// It supports standard transformations like position, scale, and rotation.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let logo = ImageNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_path("assets/logo.png")
+///     .with_scale(0.5);
+/// ```
 #[derive(Clone)]
 pub struct ImageNode {
+    /// The absolute position of the image's center (before anchor adjustment).
     pub position: Signal<Vec2>,
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
+    /// Scaling factor for the image.
     pub scale: Signal<Vec2>,
+    /// The target display size of the image.
     pub size: Signal<Vec2>,
+    /// The cached raw image data from Vello/Peniko.
     pub image: Option<Arc<PenikoImage>>,
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
+    /// The source filesystem path for the image.
     pub path: String,
 }
 
@@ -36,40 +57,48 @@ impl Default for ImageNode {
 }
 
 impl ImageNode {
+    /// Creates a new image node at the given position from a file path.
     pub fn new(pos: Vec2, path: &str) -> Self {
         Self::default().with_position(pos).with_path(path)
     }
 
+    /// Sets the absolute position of the image.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation of the image in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor for both axes.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling factors for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the opacity of the image (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Manually overrides the display size of the image.
     pub fn with_size(mut self, size: Vec2) -> Self {
         self.size = Signal::new(size);
         self
     }
 
+    /// Sets the source path and triggers image loading.
     pub fn with_path(mut self, path: &str) -> Self {
         self.path = path.to_string();
         self.image = ImageManager::get_image(path);

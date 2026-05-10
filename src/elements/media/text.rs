@@ -1,5 +1,5 @@
-use crate::core::animation::{Node, Signal};
 use crate::assets::font_manager::FontManager;
+use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use lazy_static::lazy_static;
 use skrifa::instance::{LocationRef, Size};
@@ -23,10 +23,14 @@ const DEFAULT_FONT_FAMILY: &str = "JetBrains Mono";
 const FONT_FALLBACKS: &[&str] = &["Inter", "Arial", "sans-serif"];
 const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 
+/// Horizontal alignment options for text within a `TextNode`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TextAlign {
+    /// Align text to the left edge.
     Left,
+    /// Align text to the center.
     Center,
+    /// Align text to the right edge.
     Right,
 }
 
@@ -57,16 +61,42 @@ struct TextCacheKey {
     text_align: TextAlign,
 }
 
+/// A visual node that renders vectorized text using system or embedded fonts.
+///
+/// `TextNode` supports multi-line text, custom font sizes, colors, and alignments.
+/// It uses a global cache to optimize the rendering of frequently used text strings.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let text = TextNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_text("Hello World")
+///     .with_font_size(48.0)
+///     .with_fill(Color::WHITE)
+///     .with_font("Inter")
+///     .with_text_align(TextAlign::Center);
+/// ```
 pub struct TextNode {
+    /// The absolute position of the text's center (before anchor adjustment).
     pub position: Signal<Vec2>,
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
+    /// Scaling factor for the text.
     pub scale: Signal<Vec2>,
+    /// The string content to display.
     pub text: Signal<String>,
+    /// The font size in pixels.
     pub font_size: Signal<f32>,
+    /// The solid color used to fill the text.
     pub fill_color: Signal<Color>,
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
+    /// The horizontal alignment of the text lines.
     pub text_align: Signal<TextAlign>,
+    /// The preferred font family name.
     pub font_family: String,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
@@ -90,6 +120,7 @@ impl Default for TextNode {
 }
 
 impl TextNode {
+    /// Creates a new text node with given position, content, size, and color.
     pub fn new(position: Vec2, text: &str, size: f32, color: Color) -> Self {
         Self::default()
             .with_position(position)
@@ -98,51 +129,61 @@ impl TextNode {
             .with_fill(color)
     }
 
+    /// Sets the absolute position of the text.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation of the text in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor for both axes.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling factors for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the opacity of the text (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Sets the font family to be used for rendering.
     pub fn with_font(mut self, family: &str) -> Self {
         self.font_family = family.to_string();
         self
     }
 
+    /// Sets the string content.
     pub fn with_text(mut self, text: &str) -> Self {
         self.text = Signal::new(text.to_string());
         self
     }
 
+    /// Sets the font size in pixels.
     pub fn with_font_size(mut self, size: f32) -> Self {
         self.font_size = Signal::new(size);
         self
     }
 
+    /// Sets the solid fill color.
     pub fn with_fill(mut self, color: Color) -> Self {
         self.fill_color = Signal::new(color);
         self
     }
 
+    /// Sets the horizontal alignment.
     pub fn with_text_align(mut self, align: TextAlign) -> Self {
         self.text_align = Signal::new(align);
         self

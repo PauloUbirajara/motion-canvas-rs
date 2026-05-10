@@ -8,9 +8,16 @@ use vello::Scene;
 
 const FLATTEN_TOLERANCE: f64 = 0.1;
 
+/// Pre-processed path data for efficient rendering and sampling.
+///
+/// `PathData` flattens a `BezPath` into linear segments to calculate its total length
+/// and support sampling points along the path for animations (e.g., following a path).
 pub struct PathData {
+    /// The original Vello bezier path.
     pub path: BezPath,
+    /// Flattened segments as (position, distance_from_start).
     pub segments: Vec<(Vec2, f32)>,
+    /// The total arc length of the flattened path.
     pub total_length: f32,
 }
 
@@ -21,6 +28,7 @@ impl Default for PathData {
 }
 
 impl PathData {
+    /// Creates a new `PathData` by flattening the provided `BezPath`.
     pub fn new(path: BezPath) -> Self {
         let mut segments = Vec::new();
         let mut total_length = 0.0;
@@ -48,6 +56,7 @@ impl PathData {
         }
     }
 
+    /// Samples a point along the path at a given normalized time `t` (0.0 to 1.0).
     pub fn sample(&self, t: f32) -> Vec2 {
         if self.segments.is_empty() {
             return Vec2::ZERO;
@@ -91,18 +100,43 @@ impl Default for PathNode {
     }
 }
 
+/// A node that renders a complex vector path.
+///
+/// `PathNode` uses Vello's `BezPath` to represent arbitrary shapes or lines.
+/// It is ideal for SVG-like paths or hand-drawn trajectories.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let mut bez = BezPath::new();
+/// bez.move_to((0.0, 0.0));
+/// bez.quad_to((50.0, -100.0), (100.0, 0.0));
+///
+/// let path_node = PathNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_path(bez)
+///     .with_stroke(Color::YELLOW, 2.0);
+/// ```
 #[derive(Clone)]
 pub struct PathNode {
+    /// The absolute position of the path's origin.
     pub position: Signal<Vec2>,
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
+    /// Scaling factor for the path.
     pub scale: Signal<Vec2>,
+    /// The processed path data.
     pub data: Arc<PathData>,
+    /// The color of the path's stroke.
     pub stroke_color: Signal<Color>,
+    /// The width of the path's stroke.
     pub stroke_width: Signal<f32>,
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
 }
 
 impl PathNode {
+    /// Creates a new path node at the given position with the specified path, color, and width.
     pub fn new(position: Vec2, path: BezPath, color: Color, width: f32) -> Self {
         Self {
             position: Signal::new(position),
@@ -115,36 +149,43 @@ impl PathNode {
         }
     }
 
+    /// Sets the absolute position of the path.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation of the path in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor for both axes.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling factors for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the opacity of the path (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Updates the path geometry.
     pub fn with_path(mut self, path: BezPath) -> Self {
         self.data = Arc::new(PathData::new(path));
         self
     }
 
+    /// Sets the stroke color and width.
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);
@@ -191,8 +232,6 @@ impl Node for PathNode {
         h.update_u64(self.stroke_color.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
-        // For PathData, we could hash segments, but currently it's static Arc.
-        // If data changes, we should include it.
         h.finish()
     }
 

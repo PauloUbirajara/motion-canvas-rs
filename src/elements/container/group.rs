@@ -4,13 +4,32 @@ use std::time::Duration;
 use vello::kurbo::Affine;
 use vello::Scene;
 
+/// A container that groups multiple nodes together and applies a shared transformation.
+///
+/// `GroupNode` allows you to move, rotate, scale, or fade a set of child nodes as a single unit.
+/// It acts like a layer or a folder in traditional graphics software.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let group = GroupNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_rotation(0.5);
+/// ```
 pub struct GroupNode {
+    /// The list of child nodes contained within this group.
     pub nodes: Vec<Box<dyn Node>>,
+    /// The absolute position of the group's center (before anchor adjustment).
     pub position: Signal<Vec2>,
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
+    /// Scaling factor for the group and all its children.
     pub scale: Signal<Vec2>,
+    /// Opacity factor applied to the entire group (0.0 to 1.0).
     pub opacity: Signal<f32>,
+    /// The nominal size of the group, used for anchor calculations.
     pub size: Signal<Vec2>,
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
 }
 
@@ -29,35 +48,42 @@ impl Default for GroupNode {
 }
 
 impl GroupNode {
+    /// Creates a new group containing the specified list of nodes.
     pub fn new(nodes: Vec<Box<dyn Node>>) -> Self {
         Self::default().with_nodes(nodes)
     }
 
+    /// Sets the absolute position of the group.
     pub fn with_position(mut self, pos: Vec2) -> Self {
         self.position = Signal::new(pos);
         self
     }
 
+    /// Sets the opacity of the group (0.0 to 1.0).
     pub fn with_opacity(mut self, a: f32) -> Self {
         self.opacity = Signal::new(a);
         self
     }
 
+    /// Sets the rotation of the group in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor for both axes.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling factors for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the dimensions (width, height) used for anchor calculations.
     pub fn with_size(mut self, size: Vec2) -> Self {
         self.size = Signal::new(size);
         self
@@ -70,6 +96,7 @@ impl GroupNode {
         self
     }
 
+    /// Sets the child nodes of the group.
     pub fn with_nodes(mut self, nodes: Vec<Box<dyn Node>>) -> Self {
         self.nodes = nodes;
         self

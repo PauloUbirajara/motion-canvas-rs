@@ -10,16 +10,41 @@ const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_STROKE_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
+/// A shape defined by a sequence of points that form a closed loop.
+///
+/// `Polygon` can be used for custom shapes, stars, or regular polygons (via the `regular` constructor).
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let triangle = Polygon::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_points(vec![
+///         Vec2::new(0.0, -50.0),
+///         Vec2::new(50.0, 50.0),
+///         Vec2::new(-50.0, 50.0),
+///     ])
+///     .with_fill(Color::RED);
+/// ```
 #[derive(Clone)]
 pub struct Polygon {
+    /// The absolute position of the polygon's center (before anchor adjustment).
     pub position: Signal<Vec2>,
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
+    /// Scaling factor for the polygon.
     pub scale: Signal<Vec2>,
+    /// The list of vertices that define the polygon.
     pub points: Signal<Vec<Vec2>>,
+    /// The solid color used to fill the polygon.
     pub fill_color: Signal<Color>,
+    /// The color of the border stroke.
     pub stroke_color: Signal<Color>,
+    /// The width of the border stroke.
     pub stroke_width: Signal<f32>,
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
 }
 
@@ -40,6 +65,7 @@ impl Default for Polygon {
 }
 
 impl Polygon {
+    /// Creates a new polygon at the given position with the specified vertices and fill color.
     pub fn new(position: Vec2, points: Vec<Vec2>, fill_color: Color) -> Self {
         Self::default()
             .with_position(position)
@@ -47,31 +73,37 @@ impl Polygon {
             .with_fill(fill_color)
     }
 
+    /// Sets the absolute position of the polygon.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation of the polygon in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor for both axes.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling factors for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the opacity of the polygon (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Sets the stroke color and width for the border.
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);
@@ -85,17 +117,19 @@ impl Polygon {
         self
     }
 
+    /// Sets the list of vertices.
     pub fn with_points(mut self, points: Vec<Vec2>) -> Self {
         self.points = Signal::new(points);
         self
     }
 
+    /// Sets the solid fill color.
     pub fn with_fill(mut self, color: Color) -> Self {
         self.fill_color = Signal::new(color);
         self
     }
 
-    /// Convenience method to create a regular polygon.
+    /// Creates a regular polygon with a given number of sides and radius.
     pub fn regular(sides: u32, radius: f32) -> Self {
         let mut points = Vec::new();
         for i in 0..sides {

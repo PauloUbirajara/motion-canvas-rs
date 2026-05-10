@@ -2,15 +2,34 @@
 use crate::core::animation::Animation;
 use std::time::Duration;
 
+/// Configuration for an audio asset.
+///
+/// `AudioNode` defines the parameters for playing an audio file, such as its
+/// volume and cropping. It is used to create `AudioAnimation` instances.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// # use std::time::Duration;
+/// let music = AudioNode::default()
+///     .with_path("assets/bgm.mp3")
+///     .with_volume(0.5)
+///     .with_start(Duration::from_secs(10));
+/// ```
 #[derive(Clone, Debug)]
 pub struct AudioNode {
+    /// The filesystem path to the audio file.
     pub path: String,
+    /// The volume multiplier (1.0 is original).
     pub volume: f32,
+    /// The amount of audio to skip from the beginning.
     pub start_crop: Duration,
+    /// The amount of audio to ignore at the end.
     pub end_crop: Duration,
 }
 
 impl AudioNode {
+    /// Creates a new audio configuration for the given file path.
     pub fn new(path: &str) -> Self {
         Self {
             path: path.to_string(),
@@ -20,25 +39,30 @@ impl AudioNode {
         }
     }
 
+    /// Sets the volume multiplier.
     pub fn with_volume(mut self, volume: f32) -> Self {
         self.volume = volume;
         self
     }
 
+    /// Sets the start crop (skip duration).
     pub fn with_start(mut self, offset: Duration) -> Self {
         self.start_crop = offset;
         self
     }
 
+    /// Sets the end crop (cutoff from end).
     pub fn with_end(mut self, offset: Duration) -> Self {
         self.end_crop = offset;
         self
     }
 }
 
+/// A utility for managing audio assets and durations.
 pub struct AudioManager;
 
 impl AudioManager {
+    /// Attempts to retrieve the total duration of an audio file.
     pub fn get_duration(path: &str) -> Option<Duration> {
         let file = File::open(path).ok()?;
         let decoder = Decoder::new(BufReader::new(file)).ok()?;
@@ -61,22 +85,35 @@ lazy_static! {
     static ref AUDIO_PLAYBACK_ENABLED: AtomicBool = AtomicBool::new(true);
 }
 
+/// Enables or disables real-time audio playback during preview.
 pub fn set_audio_playback(enabled: bool) {
     AUDIO_PLAYBACK_ENABLED.store(enabled, Ordering::SeqCst);
 }
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-/// A wrapper for AudioNode that implements Animation for the audio timeline.
+/// An animation that triggers audio playback on the timeline.
+///
+/// `AudioAnimation` wraps an `AudioNode` and manages its lifecycle during
+/// project playback. It handles both real-time preview (via `rodio`) and
+/// event collection for exporting.
+///
+/// Generally created via the `play!` macro.
 pub struct AudioAnimation {
+    /// The underlying audio configuration.
     pub node: AudioNode,
+    /// The time elapsed since this animation started.
     pub elapsed: Duration,
+    /// Internal flag to track if playback has started.
     pub started: AtomicBool,
+    /// Total duration of the audio file (cached).
     pub total_duration: Duration,
+    /// Internal flag to track if the event has been recorded for exporting.
     pub recorded: bool,
 }
 
 impl AudioAnimation {
+    /// Creates a new audio animation from a node configuration.
     pub fn new(node: AudioNode) -> Self {
         let total_duration =
             AudioManager::get_duration(&node.path).unwrap_or(Duration::from_secs(1)); // Fallback if duration is unknown

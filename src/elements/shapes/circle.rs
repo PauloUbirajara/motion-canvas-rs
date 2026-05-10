@@ -11,27 +11,39 @@ const DEFAULT_STROKE_COLOR: Color = Color::rgba8(250, 250, 250, 25);
 const DEFAULT_STROKE_WIDTH: f32 = 1.0;
 const DEFAULT_OPACITY: f32 = 1.0;
 
-/// A circular visual node.
+/// A circular shape with support for strokes and fills.
+///
+/// `Circle` is a basic geometric primitive. By default, its transformation origin
+/// is at its center.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let circle = Circle::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_radius(50.0)
+///     .with_fill(Color::BLUE)
+///     .with_stroke(Color::WHITE, 3.0);
+/// ```
 #[derive(Clone)]
 pub struct Circle {
-    /// The absolute position of the circle's transformation origin.
+    /// The absolute position of the circle's center (before anchor adjustment).
     pub position: Signal<Vec2>,
-    /// The rotation in radians.
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
-    /// The scale factor.
+    /// Scaling factor for the circle.
     pub scale: Signal<Vec2>,
     /// The radius of the circle.
     pub radius: Signal<f32>,
-    /// The background fill color.
+    /// The solid color used to fill the circle.
     pub fill_color: Signal<Color>,
-    /// The border stroke color.
+    /// The color of the border stroke.
     pub stroke_color: Signal<Color>,
     /// The width of the border stroke.
     pub stroke_width: Signal<f32>,
-    /// The opacity of the node (0.0 to 1.0).
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
-    /// The relative transformation origin (anchor).
-    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
 }
 
@@ -52,6 +64,7 @@ impl Default for Circle {
 }
 
 impl Circle {
+    /// Creates a new circle with the given position, radius, and fill color.
     pub fn new(position: Vec2, radius: f32, color: Color) -> Self {
         Self::default()
             .with_position(position)
@@ -59,41 +72,49 @@ impl Circle {
             .with_fill(color)
     }
 
+    /// Sets the absolute position of the circle.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation of the circle in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor for both axes.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling factors for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the opacity of the circle (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Sets the radius of the circle.
     pub fn with_radius(mut self, radius: f32) -> Self {
         self.radius = Signal::new(radius);
         self
     }
 
+    /// Sets the solid fill color.
     pub fn with_fill(mut self, color: Color) -> Self {
         self.fill_color = Signal::new(color);
         self
     }
 
+    /// Sets the stroke color and width for the border.
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);

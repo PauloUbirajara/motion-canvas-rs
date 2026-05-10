@@ -4,25 +4,51 @@
 //! Credits: The token-based animation logic and diffing approach is inspired by
 //! [shiki-magic-move](https://github.com/shikijs/shiki-magic-move).
 
-use crate::core::animation::{Node, Signal, Tweenable};
 use crate::assets::code_tokenizer::{draw_token, parse_selection, CodeValue};
+use crate::core::animation::{Node, Signal, Tweenable};
 use glam::Vec2;
 use std::time::Duration;
 use vello::kurbo::Affine;
 use vello::peniko::Color;
 use vello::Scene;
 
+/// A node that renders syntax-highlighted code with support for "magic move" transitions.
+///
+/// `CodeNode` uses `syntect` for syntax highlighting and implements a diffing algorithm
+/// that allows code tokens to smoothly animate between different states (edits, line selections).
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let code = CodeNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_language("rs")
+///     .with_code("fn main() {\n  println!(\"Hello\");\n}")
+///     .with_theme("base16-ocean.dark")
+///     .with_font_size(24.0);
+/// ```
 pub struct CodeNode {
+    /// The absolute position of the code block.
     pub position: Signal<Vec2>,
+    /// Rotation in radians.
     pub rotation: Signal<f32>,
+    /// Scaling factor for the block.
     pub scale: Signal<Vec2>,
+    /// The current state of the code (text, tokens, and transition progress).
     pub code: Signal<CodeValue>,
+    /// Base font size in pixels.
     pub font_size: Signal<f32>,
+    /// Overall opacity (0.0 to 1.0).
     pub opacity: Signal<f32>,
+    /// Opacity factor for non-selected lines (0.0 to 1.0).
     pub dim_opacity: Signal<f32>,
+    /// The syntax highlighting language (e.g., "rs", "js", "rust").
     pub language: String,
+    /// The name of the highlighting theme.
     pub theme: String,
+    /// The font family name for rendering.
     pub font_family: String,
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
 }
 
@@ -70,6 +96,7 @@ impl Clone for CodeNode {
 }
 
 impl CodeNode {
+    /// Creates a new code node at the given position with content and language.
     pub fn new(pos: Vec2, code: &str, lang: &str) -> Self {
         Self::default()
             .with_position(pos)
@@ -77,31 +104,37 @@ impl CodeNode {
             .with_code(code)
     }
 
+    /// Sets the absolute position of the code block.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets uniform scaling.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets overall opacity.
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Sets the code content and triggers re-tokenization.
     pub fn with_code(mut self, code: &str) -> Self {
         let val = CodeValue::new(
             code.to_string(),
@@ -114,6 +147,7 @@ impl CodeNode {
         self
     }
 
+    /// Sets the highlighting language.
     pub fn with_language(mut self, lang: &str) -> Self {
         self.language = lang.to_string();
         // Re-tokenize if code exists
@@ -129,6 +163,7 @@ impl CodeNode {
         self
     }
 
+    /// Sets the highlighting theme.
     pub fn with_theme(mut self, theme: &str) -> Self {
         self.theme = theme.to_string();
         let current_text = self.code.get().text;
@@ -143,6 +178,7 @@ impl CodeNode {
         self
     }
 
+    /// Sets the font family.
     pub fn with_font(mut self, font: &str) -> Self {
         self.font_family = font.to_string();
         let current_text = self.code.get().text;
@@ -157,6 +193,7 @@ impl CodeNode {
         self
     }
 
+    /// Sets the base font size.
     pub fn with_font_size(mut self, size: f32) -> Self {
         self.font_size = Signal::new(size);
         // Re-tokenize current code with new size to avoid "spazzing"
@@ -173,6 +210,7 @@ impl CodeNode {
         self
     }
 
+    /// Sets the opacity for dimmed (non-selected) lines.
     pub fn with_dim_opacity(mut self, dim: f32) -> Self {
         self.dim_opacity = Signal::new(dim);
         self
@@ -185,6 +223,7 @@ impl CodeNode {
         self
     }
 
+    /// Returns a tween that transition the current code to a new string.
     pub fn edit(
         &self,
         code: &str,
@@ -205,6 +244,7 @@ impl CodeNode {
         )
     }
 
+    /// Returns a tween that appends text to the current code.
     pub fn append(
         &self,
         text: &str,
@@ -226,6 +266,7 @@ impl CodeNode {
         )
     }
 
+    /// Returns a tween that prepends text to the current code.
     pub fn prepend(
         &self,
         text: &str,
@@ -247,6 +288,7 @@ impl CodeNode {
         )
     }
 
+    /// Returns a tween that changes the selected lines (dimming others).
     pub fn select_lines(
         &self,
         lines: Vec<usize>,

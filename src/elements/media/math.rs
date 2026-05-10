@@ -29,6 +29,20 @@ struct MathCacheKey {
 }
 
 /// A mathematical formula node powered by Typst.
+///
+/// `MathNode` allows you to render complex mathematical equations using Typst's
+/// math syntax. It supports "magic move" style transitions between equations
+/// via the `tex` animation.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let math = MathNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_equation("E = m c^2")
+///     .with_font_size(48.0)
+///     .with_fill(Color::WHITE);
+/// ```
 pub struct MathNode {
     /// The absolute position of the formula's transformation origin.
     pub position: Signal<Vec2>,
@@ -36,13 +50,13 @@ pub struct MathNode {
     pub rotation: Signal<f32>,
     /// The scale factor.
     pub scale: Signal<Vec2>,
-    /// The Typst-syntax mathematical equation.
+    /// The Typst-syntax mathematical equation string.
     pub equation: Signal<String>,
     /// The font size in points.
     pub font_size: Signal<f32>,
-    /// The fill color of the glyphs.
+    /// The solid color used to fill the glyphs.
     pub fill_color: Signal<Color>,
-    /// The opacity of the node (0.0 to 1.0).
+    /// The overall opacity (0.0 to 1.0).
     pub opacity: Signal<f32>,
     /// Internal transition progress signal (0.0 to 1.0).
     pub transition_progress: Signal<f32>,
@@ -93,6 +107,7 @@ impl Clone for MathNode {
 }
 
 impl MathNode {
+    /// Creates a new math node at the given position with an initial equation, size, and color.
     pub fn new(pos: Vec2, equation: &str, size: f32, color: Color) -> Self {
         Self::default()
             .with_position(pos)
@@ -101,31 +116,37 @@ impl MathNode {
             .with_fill(color)
     }
 
+    /// Sets the absolute position of the math node.
     pub fn with_position(mut self, position: Vec2) -> Self {
         self.position = Signal::new(position);
         self
     }
 
+    /// Sets the rotation in radians.
     pub fn with_rotation(mut self, angle: f32) -> Self {
         self.rotation = Signal::new(angle);
         self
     }
 
+    /// Sets a uniform scale factor.
     pub fn with_scale(mut self, scale: f32) -> Self {
         self.scale = Signal::new(Vec2::splat(scale));
         self
     }
 
+    /// Sets non-uniform scaling for X and Y axes.
     pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
         self.scale = Signal::new(scale);
         self
     }
 
+    /// Sets the overall opacity (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Returns an animation that transitions the current equation to a new one.
     pub fn tex(
         &self,
         equation: &str,
@@ -139,16 +160,19 @@ impl MathNode {
         })
     }
 
+    /// Sets the Typst mathematical equation string.
     pub fn with_equation(mut self, equation: &str) -> Self {
         self.equation = Signal::new(equation.to_string());
         self
     }
 
+    /// Sets the font size in points.
     pub fn with_font_size(mut self, size: f32) -> Self {
         self.font_size = Signal::new(size);
         self
     }
 
+    /// Sets the solid fill color for the glyphs.
     pub fn with_fill(mut self, color: Color) -> Self {
         self.fill_color = Signal::new(color);
         self
@@ -156,14 +180,12 @@ impl MathNode {
 
     /// Sets the relative transformation origin (anchor).
     /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
-    ///
-    /// NOTE: During transitions, MathNode uses a union of the previous and current
-    /// bounding boxes to ensure the anchor point remains perfectly stable.
     pub fn with_anchor(mut self, anchor: Vec2) -> Self {
         self.anchor = Signal::new(anchor);
         self
     }
 
+    /// Triggers a cross-fade transition to a new equation.
     pub fn start_transition(&self, new_eq: &str) {
         let prev_eq = self.equation.get();
         if prev_eq == new_eq {

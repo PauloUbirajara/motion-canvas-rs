@@ -1,20 +1,42 @@
+use crate::assets::hash::Hasher;
 use crate::core::animation::base::Node;
 use crate::core::animation::tween::Signal;
-use crate::assets::hash::Hasher;
 use glam::Vec2;
 use std::time::Duration;
 use vello::kurbo::{Affine, BezPath, Stroke};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
 
+/// A procedural grid shape.
+///
+/// `GridNode` draws a series of vertical and horizontal lines to form a grid,
+/// centered around its position.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let grid = GridNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_columns(20.0)
+///     .with_rows(20.0)
+///     .with_spacing_all(40.0)
+///     .with_stroke(Color::rgb8(40, 40, 40), 1.0);
+/// ```
 #[derive(Clone)]
 pub struct GridNode {
+    /// The absolute position of the grid's center.
     pub position: Signal<Vec2>,
+    /// The number of vertical columns.
     pub columns: Signal<f32>,
+    /// The number of horizontal rows.
     pub rows: Signal<f32>,
+    /// The distance between adjacent grid lines.
     pub spacing: Signal<Vec2>,
+    /// The color of the grid lines.
     pub stroke_color: Signal<Color>,
+    /// The width of the grid lines.
     pub stroke_width: Signal<f32>,
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
 }
 
@@ -33,10 +55,12 @@ impl Default for GridNode {
 }
 
 impl GridNode {
+    /// Creates a new grid at the given position with default settings.
     pub fn new(position: Vec2) -> Self {
         Self::default().with_position(position)
     }
 
+    /// Creates a square grid with equal columns/rows and uniform spacing.
     pub fn square(position: Vec2, count: f32, spacing: f32) -> Self {
         Self::default()
             .with_position(position)
@@ -45,32 +69,38 @@ impl GridNode {
             .with_spacing(Vec2::splat(spacing))
     }
 
+    /// Sets the absolute position of the grid.
     pub fn with_position(mut self, pos: Vec2) -> Self {
         self.position = Signal::new(pos);
         self
     }
 
+    /// Sets the number of columns.
     pub fn with_columns(mut self, cols: f32) -> Self {
         self.columns = Signal::new(cols);
         self
     }
 
+    /// Sets the number of rows.
     pub fn with_rows(mut self, rows: f32) -> Self {
         self.rows = Signal::new(rows);
         self
     }
 
+    /// Sets the spacing between grid lines.
     pub fn with_spacing(mut self, spacing: Vec2) -> Self {
         self.spacing = Signal::new(spacing);
         self
     }
 
+    /// Sets the stroke color and width for the grid lines.
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);
         self.stroke_width = Signal::new(width);
         self
     }
 
+    /// Sets the opacity of the grid (0.0 to 1.0).
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
@@ -80,7 +110,9 @@ impl GridNode {
 impl Node for GridNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let opacity = self.opacity.get() * parent_opacity;
-        if opacity <= 0.0 { return; }
+        if opacity <= 0.0 {
+            return;
+        }
 
         let pos = self.position.get();
         let cols = self.columns.get().max(0.0);
@@ -101,7 +133,9 @@ impl Node for GridNode {
         // Vertical lines
         for i in 0..=(cols.ceil() as i32) {
             let x = start_x + i as f32 * spacing.x;
-            if x > width / 2.0 { break; }
+            if x > width / 2.0 {
+                break;
+            }
             let mut path = BezPath::new();
             path.move_to((x as f64, start_y as f64));
             path.line_to((x as f64, (start_y + height) as f64));
@@ -111,7 +145,9 @@ impl Node for GridNode {
         // Horizontal lines
         for i in 0..=(rows.ceil() as i32) {
             let y = start_y + i as f32 * spacing.y;
-            if y > height / 2.0 { break; }
+            if y > height / 2.0 {
+                break;
+            }
             let mut path = BezPath::new();
             path.move_to((start_x as f64, y as f64));
             path.line_to(((start_x + width) as f64, y as f64));
