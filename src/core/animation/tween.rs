@@ -12,8 +12,11 @@ fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
 
+/// A trait for types that can be interpolated over time.
 pub trait Tweenable: Clone + Send + Sync + std::fmt::Debug + 'static {
+    /// Interpolates between `a` and `b` by factor `t` (0.0 to 1.0).
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self;
+    /// Returns a hash of the current value for change detection.
     fn state_hash(&self) -> u64;
 }
 
@@ -131,18 +134,35 @@ impl Tweenable for Affine {
     }
 }
 
-/// SignalData now only stores the current value, allowing multiple animations
-/// to control it sequentially or in parallel without state interference.
+/// Internal data for a signal.
 pub struct SignalData<T> {
+    /// The current value of the signal.
     pub value: T,
+    /// The initial value the signal was created with.
     pub initial: T,
 }
 
+/// A reactive wrapper for a value that can be tweened over time.
+///
+/// `Signal` is the primary way to define animatable properties for `Node` elements.
+/// It wraps a `Tweenable` value and provides methods to create animations that
+/// change this value smoothly.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// # use glam::Vec2;
+/// # use std::time::Duration;
+/// let pos = Signal::new(Vec2::ZERO);
+/// let tween = pos.to(Vec2::new(100.0, 100.0), Duration::from_secs(1));
+/// ```
 #[derive(Clone)]
 pub struct Signal<T> {
     pub data: Arc<Mutex<SignalData<T>>>,
 }
 
+/// A trait for types that can be constructed from a `Vec2`.
+/// Used for mapping path samples to signal types (e.g. `Vec2` or `Affine`).
 pub trait FromVec2: Send + Sync + 'static {
     fn from_vec2(v: Vec2) -> Self;
 }
@@ -159,8 +179,11 @@ impl FromVec2 for Affine {
     }
 }
 
+/// The target of a tween animation.
 pub enum Target<T> {
+    /// A specific fixed value.
     Fixed(T),
+    /// A value calculated lazily at the start of the animation based on the signal's state at that time.
     Lazy(Arc<dyn Fn(&T) -> T + Send + Sync>),
 }
 
@@ -174,6 +197,7 @@ impl<T: Clone> Clone for Target<T> {
 }
 
 impl<T: Tweenable + PartialEq> Signal<T> {
+    /// Creates a new signal with the given initial value.
     pub fn new(value: T) -> Self {
         Self {
             data: Arc::new(Mutex::new(SignalData {
@@ -183,10 +207,12 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         }
     }
 
+    /// Retrieves a clone of the current value.
     pub fn get(&self) -> T {
         self.data.lock().unwrap().value.clone()
     }
 
+    /// Manually overrides the current value.
     pub fn set(&self, value: T) {
         let mut data = self.data.lock().unwrap();
         if data.value != value {
@@ -194,15 +220,18 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         }
     }
 
+    /// Returns a hash of the current value.
     pub fn state_hash(&self) -> u64 {
         self.data.lock().unwrap().value.state_hash()
     }
 
+    /// Resets the signal to its initial value.
     pub fn reset(&self) {
         let mut data = self.data.lock().unwrap();
         data.value = data.initial.clone();
     }
 
+    /// Returns a tween animation that changes the signal to a fixed target value.
     pub fn to(&self, target: T, duration: Duration) -> SignalTween<T> {
         SignalTween {
             data: self.data.clone(),
@@ -215,6 +244,9 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         }
     }
 
+    /// Returns a tween animation where the target is calculated lazily when the animation starts.
+    ///
+    /// Useful for relative offsets (e.g., `pos.to_lazy(|v| *v + offset, duration)`).
     pub fn to_lazy<F>(&self, factory: F, duration: Duration) -> SignalTween<T>
     where
         F: Fn(&T) -> T + Send + Sync + 'static,
@@ -230,6 +262,7 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         }
     }
 
+    /// Returns an animation that makes the signal's value follow a `PathNode`.
     pub fn follow(&self, path: &PathNode, duration: Duration) -> FollowPath<T>
     where
         T: FromVec2,
@@ -243,6 +276,7 @@ impl<T: Tweenable + PartialEq> Signal<T> {
         }
     }
 
+    /// Binds this signal to another signal, transforming its value via a mapper function.
     pub fn bind<S: Tweenable + PartialEq, F>(
         &self,
         source: Signal<S>,
@@ -255,7 +289,7 @@ impl<T: Tweenable + PartialEq> Signal<T> {
     }
 }
 
-/// SignalTween now tracks its own elapsed time and start/target values.
+/// An animation that smoothly changes a `Signal`'s value over time.
 pub struct SignalTween<T> {
     data: Arc<Mutex<SignalData<T>>>,
     start_value: Option<T>,
@@ -267,6 +301,7 @@ pub struct SignalTween<T> {
 }
 
 impl<T: Tweenable> SignalTween<T> {
+    /// Applies a custom easing function to this tween.
     pub fn ease(mut self, easing: fn(f32) -> f32) -> Self {
         self.easing = easing;
         self
@@ -333,6 +368,7 @@ impl<T: Tweenable> Animation for SignalTween<T> {
     }
 }
 
+/// An animation that samples a `PathNode`'s geometry to update a `Signal`.
 pub struct FollowPath<T> {
     data: Arc<Mutex<SignalData<T>>>,
     path_data: Arc<PathData>,
@@ -342,6 +378,7 @@ pub struct FollowPath<T> {
 }
 
 impl<T: Send + Sync + 'static> FollowPath<T> {
+    /// Applies a custom easing function to this animation.
     pub fn ease(mut self, easing: fn(f32) -> f32) -> Self {
         self.easing = easing;
         self

@@ -3,13 +3,16 @@ use std::time::Duration;
 
 /// An animation that runs multiple animations in parallel.
 ///
-/// It finishes when all child animations have finished.
+/// `All` manages a set of animations, updating each of them by the same `dt` 
+/// every frame. It is considered finished only when **every** child animation 
+/// has completed.
 pub struct All {
     pub(crate) animations: Vec<Box<dyn Animation>>,
     pub(crate) finished: Vec<bool>,
 }
 
 impl All {
+    /// Creates a new `All` container with the provided animations.
     pub fn new(animations: Vec<Box<dyn Animation>>) -> Self {
         let len = animations.len();
         Self {
@@ -20,6 +23,8 @@ impl All {
 }
 
 impl Animation for All {
+    /// Updates all non-finished child animations.
+    /// Returns `true` if all children are finished.
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         let mut all_finished = true;
         let mut min_leftover = dt;
@@ -48,6 +53,7 @@ impl Animation for All {
         )
     }
 
+    /// The duration is the duration of the longest child animation.
     fn duration(&self) -> Duration {
         self.animations
             .iter()
@@ -56,18 +62,21 @@ impl Animation for All {
             .unwrap_or(Duration::ZERO)
     }
 
+    /// Propagates the easing function to all child animations.
     fn set_easing(&mut self, easing: fn(f32) -> f32) {
         for anim in &mut self.animations {
             anim.set_easing(easing);
         }
     }
 
+    /// Collects audio events from all child animations using the same start time.
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<AudioEvent>) {
         for anim in &mut self.animations {
             anim.collect_audio_events(current_time, events);
         }
     }
 
+    /// Resets all child animations to their initial state.
     fn reset(&mut self) {
         for anim in &mut self.animations {
             anim.reset();
@@ -80,7 +89,7 @@ impl Animation for All {
 
 /// Creates an animation that runs all passed animations in parallel.
 ///
-/// Generally used via the `all!` macro.
+/// Generally used via the [`all!`](crate::all) macro.
 ///
 /// ### Example
 /// ```rust

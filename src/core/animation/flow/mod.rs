@@ -1,3 +1,8 @@
+//! Control flow primitives for orchestrating multiple animations.
+//!
+//! This module provides functions and macros to combine animations in parallel,
+//! sequence, or with specific timing modifications (delays, staggers, easing overrides).
+
 pub mod all;
 pub mod any;
 pub mod chain;
@@ -16,6 +21,8 @@ pub use loop_anim::loop_anim;
 pub use sequence::sequence;
 pub use wait::wait;
 
+/// Runs multiple animations in parallel.
+/// The resulting animation finishes when the *last* child finishes.
 #[macro_export]
 macro_rules! all {
     ($($anim:expr),* $(,)?) => {
@@ -23,6 +30,8 @@ macro_rules! all {
     };
 }
 
+/// Runs multiple animations in parallel.
+/// The resulting animation finishes when the *first* child finishes.
 #[macro_export]
 macro_rules! any {
     ($($anim:expr),* $(,)?) => {
@@ -30,6 +39,8 @@ macro_rules! any {
     };
 }
 
+/// Runs multiple animations sequentially.
+/// Each animation starts as soon as the previous one finishes.
 #[macro_export]
 macro_rules! chain {
     ($($anim:expr),* $(,)?) => {
@@ -37,6 +48,7 @@ macro_rules! chain {
     };
 }
 
+/// Adds a pre-delay to an animation.
 #[macro_export]
 macro_rules! delay {
     ($d:expr, $anim:expr $(,)?) => {
@@ -47,6 +59,7 @@ macro_rules! delay {
     };
 }
 
+/// Runs multiple animations sequentially with a fixed stagger delay between starts.
 #[macro_export]
 macro_rules! sequence {
     ($stagger:expr, $($anim:expr),* $(,)?) => {
@@ -54,6 +67,7 @@ macro_rules! sequence {
     };
 }
 
+/// Repeats an animation factory multiple times.
 #[macro_export]
 macro_rules! loop_anim {
     ($factory:expr, $iters:expr $(,)?) => {
@@ -66,6 +80,7 @@ macro_rules! loop_anim {
     };
 }
 
+/// Overrides the easing function for a set of animations running in parallel.
 #[macro_export]
 macro_rules! with_easing {
     ($easing:expr, [$($anim:expr),* $(,)?] $(,)?) => {
@@ -73,6 +88,7 @@ macro_rules! with_easing {
     };
 }
 
+/// Triggers playback of an audio node.
 #[cfg(feature = "audio")]
 #[macro_export]
 macro_rules! play {
@@ -82,6 +98,7 @@ macro_rules! play {
     };
 }
 
+/// A specialized wait macro for audio-syncing.
 #[cfg(feature = "audio")]
 #[macro_export]
 macro_rules! audio_wait {

@@ -2,6 +2,10 @@ use crate::core::animation::base::{Animation, AudioEvent};
 use std::time::Duration;
 
 /// An animation that runs multiple animations in parallel, but with a staggered start time.
+///
+/// `Sequence` is similar to [`All`](crate::flows::all::All), but it adds a fixed 
+/// time offset between the start of each child animation. This is a common 
+/// technique for animating lists or groups of items.
 pub struct Sequence {
     pub(crate) items: Vec<(Duration, Box<dyn Animation>)>,
     pub(crate) finished: Vec<bool>,
@@ -9,6 +13,7 @@ pub struct Sequence {
 }
 
 impl Sequence {
+    /// Creates a new `Sequence` with the provided stagger delay and child animations.
     pub fn new(stagger: Duration, animations: Vec<Box<dyn Animation>>) -> Self {
         let len = animations.len();
         let items = animations
@@ -25,6 +30,8 @@ impl Sequence {
 }
 
 impl Animation for Sequence {
+    /// Increments the internal elapsed timer and updates all child animations 
+    /// whose start time has been reached.
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.elapsed += dt;
         let mut all_finished = true;
@@ -72,6 +79,7 @@ impl Animation for Sequence {
         (total_finished, final_leftover)
     }
 
+    /// The duration is (stagger * (count - 1)) + duration of the last animation.
     fn duration(&self) -> Duration {
         self.items
             .iter()
@@ -80,12 +88,14 @@ impl Animation for Sequence {
             .unwrap_or(Duration::ZERO)
     }
 
+    /// Propagates the easing function to all child animations.
     fn set_easing(&mut self, easing: fn(f32) -> f32) {
         for (_, anim) in &mut self.items {
             anim.set_easing(easing);
         }
     }
 
+    /// Collects audio events from child animations whose start time has been reached.
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<AudioEvent>) {
         for (start, anim) in &mut self.items {
             if self.elapsed >= *start {
@@ -94,6 +104,7 @@ impl Animation for Sequence {
         }
     }
 
+    /// Resets the elapsed timer and all child animations.
     fn reset(&mut self) {
         for (_, anim) in &mut self.items {
             anim.reset();
@@ -107,7 +118,7 @@ impl Animation for Sequence {
 
 /// Creates an animation that runs multiple animations in parallel with a staggered start.
 ///
-/// Generally used via the `sequence!` macro.
+/// Generally used via the [`sequence!`](crate::sequence) macro.
 ///
 /// ### Example
 /// ```rust

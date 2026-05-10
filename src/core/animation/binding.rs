@@ -4,6 +4,11 @@ use std::time::Duration;
 use vello::Scene;
 use vello::kurbo::Affine;
 
+/// A logical node that synchronizes one signal to another using a mapping function.
+///
+/// `BindingNode` is a non-visual node that facilitates reactive data flow between elements.
+/// For example, you can use a binding to ensure a label always displays the current 
+/// position of a moving circle.
 pub struct BindingNode<T, S>
 where
     T: Tweenable + PartialEq,
@@ -19,6 +24,10 @@ where
     T: Tweenable + PartialEq,
     S: Tweenable + PartialEq,
 {
+    /// Creates a new binding that maps values from the `source` signal to the `target` signal.
+    ///
+    /// Every update cycle, the `mapper` function is called with the current value of `source`,
+    /// and the result is applied to `target`.
     pub fn new(source: Signal<S>, target: Signal<T>, mapper: impl Fn(S) -> T + Send + Sync + 'static) -> Self {
         Self {
             source,

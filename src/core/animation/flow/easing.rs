@@ -3,7 +3,11 @@ use crate::core::animation::base::Animation;
 
 /// Runs multiple animations in parallel with a shared easing override.
 ///
-/// Generally used via the `with_easing!` macro.
+/// `with_easing` creates an [`All`] container and immediately applies the 
+/// provided easing function to all child animations. This is useful for 
+/// grouping animations that should share the same motion feel.
+///
+/// Generally used via the [`with_easing!`](crate::with_easing) macro.
 ///
 /// ### Example
 /// ```rust
