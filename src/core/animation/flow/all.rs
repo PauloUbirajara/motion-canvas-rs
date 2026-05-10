@@ -3,8 +3,8 @@ use std::time::Duration;
 
 /// An animation that runs multiple animations in parallel.
 ///
-/// `All` manages a set of animations, updating each of them by the same `dt` 
-/// every frame. It is considered finished only when **every** child animation 
+/// `All` manages a set of animations, updating each of them by the same `dt`
+/// every frame. It is considered finished only when **every** child animation
 /// has completed.
 pub struct All {
     pub(crate) animations: Vec<Box<dyn Animation>>,
@@ -95,10 +95,13 @@ impl Animation for All {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let node = Rect::default()
+/// #    .with_size(Vec2::new(100.0, 100.0))
+/// #    .with_fill(Color::RED);
+/// # let dur = Duration::from_secs(1);
 /// all![
-///     node.position.to(Vec2::new(100.0, 100.0), Duration::from_secs(1)),
-///     node.fill_color.to(Color::BLUE, Duration::from_secs(1)),
+///     node.position.to(Vec2::new(100.0, 100.0), dur),
+///     node.fill_color.to(Color::BLUE, dur),
 /// ];
 /// ```
 pub fn all(animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {

@@ -1,10 +1,10 @@
 use crate::core::animation::base::Animation;
 use crate::elements::shapes::{PathData, PathNode};
 use glam::Vec2;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use kurbo::Affine;
 use peniko::Color;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 const DEFAULT_EASING: fn(f32) -> f32 = crate::core::easings::cubic_in_out;
 
@@ -195,7 +195,6 @@ impl<T: Clone> Clone for Target<T> {
         }
     }
 }
-
 impl<T: Tweenable + PartialEq> Signal<T> {
     /// Creates a new signal with the given initial value.
     pub fn new(value: T) -> Self {

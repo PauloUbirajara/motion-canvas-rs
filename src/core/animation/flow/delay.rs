@@ -3,7 +3,7 @@ use std::time::Duration;
 
 /// An animation that delays the execution of another animation.
 ///
-/// `Delay` wraps an inner animation and prevents it from updating until the 
+/// `Delay` wraps an inner animation and prevents it from updating until the
 /// specified delay duration has passed.
 pub struct Delay {
     pub(crate) duration: Duration,
@@ -23,7 +23,7 @@ impl Delay {
 }
 
 impl Animation for Delay {
-    /// Increments the internal elapsed timer. 
+    /// Increments the internal elapsed timer.
     /// Once the timer exceeds the delay duration, it begins updating the inner animation.
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         if self.elapsed >= self.duration {
@@ -71,13 +71,15 @@ impl Animation for Delay {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let node = Rect::default()
+/// #    .with_size(Vec2::new(100.0, 100.0))
+/// #    .with_fill(Color::RED);
 /// # let target = Vec2::new(100.0, 100.0);
 /// # let dur = Duration::from_secs(1);
-/// delay!(
-///     Duration::from_secs(1),
-///     node.position.to(target, dur)
-/// );
+/// chain![
+///     node.position.to(target.clone(), dur.clone()),
+///     delay!(Duration::from_secs_f32(0.5), node.opacity.to(0.0, dur.clone())),
+/// ];
 /// ```
 pub fn delay(duration: Duration, inner: Box<dyn Animation>) -> Box<dyn Animation> {
     Box::new(Delay::new(duration, inner))

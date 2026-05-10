@@ -3,8 +3,8 @@ use std::time::Duration;
 
 /// An animation that runs multiple animations in parallel, but with a staggered start time.
 ///
-/// `Sequence` is similar to [`All`](crate::flows::all::All), but it adds a fixed 
-/// time offset between the start of each child animation. This is a common 
+/// `Sequence` is similar to [`All`](crate::flows::all::All), but it adds a fixed
+/// time offset between the start of each child animation. This is a common
 /// technique for animating lists or groups of items.
 pub struct Sequence {
     pub(crate) items: Vec<(Duration, Box<dyn Animation>)>,
@@ -30,7 +30,7 @@ impl Sequence {
 }
 
 impl Animation for Sequence {
-    /// Increments the internal elapsed timer and updates all child animations 
+    /// Increments the internal elapsed timer and updates all child animations
     /// whose start time has been reached.
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.elapsed += dt;
@@ -124,9 +124,15 @@ impl Animation for Sequence {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node1 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
-/// # let node2 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
-/// # let node3 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let node1 = Rect::default()
+/// #    .with_size(Vec2::new(100.0, 100.0))
+/// #    .with_fill(Color::RED);
+/// # let node2 = Rect::default()
+/// #    .with_size(Vec2::new(100.0, 100.0))
+/// #    .with_fill(Color::RED);
+/// # let node3 = Rect::default()
+/// #    .with_size(Vec2::new(100.0, 100.0))
+/// #    .with_fill(Color::RED);
 /// # let target = Vec2::new(100.0, 100.0);
 /// # let dur = Duration::from_secs(1);
 /// sequence!(

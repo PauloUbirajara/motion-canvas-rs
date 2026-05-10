@@ -5,8 +5,8 @@ const INFINITE_DURATION_CAP: Duration = Duration::from_secs(3600); // 1 hour cap
 
 /// An animation that repeats another animation multiple times (or infinitely).
 ///
-/// `LoopAnim` takes a factory function that produces an [`Animation`]. 
-/// Every time the current animation finishes, the factory is called to 
+/// `LoopAnim` takes a factory function that produces an [`Animation`].
+/// Every time the current animation finishes, the factory is called to
 /// create a fresh instance for the next iteration.
 pub struct LoopAnim {
     pub(crate) factory: Box<dyn Fn() -> Box<dyn Animation> + Send + Sync>,
@@ -18,7 +18,7 @@ pub struct LoopAnim {
 impl LoopAnim {
     /// Creates a new `LoopAnim` with the provided factory and iteration count.
     ///
-    /// If `count` is `None`, the animation loops infinitely (capped at 1 hour 
+    /// If `count` is `None`, the animation loops infinitely (capped at 1 hour
     /// for timeline duration calculations).
     pub fn new(
         factory: Box<dyn Fn() -> Box<dyn Animation> + Send + Sync>,
@@ -35,8 +35,8 @@ impl LoopAnim {
 }
 
 impl Animation for LoopAnim {
-    /// Updates the current animation instance. 
-    /// If it finishes and more iterations remain, it instantiates a new 
+    /// Updates the current animation instance.
+    /// If it finishes and more iterations remain, it instantiates a new
     /// animation using the factory.
     fn update(&mut self, mut dt: Duration) -> (bool, Duration) {
         loop {
@@ -90,13 +90,17 @@ impl Animation for LoopAnim {
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// # let node = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let node = Rect::default()
+/// #    .with_size(Vec2::new(100.0, 100.0))
+/// #    .with_fill(Color::RED);
 /// # let target = Vec2::new(100.0, 100.0);
 /// # let dur = Duration::from_secs(1);
 /// // Repeat 5 times
 /// loop_anim!(node.position.to(target.clone(), dur), Some(5));
 ///
-/// # let node_2 = Rect::default().with_size(Vec2::new(100.0, 100.0)).with_fill(Color::RED);
+/// # let node_2 = Rect::default()
+/// #    .with_size(Vec2::new(100.0, 100.0))
+/// #    .with_fill(Color::RED);
 /// // Repeat infinitely
 /// loop_anim!(node_2.position.to(target, dur), None);
 /// ```
