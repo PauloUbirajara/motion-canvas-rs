@@ -9,18 +9,8 @@ use std::path::Path;
 #[cfg(feature = "export")]
 use std::process::{ChildStdin, Command, Stdio};
 
-pub fn sanitize_title(title: &str) -> String {
-    title
-        .trim()
-        .to_lowercase()
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '_' })
-        .collect::<String>()
-        .split('_')
-        .filter(|s| !s.is_empty())
-        .collect::<Vec<_>>()
-        .join("_")
-}
+use super::sanitize_title;
+
 
 #[cfg(feature = "export")]
 pub fn start_ffmpeg(

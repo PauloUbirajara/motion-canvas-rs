@@ -363,7 +363,7 @@ impl Project {
     }
 
     fn sanitize_title(&self) -> String {
-        crate::engine::util::export::sanitize_title(&self.title)
+        crate::engine::util::sanitize_title(&self.title)
     }
 
     pub fn get_frame_name(&self, frame_count: u32) -> String {

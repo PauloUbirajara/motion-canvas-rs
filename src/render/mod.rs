@@ -1,6 +1,5 @@
 use crate::engine::scene::Scene2D;
 use std::time::{Duration, Instant};
-pub use vello::peniko::Color;
 use vello::{
     util::{RenderContext, RenderSurface},
     Renderer, RendererOptions, Scene,
@@ -27,6 +26,7 @@ Controls:
   ^ (Up)    / K : Increase speed
   v (Down)  / J : Decrease speed (min 0.1x)
 "#;
+#[cfg(feature = "export")]
 pub mod export;
 use std::future::Future;
 

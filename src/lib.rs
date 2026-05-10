@@ -2,7 +2,7 @@
 
 pub mod engine;
 
-pub mod render;
+mod render;
 
 // --- RE-EXPORTS ---
 
@@ -11,6 +11,7 @@ pub use engine::project::Project;
 
 /// Common mathematical types
 pub use glam::Vec2;
+pub use vello::peniko::Color;
 
 /// Custom Result type for the library
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
