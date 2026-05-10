@@ -15,15 +15,16 @@ use winit::{
 const TUI_HEADER: &str = "--- motion-canvas-rs playback ---";
 const TUI_CONTROLS: &str = r#"
 Controls:
-  Esc / Q      : [Q]uit
-  R            : [R]estart
-  Space / P    : [P]ause / Resume
-  .            : Step +1 frame
-  ,            : Step -1 frame
-  Right / L    : Seek +10s
-  Left / H     : Seek -10s
-  Up / K       : Increase speed
-  Down / J     : Decrease speed (min 0.1x)
+  R         : [R]estart
+  Esc   / Q : [Q]uit
+  Space / P : [P]ause / Resume
+
+  . (Dot)       : Step +1 frame
+  , (Comma)     : Step -1 frame
+  > (Right) / L : Seek +10s
+  < (Left)  / H : Seek -10s
+  ^ (Up)    / K : Increase speed
+  v (Down)  / J : Decrease speed (min 0.1x)
 "#;
 const TUI_FOOTER: &str = "---------------------------------";
 

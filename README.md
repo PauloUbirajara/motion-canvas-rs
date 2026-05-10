@@ -1,6 +1,6 @@
 # Motion Canvas in Rust
 
-![Motion Canvas Banner](./assets/cover.png)
+![Motion Canvas Banner](./assets/cover.webp)
 
 A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst.
 
@@ -30,7 +30,7 @@ cargo add motion-canvas-rs --features math,image,audio
 |:---|:---|:---|
 | `math` | Typst-powered LaTeX math rendering. | `MathNode` |
 | `code` | Syntax-highlighted code blocks via Syntect. | `CodeNode` |
-| `image` | Bitmap (PNG, JPEG) and Vector (SVG) support. | `ImageNode` |
+| `image` | Bitmap (webp, JPEG) and Vector (SVG) support. | `ImageNode` |
 | `audio` | Independent audio timeline and MP3 playback. | `play!`, `AudioNode` |
 | `export` | Headless frame rendering and video generation. | `project.export()` |
 | `full` | Meta-feature that enables all of the above. | Everything |
@@ -110,10 +110,10 @@ fn main() {
 
 ## Running Examples
 
-The project includes 21 examples that can be found in the [examples directory](./examples).
+The project includes 22 examples that can be found in the [examples directory](./examples).
 
 <details>
-<summary><b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
+    <summary> [ <a href="./examples/advanced_flow.rs">code</a> ] <b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
 
 ```sh
 cargo run --example advanced_flow --features=full
@@ -121,13 +121,13 @@ cargo run --example advanced_flow --features=full
 
 | Preview |
 | - |
-| ![Advanced Flow](./assets/examples/advanced_flow.png) |
+| ![Advanced Flow](./assets/examples/advanced_flow.webp) |
 | [Advanced Flow Video](./assets/examples/advanced_flow.mp4) |
 
 </details>
 
 <details>
-<summary><b>Anchors</b> - Reactive transformation origins for precise positioning.</summary>
+<summary> [ <a href="./examples/anchors.rs">code</a> ] <b>Anchors</b> - Reactive transformation origins for precise positioning.</summary>
 
 ```sh
 cargo run --example anchors
@@ -135,13 +135,13 @@ cargo run --example anchors
 
 | Preview |
 | - |
-| ![Anchors](./assets/examples/anchors.png) |
+| ![Anchors](./assets/examples/anchors.webp) |
 | [Anchors Video](./assets/examples/anchors.mp4) |
 
 </details>
 
 <details>
-<summary><b>Audio Demo</b> - Independent audio and video timelines with cropping.</summary>
+<summary> [ <a href="./examples/audio_demo.rs">code</a> ] <b>Audio Demo</b> - Independent audio and video timelines with cropping.</summary>
 
 ```sh
 cargo run --example audio_demo --features audio
@@ -149,13 +149,13 @@ cargo run --example audio_demo --features audio
 
 | Preview |
 | - |
-| ![Audio Demo](./assets/examples/audio_demo.png) |
+| ![Audio Demo](./assets/examples/audio_demo.webp) |
 | [Audio Demo Video](./assets/examples/audio_demo.mp4) |
 
 </details>
 
 <details>
-<summary><b>Camera Control</b> - Viewport-level panning, zooming, and rotation.</summary>
+<summary> [ <a href="./examples/camera_demo.rs">code</a> ] <b>Camera Control</b> - Viewport-level panning, zooming, and rotation.</summary>
 
 ```sh
 cargo run --example camera_demo
@@ -163,13 +163,13 @@ cargo run --example camera_demo
 
 | Preview |
 | - |
-| ![Camera Demo](./assets/examples/camera_demo.png) |
+| ![Camera Demo](./assets/examples/camera_demo.webp) |
 | [Camera Demo Video](./assets/examples/camera_demo.mp4) |
 
 </details>
 
 <details>
-<summary><b>Code Advanced</b> - Fine-grained selection and content manipulation.</summary>
+<summary> [ <a href="./examples/code_advanced.rs">code</a> ] <b>Code Advanced</b> - Fine-grained selection and content manipulation.</summary>
 
 ```sh
 cargo run --example code_advanced --features code
@@ -177,13 +177,13 @@ cargo run --example code_advanced --features code
 
 | Preview |
 | - |
-| ![Code Advanced](./assets/examples/code_advanced.png) |
+| ![Code Advanced](./assets/examples/code_advanced.webp) |
 | [Code Advanced Video](./assets/examples/code_advanced.mp4) |
 
 </details>
 
 <details>
-<summary><b>Code Animation</b> - "Magic Move" token-based code transitions.</summary>
+<summary> [ <a href="./examples/code_animation.rs">code</a> ] <b>Code Animation</b> - "Magic Move" token-based code transitions.</summary>
 
 ```sh
 cargo run --example code_animation --features code
@@ -191,13 +191,13 @@ cargo run --example code_animation --features code
 
 | Preview |
 | - |
-| ![Code Animation](./assets/examples/code_animation.png) |
+| ![Code Animation](./assets/examples/code_animation.webp) |
 | [Code Animation Video](./assets/examples/code_animation.mp4) |
 
 </details>
 
 <details>
-<summary><b>Color Interpolation</b> - Smooth transitions between color spaces.</summary>
+<summary> [ <a href="./examples/color_interpolation.rs">code</a> ] <b>Color Interpolation</b> - Smooth transitions between color spaces.</summary>
 
 ```sh
 cargo run --example color_interpolation
@@ -205,13 +205,13 @@ cargo run --example color_interpolation
 
 | Preview |
 | - |
-| ![Color Interpolation](./assets/examples/color_interpolation.png) |
+| ![Color Interpolation](./assets/examples/color_interpolation.webp) |
 | [Color Interpolation Video](./assets/examples/color_interpolation.mp4) |
 
 </details>
 
 <details>
-<summary><b>Easing Scope</b> - 100% parity easing library visualizer.</summary>
+<summary> [ <a href="./examples/easing_scope.rs">code</a> ] <b>Easing Scope</b> - 100% parity easing library visualizer.</summary>
 
 ```sh
 cargo run --example easing_scope
@@ -219,13 +219,13 @@ cargo run --example easing_scope
 
 | Preview |
 | - |
-| ![Easing Scope](./assets/examples/easing_scope.png) |
+| ![Easing Scope](./assets/examples/easing_scope.webp) |
 | [Easing Scope Video](./assets/examples/easing_scope.mp4) |
 
 </details>
 
 <details>
-<summary><b>Explainer</b> - Showcasing the library and some of its features.</summary>
+<summary> [ <a href="./examples/explainer.rs">code</a> ] <b>Explainer</b> - Showcasing the library and some of its features.</summary>
 
 ```sh
 cargo run --example explainer --release --features full
@@ -233,13 +233,13 @@ cargo run --example explainer --release --features full
 
 | Preview |
 | - |
-| ![Explainer](./assets/examples/explainer.png) |
+| ![Explainer](./assets/examples/explainer.webp) |
 | [Explainer Video](https://www.youtube.com/watch?v=v4W1Y_TrWew) |
 
 </details>
 
 <details>
-<summary><b>Export</b> - Video export with color and font-size animations.</summary>
+<summary> [ <a href="./examples/export.rs">code</a> ] <b>Export</b> - Video export with color and font-size animations.</summary>
 
 ```sh
 cargo run --example export --features export
@@ -247,13 +247,13 @@ cargo run --example export --features export
 
 | Preview |
 | - |
-| ![Export](./assets/examples/export.png) |
+| ![Export](./assets/examples/export.webp) |
 | [Export Video](./assets/examples/export.mp4) |
 
 </details>
 
 <details>
-<summary><b>Getting Started</b> - Basic node creation and animation.</summary>
+<summary> [ <a href="./examples/getting_started.rs">code</a> ] <b>Getting Started</b> - Basic node creation and animation.</summary>
 
 ```sh
 cargo run --example getting_started
@@ -261,13 +261,13 @@ cargo run --example getting_started
 
 | Preview |
 | - |
-| ![Getting Started](./assets/examples/getting_started.png) |
+| ![Getting Started](./assets/examples/getting_started.webp) |
 | [Getting Started Video](./assets/examples/getting_started.mp4) |
 
 </details>
 
 <details>
-<summary><b>Grid</b> - Procedural grid</summary>
+<summary> [ <a href="./examples/grid.rs">code</a> ] <b>Grid</b> - Procedural grid generation.</summary>
 
 ```sh
 cargo run --example grid
@@ -275,13 +275,13 @@ cargo run --example grid
 
 | Preview |
 | - |
-| ![Grid](./assets/examples/grid.png) |
+| ![Grid](./assets/examples/grid.webp) |
 | [Grid Video](./assets/examples/grid.mp4) |
 
 </details>
 
 <details>
-<summary><b>Group Animation</b> - Hierarchical transformations and inherited opacity.</summary>
+<summary> [ <a href="./examples/group_animation.rs">code</a> ] <b>Group Animation</b> - Hierarchical transformations and inherited opacity.</summary>
 
 ```sh
 cargo run --example group_animation
@@ -289,13 +289,13 @@ cargo run --example group_animation
 
 | Preview |
 | - |
-| ![Group Animation](./assets/examples/group_animation.png) |
+| ![Group Animation](./assets/examples/group_animation.webp) |
 | [Group Animation Video](./assets/examples/group_animation.mp4) |
 
 </details>
 
 <details>
-<summary><b>Images</b> - Bitmap image support and transformations.</summary>
+<summary> [ <a href="./examples/images.rs">code</a> ] <b>Images</b> - Bitmap image support and transformations.</summary>
 
 ```sh
 cargo run --example images --features image,svg
@@ -303,13 +303,13 @@ cargo run --example images --features image,svg
 
 | Preview |
 | - |
-| ![Images](./assets/examples/images.png) |
+| ![Images](./assets/examples/images.webp) |
 | [Images Video](./assets/examples/images.mp4) |
 
 </details>
 
 <details>
-<summary><b>Math Animation</b> - Advanced mathematical transitions.</summary>
+<summary> [ <a href="./examples/math_animation.rs">code</a> ] <b>Math Animation</b> - Advanced mathematical transitions.</summary>
 
 ```sh
 cargo run --example math_animation --features math
@@ -317,13 +317,13 @@ cargo run --example math_animation --features math
 
 | Preview |
 | - |
-| ![Math Animation](./assets/examples/math_animation.png) |
+| ![Math Animation](./assets/examples/math_animation.webp) |
 | [Math Animation Video](./assets/examples/math_animation.mp4) |
 
 </details>
 
 <details>
-<summary><b>Math & Code</b> - Typst LaTeX and Syntax Highlighting.</summary>
+<summary> [ <a href="./examples/math_code.rs">code</a> ] <b>Math & Code</b> - Typst LaTeX and Syntax Highlighting.</summary>
 
 ```sh
 cargo run --example math_code --features math,code
@@ -331,13 +331,13 @@ cargo run --example math_code --features math,code
 
 | Preview |
 | - |
-| ![Math Code](./assets/examples/math_code.png) |
+| ![Math Code](./assets/examples/math_code.webp) |
 | [Math Code Video](./assets/examples/math_code.mp4) |
 
 </details>
 
 <details>
-<summary><b>Nested Cameras</b> - Hierarchical viewport control and coordinate shifting.</summary>
+<summary> [ <a href="./examples/nested_cameras.rs">code</a> ] <b>Nested Cameras</b> - Hierarchical viewport control and coordinate shifting.</summary>
 
 ```sh
 cargo run --example nested_cameras
@@ -345,13 +345,13 @@ cargo run --example nested_cameras
 
 | Preview |
 | - |
-| ![Nested Cameras](./assets/examples/nested_cameras.png) |
+| ![Nested Cameras](./assets/examples/nested_cameras.webp) |
 | [Nested Cameras Video](./assets/examples/nested_cameras.mp4) |
 
 </details>
 
 <details>
-<summary><b>News Feed</b> - A simple architectural visualization of a news feed system.</summary>
+<summary> [ <a href="./examples/news_feed.rs">code</a> ] <b>News Feed</b> - A simple architectural visualization of a news feed system.</summary>
 
 > Based on the "News Feed System" architecture from **"System Design Interview: An Insider's Guide" (Second Edition)** by **Alex Xu**.
 
@@ -361,13 +361,13 @@ cargo run --example news_feed
 
 | Preview |
 | - |
-| ![News Feed](./assets/examples/news_feed.png) |
+| ![News Feed](./assets/examples/news_feed.webp) |
 | [News Feed Video](./assets/examples/news_feed.mp4) |
 
 </details>
 
 <details>
-<summary><b>Polygon</b> - Regular and custom polygon primitives.</summary>
+<summary> [ <a href="./examples/polygon.rs">code</a> ] <b>Polygon</b> - Regular and custom polygon primitives.</summary>
 
 ```sh
 cargo run --example polygon
@@ -375,13 +375,13 @@ cargo run --example polygon
 
 | Preview |
 | - |
-| ![Polygon](./assets/examples/polygon.png) |
+| ![Polygon](./assets/examples/polygon.webp) |
 | [Polygon Video](./assets/examples/polygon.mp4) |
 
 </details>
 
 <details>
-<summary><b>Shapes</b> - Circle, Rect, and Line primitives.</summary>
+<summary> [ <a href="./examples/shapes.rs">code</a> ] <b>Shapes</b> - Circle, Rect, and Line primitives.</summary>
 
 ```sh
 cargo run --example shapes
@@ -389,12 +389,12 @@ cargo run --example shapes
 
 | Preview |
 | - |
-| ![Shapes](./assets/examples/shapes.png) |
+| ![Shapes](./assets/examples/shapes.webp) |
 
 </details>
 
 <details>
-<summary><b>Signals</b> - Reactive signal linking and independent property animation.</summary>
+<summary> [ <a href="./examples/signals.rs">code</a> ] <b>Signals</b> - Reactive signal linking and independent property animation.</summary>
 
 ```sh
 cargo run --example signals
@@ -402,8 +402,24 @@ cargo run --example signals
 
 | Preview |
 | - |
-| ![Signals](./assets/examples/signals.png) |
+| ![Signals](./assets/examples/signals.webp) |
 | [Signals Video](./assets/examples/signals.mp4) |
+
+</details>
+
+<details>
+<summary> [ <a href="./examples/world_map.rs">code</a> ] <b>World Map</b> - Animated world tour with camera panning, cloud effects, and plane flight paths.</summary>
+
+> Map SVG sourced from [vemaps.com](https://vemaps.com/world/wrld-21).
+
+```sh
+cargo run --example world_map --features image,svg
+```
+
+| Preview |
+| - |
+| ![World Map](./assets/examples/world_map.webp) |
+| [World Map Video](./assets/examples/world_map.mp4) |
 
 </details>
 
@@ -421,3 +437,4 @@ Special thanks to:
 - [easings.net](https://easings.net/) for the standardized easing function library.
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
 - **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.
+- [vemaps.com](https://vemaps.com/world/wrld-21) for the world map SVG used in the `world_map` example.
