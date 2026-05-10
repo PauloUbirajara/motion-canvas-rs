@@ -8,9 +8,11 @@ use std::collections::HashMap;
 #[cfg(feature = "export")]
 use std::fs;
 #[cfg(feature = "export")]
-use std::io::{self, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use vello::peniko::Color;
+#[cfg(feature = "export")]
+use indicatif::{ProgressBar, ProgressStyle};
 
 const DEFAULT_FPS: u32 = 60;
 const DEFAULT_WIDTH: u32 = 800;
@@ -148,9 +150,6 @@ impl Project {
             #[cfg(feature = "audio")]
             crate::engine::nodes::audio::set_audio_playback(false);
 
-            #[cfg(feature = "audio")]
-            crate::engine::nodes::audio::set_audio_playback(false);
-
             let mut exporter = crate::render::export::Exporter::new(
                 self.width,
                 self.height,
@@ -215,6 +214,14 @@ impl Project {
                 }
             });
 
+            let pb = ProgressBar::new(total_frames as u64);
+            pb.set_style(
+                ProgressStyle::default_bar()
+                    .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+                    .unwrap()
+                    .progress_chars("=>-"),
+            );
+
             // Export until all animations are finished
             loop {
                 let hash = self.scene.state_hash();
@@ -273,28 +280,8 @@ impl Project {
 
                 // Progress Bar (now reflects saved count)
                 let current_saved = saved_count.load(Ordering::SeqCst);
-                let progress = if total_frames > 0 {
-                    (current_saved as f32 / total_frames as f32).min(1.0)
-                } else {
-                    1.0
-                };
-                let bar_len = 20;
-                let filled = (progress * bar_len as f32) as usize;
-                let bar: String = std::iter::repeat('=')
-                    .take(filled)
-                    .chain(std::iter::once('>'))
-                    .chain(std::iter::repeat(' ').take(bar_len - filled))
-                    .collect();
-
-                print!(
-                    "\r[Exporting] Frame {}/{} [{}] {:.0}% (Skipped {})",
-                    current_saved.min(total_frames),
-                    total_frames,
-                    bar,
-                    progress * 100.0,
-                    skipped_count
-                );
-                io::stdout().flush()?;
+                pb.set_position(current_saved as u64);
+                pb.set_message(format!("(Skipped {})", skipped_count));
 
                 let is_video_finished = self.scene.video_timeline.finished();
                 let is_audio_finished = {
@@ -330,30 +317,14 @@ impl Project {
             // Wait for all frames to be saved while updating the progress bar
             while saved_count.load(Ordering::SeqCst) < frame_count + 1 {
                 let current_saved = saved_count.load(Ordering::SeqCst);
-                let progress = if total_frames > 0 {
-                    (current_saved as f32 / total_frames as f32).min(1.0)
-                } else {
-                    1.0
-                };
-                let bar_len = 20;
-                let filled = (progress * bar_len as f32) as usize;
-                let bar: String = std::iter::repeat('=')
-                    .take(filled)
-                    .chain(std::iter::once('>'))
-                    .chain(std::iter::repeat(' ').take(bar_len - filled))
-                    .collect();
-
-                print!(
-                    "\r[Exporting] Frame {}/{} [{}] {:.0}% (Skipped {})",
-                    current_saved.min(total_frames),
-                    total_frames,
-                    bar,
-                    progress * 100.0,
-                    skipped_count
-                );
-                io::stdout().flush()?;
+                pb.set_position(current_saved as u64);
                 std::thread::sleep(std::time::Duration::from_millis(50));
             }
+
+            pb.finish_with_message(format!(
+                "Export finished: {} frames rendered, {} skipped.",
+                rendered_count, skipped_count
+            ));
 
             saving_thread.join().unwrap();
             if let Some(stdin) = ffmpeg_process {
@@ -366,10 +337,6 @@ impl Project {
                 fs::write(self.output_path.join(".motion_canvas_cache"), json)?;
             }
 
-            println!(
-                "\nExport finished: {} frames rendered, {} skipped.",
-                rendered_count, skipped_count
-            );
 
             #[cfg(feature = "audio")]
             if self.use_ffmpeg {
