@@ -110,7 +110,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 21 examples that can be found in the [examples directory](./examples).
+The project includes 22 examples that can be found in the [examples directory](./examples).
 
 <details>
     <summary> [ <a href="./examples/advanced_flow.rs">code</a> ] <b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -407,6 +407,22 @@ cargo run --example signals
 
 </details>
 
+<details>
+<summary> [ <a href="./examples/world_map.rs">code</a> ] <b>World Map</b> - Animated world tour with camera panning, cloud effects, and plane flight paths.</summary>
+
+> Map SVG sourced from [vemaps.com](https://vemaps.com/world/wrld-21).
+
+```sh
+cargo run --example world_map --features image,svg
+```
+
+| Preview |
+| - |
+| ![World Map](./assets/examples/world_map.webp) |
+| [World Map Video](./assets/examples/world_map.mp4) |
+
+</details>
+
 ## Requirements
 
 - Rust 1.75+
@@ -421,3 +437,4 @@ Special thanks to:
 - [easings.net](https://easings.net/) for the standardized easing function library.
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
 - **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.
+- [vemaps.com](https://vemaps.com/world/wrld-21) for the world map SVG used in the `world_map` example.
