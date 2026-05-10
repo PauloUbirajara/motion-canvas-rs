@@ -1,10 +1,14 @@
 /// A utility for deterministic, consistent hashing across the engine.
-/// Currently powered by `seahash` for speed and determinism.
+///
+/// `Hasher` is used primarily for calculating state hashes in the caching system, 
+/// ensuring that frames are only re-rendered when their underlying data changes.
+/// Currently powered by `seahash` for high-performance, deterministic 64-bit hashing.
 pub struct Hasher {
     state: u64,
 }
 
 impl Hasher {
+    /// Creates a new `Hasher` initialized with a zero state.
     pub fn new() -> Self {
         Self { state: 0 }
     }
@@ -41,15 +45,17 @@ pub fn combine_hashes(a: u64, b: u64) -> u64 {
     h.finish()
 }
 
-/// Helper for hashing primitives.
+/// Deterministically hashes a u64 value.
 pub fn hash_u64(val: u64) -> u64 {
     seahash::hash(&val.to_le_bytes())
 }
 
+/// Deterministically hashes an f32 value by using its bit representation.
 pub fn hash_f32(val: f32) -> u64 {
     hash_u64(val.to_bits() as u64)
 }
 
+/// Deterministically hashes a string.
 pub fn hash_str(val: &str) -> u64 {
     seahash::hash(val.as_bytes())
 }

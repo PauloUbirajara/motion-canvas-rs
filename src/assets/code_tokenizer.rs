@@ -16,63 +16,110 @@ use vello::peniko::{Brush, Color};
 use vello::Scene;
 
 lazy_static! {
+    /// The global set of syntax definitions for highlighting.
     pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
+    /// The global set of highlighting themes.
     pub static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
+    /// Internal cache to avoid re-tokenizing identical code blocks.
     pub static ref GLOBAL_CODE_CACHE: Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>> =
         Mutex::new(HashMap::new());
 }
 
+/// The default syntax highlighting theme name.
 pub const DEFAULT_THEME: &str = "base16-ocean.dark";
+/// List of fonts to try if the primary code font is missing.
 pub const FONT_FALLBACKS: &[&str] = &["Fira Code", "Courier New", "monospace"];
+/// Multiplier for character advance if font metrics are unavailable.
 pub const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
+/// Default line height as a multiple of font size.
 pub const LINE_HEIGHT_MULTIPLIER: f32 = 1.5;
+/// Default font size for code snippets.
 pub const DEFAULT_FONT_SIZE: f32 = 24.0;
+/// Default font family for code snippets.
 pub const DEFAULT_FONT_FAMILY: &str = "Fira Code";
+/// Default programming language for highlighting.
 pub const DEFAULT_LANGUAGE: &str = "rust";
+/// Default opacity for normal code.
 pub const DEFAULT_OPACITY: f32 = 1.0;
+/// Opacity for "dimmed" code (non-selected lines).
 pub const DEFAULT_DIM_OPACITY: f32 = 0.2;
 
+/// Cache key for lookups in [`GLOBAL_CODE_CACHE`].
 #[derive(Hash, Eq, PartialEq, Clone)]
 pub struct CodeCacheKey {
+    /// The raw source code text.
     pub code: String,
+    /// The font size bit representation.
     pub font_size_bits: u32,
+    /// Programming language name.
     pub language: String,
+    /// Highlighting theme name.
     pub theme: String,
+    /// Font family name.
     pub font_family: String,
 }
 
+/// A single highlighted fragment of code.
+///
+/// `Token` contains the text, color, and pre-rasterized glyph paths for 
+/// efficient rendering and interpolation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Token {
+    /// The raw text of the token.
     pub text: String,
+    /// The syntax-highlighted color.
     pub color: Color,
+    /// Local position relative to the code block.
     pub pos: Vec2,
+    /// Font size in pixels.
     pub size: f32,
+    /// Pre-computed vector paths for each glyph in the token.
     pub glyphs: Vec<(Affine, BezPath)>,
+    /// Total layout width of the token.
     pub width: f32,
+    /// Line index within the code block (0-indexed).
     pub line_index: usize,
 }
 
+/// Internal state for morphing between two code snippets.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CodeTransition {
+    /// Source text before the transition.
     pub from_text: String,
+    /// Destination text after the transition.
     pub to_text: String,
+    /// Source tokens.
     pub from_tokens: Vec<Token>,
+    /// Destination tokens.
     pub to_tokens: Vec<Token>,
+    /// Progress of the transition (0.0 to 1.0).
     pub progress: f32,
+    /// Mapping of token indices between source and destination.
     pub matches: Vec<(usize, usize)>, // (from_idx, to_idx)
+    /// Selection indices before the transition.
     pub from_selection: Vec<usize>,
+    /// Selection indices after the transition.
     pub to_selection: Vec<usize>,
 }
 
+/// The value type for a [`CodeNode`](crate::elements::media::CodeNode).
+///
+/// `CodeValue` encapsulates the text, its highlighted tokens, and any 
+/// active transition state between two code snippets.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CodeValue {
+    /// The raw source code.
     pub text: String,
+    /// The list of highlighted tokens.
     pub tokens: Vec<Token>,
+    /// Optional transition state during morphing.
     pub transition: Option<CodeTransition>,
+    /// List of line indices that are currently highlighted/selected.
     pub selection: Vec<usize>,
 }
 
 impl CodeValue {
+    /// Creates a new highlighted code value.
     pub fn new(
         text: String,
         font_size: f32,
@@ -110,6 +157,11 @@ impl Default for CodeValue {
 }
 
 impl Tweenable for CodeValue {
+    /// Interpolates between two code snippets.
+    ///
+    /// This implementation uses a diffing algorithm (Patience) to identify 
+    /// matching tokens between `a` and `b`, enabling smooth morphing transitions
+    /// where code segments move to their new positions.
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         if t <= 0.0 {
             return a.clone();
@@ -191,6 +243,7 @@ impl Tweenable for CodeValue {
     }
 }
 
+/// Removes common whitespace indentation from a multi-line string.
 pub fn strip_common_indent(text: &str) -> String {
     let lines: Vec<&str> = text.lines().collect();
     if lines.is_empty() {
@@ -246,6 +299,7 @@ impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
     }
 }
 
+/// Tokenizes and highlights source code into a list of [`Token`]s.
 pub fn tokenize_code(
     code: &str,
     font_size: f32,
@@ -354,6 +408,7 @@ pub fn tokenize_code(
     tokens
 }
 
+/// Parses a selection string (e.g., "1-3,5") into a list of 0-indexed line indices.
 pub fn parse_selection(selection: &str) -> Vec<usize> {
     let mut lines = Vec::new();
     for part in selection.split(',') {
@@ -381,6 +436,7 @@ pub fn parse_selection(selection: &str) -> Vec<usize> {
     lines
 }
 
+/// Renders a single code token into a Vello [`Scene`].
 pub fn draw_token(scene: &mut Scene, transform: Affine, token: &Token, color: Color, opacity: f32) {
     if opacity <= 0.0 {
         return;

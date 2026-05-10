@@ -8,9 +8,20 @@ lazy_static! {
     static ref GLOBAL_SCALE: Mutex<f32> = Mutex::new(1.0);
 }
 
+/// Global manager for loading and caching image assets.
+///
+/// `ImageManager` provides a centralized system for loading raster images (PNG, JPG)
+/// and vector images (SVG). It handles the conversion of these formats into 
+/// Vello-compatible [`PenikoImage`] structures and manages a global scale factor 
+/// for high-quality SVG rasterization.
 pub struct ImageManager;
 
 impl ImageManager {
+    /// Sets the global scale factor used for SVG rasterization.
+    ///
+    /// Increasing this value (e.g., to 4.0 for export) will result in sharper 
+    /// vector images but higher memory usage. Changing the scale automatically 
+    /// invalidates the image cache.
     pub fn set_global_scale(scale: f32) {
         let mut s = GLOBAL_SCALE.lock().unwrap();
         if *s != scale {
@@ -22,6 +33,11 @@ impl ImageManager {
 }
 
 impl ImageManager {
+    /// Loads an image from the specified file path.
+    ///
+    /// This method first checks an internal cache. If the image is not found:
+    /// - **SVG**: The vector file is loaded and rasterized at the current `GLOBAL_SCALE`.
+    /// - **Raster**: The image is loaded from disk (requires the `image` feature).
     pub fn get_image(path: &str) -> Option<Arc<PenikoImage>> {
         let mut cache = IMAGE_CACHE.lock().unwrap();
         if let Some(img) = cache.get(path) {

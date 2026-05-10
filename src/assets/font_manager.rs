@@ -6,8 +6,11 @@ use skrifa::FontRef;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 
+/// Container for raw font byte data and its identifier.
 pub struct FontData {
+    /// The name of the font family or file.
     pub name: String,
+    /// The raw TrueType/OpenType byte data.
     pub data: Vec<u8>,
 }
 
@@ -29,9 +32,18 @@ lazy_static! {
     static ref FONT_WARNINGS: Mutex<HashMap<String, bool>> = Mutex::new(HashMap::new());
 }
 
+/// Global manager for font discovery, loading, and caching.
+///
+/// `FontManager` provides a unified interface to load fonts from the system,
+/// from local files, or from registered memory buffers. It includes robust 
+/// fallback logic and specialized support for finding Math fonts required by Typst.
 pub struct FontManager;
 
 impl FontManager {
+    /// Retrieves a font by its family name or file path.
+    ///
+    /// This method first checks an internal cache, then tries to load it as a 
+    /// local file, and finally searches the system's font directories.
     pub fn get_font(family: &str) -> Option<Arc<FontData>> {
         let mut cache = FONT_CACHE.lock().unwrap();
 
@@ -78,6 +90,7 @@ impl FontManager {
         None
     }
 
+    /// Explicitly registers a font from a file path under a custom name.
     pub fn register_font(
         name: &str,
         path: impl AsRef<std::path::Path>,
@@ -92,6 +105,10 @@ impl FontManager {
         Ok(())
     }
 
+    /// Attempts to load the first available font from a list of families.
+    ///
+    /// If the primary font is not found, it prints a warning and tries subsequent 
+    /// fallbacks, eventually resorting to generic system fonts (Sans-Serif, etc.).
     pub fn get_font_with_fallback(families: &[&str]) -> Option<Arc<FontData>> {
         let primary = families
             .first()
@@ -147,6 +164,10 @@ impl FontManager {
         None
     }
 
+    /// Discovers a suitable Math font on the system for Typst rendering.
+    ///
+    /// This method prioritizes well-known math fonts (like DejaVu Math) and then 
+    /// falls back to any system font that contains "Math" in its metadata.
     pub fn get_math_font() -> (String, Option<Arc<FontData>>) {
         static MATH_CACHE: OnceLock<(String, Option<Arc<FontData>>)> = OnceLock::new();
         MATH_CACHE
@@ -199,6 +220,7 @@ impl FontManager {
             .clone()
     }
 
+    /// Converts a [`FontData`] into a [`FontRef`] for use with the `skrifa` crate.
     pub fn get_font_ref(data: &Arc<FontData>) -> FontRef<'_> {
         FontRef::new(&data.data).unwrap()
     }

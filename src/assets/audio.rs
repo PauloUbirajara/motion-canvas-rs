@@ -2,15 +2,26 @@ use std::time::Duration;
 use crate::core::scene::BaseScene;
 use crate::Result;
 
+/// Interface for handling audio orchestration during preview or export.
+///
+/// `AudioHandler` abstracts the differences between real audio playback (using `rodio`)
+/// and headless audio processing (for export).
 pub trait AudioHandler {
+    /// Performs any necessary initialization (e.g., disabling live playback during export).
     fn setup(&mut self);
+    /// Returns the total duration of the audio timeline.
     fn get_duration(&self, scene: &BaseScene) -> Duration;
+    /// Collects audio events from the scene for the current timestamp.
     fn collect_events(&mut self, scene: &mut BaseScene, current_time: Duration);
+    /// Returns true if the audio timeline has finished.
     fn is_finished(&self, scene: &BaseScene) -> bool;
+    /// Returns true if this handler is capable of processing audio.
     fn has_audio(&self) -> bool;
+    /// Finalizes audio processing (e.g., merging audio into a video file via FFmpeg).
     fn finish(&self, title: &str, use_ffmpeg: bool) -> Result<()>;
 }
 
+/// Factory function to create an appropriate audio handler based on active features.
 pub fn create_audio_handler() -> Box<dyn AudioHandler> {
     #[cfg(feature = "audio")]
     {
