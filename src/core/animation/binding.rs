@@ -1,15 +1,15 @@
 use crate::core::animation::base::Node;
 use crate::core::animation::tween::{Signal, Tweenable};
+#[cfg(feature = "runtime")]
+use kurbo::Affine;
 use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
-#[cfg(feature = "runtime")]
-use kurbo::Affine;
 
 /// A logical node that synchronizes one signal to another using a mapping function.
 ///
 /// `BindingNode` is a non-visual node that facilitates reactive data flow between elements.
-/// For example, you can use a binding to ensure a label always displays the current 
+/// For example, you can use a binding to ensure a label always displays the current
 /// position of a moving circle.
 pub struct BindingNode<T, S>
 where
@@ -30,7 +30,11 @@ where
     ///
     /// Every update cycle, the `mapper` function is called with the current value of `source`,
     /// and the result is applied to `target`.
-    pub fn new(source: Signal<S>, target: Signal<T>, mapper: impl Fn(S) -> T + Send + Sync + 'static) -> Self {
+    pub fn new(
+        source: Signal<S>,
+        target: Signal<T>,
+        mapper: impl Fn(S) -> T + Send + Sync + 'static,
+    ) -> Self {
         Self {
             source,
             target,

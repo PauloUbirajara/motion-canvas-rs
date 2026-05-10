@@ -1,9 +1,10 @@
+#![cfg(feature = "image")]
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
-use std::sync::Arc;
-use std::time::Duration;
 use kurbo::Affine;
 use peniko::Image as PenikoImage;
+use std::sync::Arc;
+use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
 

@@ -1,6 +1,6 @@
 /// A utility for deterministic, consistent hashing across the engine.
 ///
-/// `Hasher` is used primarily for calculating state hashes in the caching system, 
+/// `Hasher` is used primarily for calculating state hashes in the caching system,
 /// ensuring that frames are only re-rendered when their underlying data changes.
 /// Currently powered by `seahash` for high-performance, deterministic 64-bit hashing.
 pub struct Hasher {

@@ -1,5 +1,5 @@
-use std::time::Duration;
 use crate::core::animation::base::{Animation, AudioEvent};
+use std::time::Duration;
 
 /// A linear container for sequential animations.
 ///
@@ -29,7 +29,7 @@ impl Timeline {
 
     /// Advances the timeline by `dt`.
     ///
-    /// This method identifies which animation(s) should be active during the 
+    /// This method identifies which animation(s) should be active during the
     /// provided time slice and updates them accordingly.
     pub fn update(&mut self, dt: Duration) {
         let mut total_time = Duration::ZERO;
@@ -52,10 +52,7 @@ impl Timeline {
 
     /// Returns the total duration of all animations in the timeline.
     pub fn duration(&self) -> Duration {
-        self.animations
-            .iter()
-            .map(|a| a.duration())
-            .sum()
+        self.animations.iter().map(|a| a.duration()).sum()
     }
 
     /// Returns true if the current time has reached or exceeded the total duration.

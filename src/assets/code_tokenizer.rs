@@ -1,6 +1,6 @@
 #![cfg(feature = "code")]
-use crate::core::animation::Tweenable;
 use crate::assets::font_manager::FontManager;
+use crate::core::animation::Tweenable;
 use glam::Vec2;
 use once_cell::sync::Lazy;
 use similar::TextDiff;
@@ -59,7 +59,7 @@ pub struct CodeCacheKey {
 
 /// A single highlighted fragment of code.
 ///
-/// `Token` contains the text, color, and pre-rasterized glyph paths for 
+/// `Token` contains the text, color, and pre-rasterized glyph paths for
 /// efficient rendering and interpolation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Token {
@@ -102,7 +102,7 @@ pub struct CodeTransition {
 
 /// The value type for a [`CodeNode`](crate::elements::media::CodeNode).
 ///
-/// `CodeValue` encapsulates the text, its highlighted tokens, and any 
+/// `CodeValue` encapsulates the text, its highlighted tokens, and any
 /// active transition state between two code snippets.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CodeValue {
@@ -157,7 +157,7 @@ impl Default for CodeValue {
 impl Tweenable for CodeValue {
     /// Interpolates between two code snippets.
     ///
-    /// This implementation uses a diffing algorithm (Patience) to identify 
+    /// This implementation uses a diffing algorithm (Patience) to identify
     /// matching tokens between `a` and `b`, enabling smooth morphing transitions
     /// where code segments move to their new positions.
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {

@@ -1,6 +1,6 @@
 //! Runtime modules for rendering and interacting with animations.
 //!
-//! This module provides the glue between the core animation engine and the 
+//! This module provides the glue between the core animation engine and the
 //! physical output devices (Window/Screen) or files (Export).
 
 pub mod renderer;
@@ -13,7 +13,7 @@ use crate::Project;
 
 /// Extension trait to provide ergonomic runtime methods to [`Project`].
 ///
-/// This trait keeps the core `Project` struct clean of side-effects while 
+/// This trait keeps the core `Project` struct clean of side-effects while
 /// allowing for a simple `.show()` or `.export()` API.
 pub trait ProjectRuntimeExt {
     /// Opens the playback window for the project.

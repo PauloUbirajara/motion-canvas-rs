@@ -4,11 +4,11 @@
 //! property system, and control flow primitives for complex animations.
 
 pub mod base;
-pub mod tween;
-pub mod flow;
 pub mod binding;
+pub mod flow;
+pub mod tween;
 
 pub use base::*;
-pub use tween::*;
-pub use flow::*;
 pub use binding::*;
+pub use flow::*;
+pub use tween::*;

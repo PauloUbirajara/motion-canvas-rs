@@ -1,7 +1,7 @@
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
-use std::time::Duration;
 use kurbo::Affine;
+use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
 

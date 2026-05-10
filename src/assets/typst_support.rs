@@ -15,9 +15,9 @@ use vello::peniko::Color;
 
 /// A minimal implementation of the [`typst::World`] trait.
 ///
-/// `TypstWorld` provides the necessary environment for the Typst compiler to 
-/// function within `motion-canvas-rs`. It manages font discovery specifically 
-/// for mathematical typesetting and provides a virtual file system for the 
+/// `TypstWorld` provides the necessary environment for the Typst compiler to
+/// function within `motion-canvas-rs`. It manages font discovery specifically
+/// for mathematical typesetting and provides a virtual file system for the
 /// compiler to access main sources.
 pub struct TypstWorld {
     library: LazyHash<Library>,
@@ -30,7 +30,7 @@ pub struct TypstWorld {
 impl TypstWorld {
     /// Creates a new `TypstWorld` initialized with the provided source code.
     ///
-    /// It automatically discovers and loads system math fonts to ensure 
+    /// It automatically discovers and loads system math fonts to ensure
     /// complex equations are rendered correctly.
     pub fn new(text: &str) -> Self {
         let library = Library::default();
@@ -96,10 +96,10 @@ impl World for TypstWorld {
     }
 }
 
-/// Recursively traverses a Typst [`Frame`](typst::layout::Frame) and extracts 
+/// Recursively traverses a Typst [`Frame`](typst::layout::Frame) and extracts
 /// all glyphs as vector paths.
 ///
-/// This function translates Typst's internal layout items into Vello-compatible 
+/// This function translates Typst's internal layout items into Vello-compatible
 /// [`BezPath`] structures, preserving positioning and hierarchy.
 pub fn collect_paths(
     frame: &typst::layout::Frame,

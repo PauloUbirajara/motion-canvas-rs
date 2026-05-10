@@ -9,8 +9,8 @@ pub mod math;
 pub mod text;
 
 #[cfg(feature = "audio")]
-pub use audio::{AudioNode, AudioAnimation};
-pub use text::{TextNode, TextAlign};
+pub use audio::{AudioAnimation, AudioNode};
+pub use text::{TextAlign, TextNode};
 
 #[cfg(feature = "code")]
 pub use code::CodeNode;

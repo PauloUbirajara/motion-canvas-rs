@@ -1,24 +1,26 @@
+#![cfg(any(feature = "image", feature = "svg"))]
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use vello::peniko::{Blob, Extend, Format, Image as PenikoImage};
 
-static IMAGE_CACHE: Lazy<Mutex<HashMap<String, Arc<PenikoImage>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+static IMAGE_CACHE: Lazy<Mutex<HashMap<String, Arc<PenikoImage>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 static GLOBAL_SCALE: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
 
 /// Global manager for loading and caching image assets.
 ///
 /// `ImageManager` provides a centralized system for loading raster images (PNG, JPG)
-/// and vector images (SVG). It handles the conversion of these formats into 
-/// Vello-compatible [`PenikoImage`] structures and manages a global scale factor 
+/// and vector images (SVG). It handles the conversion of these formats into
+/// Vello-compatible [`PenikoImage`] structures and manages a global scale factor
 /// for high-quality SVG rasterization.
 pub struct ImageManager;
 
 impl ImageManager {
     /// Sets the global scale factor used for SVG rasterization.
     ///
-    /// Increasing this value (e.g., to 4.0 for export) will result in sharper 
-    /// vector images but higher memory usage. Changing the scale automatically 
+    /// Increasing this value (e.g., to 4.0 for export) will result in sharper
+    /// vector images but higher memory usage. Changing the scale automatically
     /// invalidates the image cache.
     pub fn set_global_scale(scale: f32) {
         let mut s = GLOBAL_SCALE.lock().unwrap();
@@ -56,7 +58,7 @@ impl ImageManager {
             let raster_w = ((size.width() as f32 * scale) as u32).max(1) + pad * 2;
             let raster_h = ((size.height() as f32 * scale) as u32).max(1) + pad * 2;
             let mut pixmap = resvg::tiny_skia::Pixmap::new(raster_w, raster_h)?;
-            
+
             // Render with padding offset
             resvg::render(
                 &tree,

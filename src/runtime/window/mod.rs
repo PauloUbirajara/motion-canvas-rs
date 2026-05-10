@@ -1,3 +1,4 @@
+use indicatif::{ProgressBar, ProgressStyle};
 use std::time::{Duration, Instant};
 use winit::{
     event::{Event, KeyEvent, WindowEvent},
@@ -5,11 +6,10 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowBuilder},
 };
-use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::Project;
 use crate::core::scene::Scene2D;
 use crate::runtime::renderer::VelloRenderer;
+use crate::Project;
 
 const TUI_HEADER: &str = "--- motion-canvas-rs playback ---";
 const TUI_CONTROLS: &str = r#"
@@ -69,7 +69,7 @@ impl AnimationWindow {
     /// Starts the interactive event loop.
     ///
     /// This method blocks the current thread until the window is closed or the animation finishes
-    /// (if `close_on_finish` is set). It handles window resizing, keyboard input, and 
+    /// (if `close_on_finish` is set). It handles window resizing, keyboard input, and
     /// scheduled updates.
     pub fn run(mut self) -> crate::Result<()> {
         let event_loop = EventLoop::new()?;
@@ -246,9 +246,14 @@ impl AnimationWindow {
         let hours = total_secs / 3600;
         let minutes = (total_secs % 3600) / 60;
         let seconds = total_secs % 60;
-        let status_str = if self.project.paused { "PAUSED" } else { "PLAYING" };
+        let status_str = if self.project.paused {
+            "PAUSED"
+        } else {
+            "PLAYING"
+        };
 
-        self.pb.set_message(format!("[{:02}:{:02}:{:02}]", hours, minutes, seconds));
+        self.pb
+            .set_message(format!("[{:02}:{:02}:{:02}]", hours, minutes, seconds));
         self.pb.set_style(
             ProgressStyle::default_bar()
                 .template(&format!(

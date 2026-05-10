@@ -28,20 +28,21 @@ const GENERIC_FALLBACKS: &[(FamilyName, &str)] = &[
 
 use once_cell::sync::Lazy;
 
-static FONT_CACHE: Lazy<Mutex<HashMap<String, Arc<FontData>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+static FONT_CACHE: Lazy<Mutex<HashMap<String, Arc<FontData>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 static FONT_WARNINGS: Lazy<Mutex<HashMap<String, bool>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 /// Global manager for font discovery, loading, and caching.
 ///
 /// `FontManager` provides a unified interface to load fonts from the system,
-/// from local files, or from registered memory buffers. It includes robust 
+/// from local files, or from registered memory buffers. It includes robust
 /// fallback logic and specialized support for finding Math fonts required by Typst.
 pub struct FontManager;
 
 impl FontManager {
     /// Retrieves a font by its family name or file path.
     ///
-    /// This method first checks an internal cache, then tries to load it as a 
+    /// This method first checks an internal cache, then tries to load it as a
     /// local file, and finally searches the system's font directories.
     pub fn get_font(family: &str) -> Option<Arc<FontData>> {
         let mut cache = FONT_CACHE.lock().unwrap();
@@ -106,7 +107,7 @@ impl FontManager {
 
     /// Attempts to load the first available font from a list of families.
     ///
-    /// If the primary font is not found, it prints a warning and tries subsequent 
+    /// If the primary font is not found, it prints a warning and tries subsequent
     /// fallbacks, eventually resorting to generic system fonts (Sans-Serif, etc.).
     pub fn get_font_with_fallback(families: &[&str]) -> Option<Arc<FontData>> {
         let primary = families
@@ -165,7 +166,7 @@ impl FontManager {
 
     /// Discovers a suitable Math font on the system for Typst rendering.
     ///
-    /// This method prioritizes well-known math fonts (like DejaVu Math) and then 
+    /// This method prioritizes well-known math fonts (like DejaVu Math) and then
     /// falls back to any system font that contains "Math" in its metadata.
     pub fn get_math_font() -> (String, Option<Arc<FontData>>) {
         static MATH_CACHE: OnceLock<(String, Option<Arc<FontData>>)> = OnceLock::new();

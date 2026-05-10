@@ -1,8 +1,8 @@
+#[cfg(feature = "runtime")]
+use kurbo::Affine;
 use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
-#[cfg(feature = "runtime")]
-use kurbo::Affine;
 
 /// Represents an audio playback event on the project timeline.
 #[derive(Clone, Debug)]
@@ -21,7 +21,7 @@ pub struct AudioEvent {
 
 /// The core trait for all time-based animations in the engine.
 ///
-/// Types implementing `Animation` represent a specific duration of time during 
+/// Types implementing `Animation` represent a specific duration of time during
 /// which state changes or side-effects (like audio) occur.
 pub trait Animation: Send + Sync + 'static {
     /// Advances the animation by the given delta time.
@@ -69,12 +69,7 @@ impl<T: ?Sized + Animation> Animation for Box<T> {
 pub trait Node: Send + Sync + 'static {
     /// Renders the node into the provided Vello scene.
     #[cfg(feature = "runtime")]
-    fn render(
-        &self,
-        vello_scene: &mut Scene,
-        parent_transform: Affine,
-        parent_opacity: f32,
-    );
+    fn render(&self, vello_scene: &mut Scene, parent_transform: Affine, parent_opacity: f32);
 
     /// Updates the node's internal state (e.g., for procedural animations).
     fn update(&mut self, dt: Duration);

@@ -1,11 +1,11 @@
 #![doc = include_str!("../README.md")]
 
+pub mod assets;
 pub mod core;
 pub mod elements;
-pub mod assets;
+pub mod project;
 #[cfg(feature = "runtime")]
 pub mod runtime;
-pub mod project;
 
 // --- RE-EXPORTS ---
 
@@ -28,7 +28,7 @@ pub mod nodes {
 pub mod flows {
     pub use crate::core::animation::flow::*;
     // Re-export macros at the module level as well
-    pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing, wait};
+    pub use crate::{all, any, chain, delay, loop_anim, sequence, wait, with_easing};
     #[cfg(feature = "audio")]
     pub use crate::{audio_wait, play};
 }
@@ -52,26 +52,26 @@ pub mod prelude {
     pub use crate::easings;
     pub use crate::flows;
     pub use crate::nodes;
-    
+
     #[cfg(feature = "runtime")]
     pub use crate::runtime::ProjectRuntimeExt;
 
     // Glob-export for direct access (e.g. Circle, all!, quad_in)
     pub use crate::core::animation::flow::*;
     pub use crate::core::easings::*;
-    
-    pub use crate::elements::shapes::*;
-    pub use crate::elements::media::*;
-    pub use crate::elements::container::*;
 
-    pub use crate::{all, any, chain, delay, loop_anim, sequence, with_easing, wait};
+    pub use crate::elements::container::*;
+    pub use crate::elements::media::*;
+    pub use crate::elements::shapes::*;
+
+    pub use crate::{all, any, chain, delay, loop_anim, sequence, wait, with_easing};
     #[cfg(feature = "audio")]
     pub use crate::{audio_wait, play};
 
     pub use crate::assets::font_manager::FontManager;
     pub use crate::assets::palette::Palette;
     pub use crate::Result;
-    
+
     pub use glam::Vec2;
     pub use kurbo::{Affine, BezPath};
     pub use peniko::Color;

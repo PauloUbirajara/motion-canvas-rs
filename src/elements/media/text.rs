@@ -1,14 +1,14 @@
 use crate::assets::font_manager::FontManager;
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
+use kurbo::{Affine, BezPath, Shape};
 use once_cell::sync::Lazy;
+use peniko::{Brush, Color, Fill};
 use skrifa::instance::{LocationRef, Size};
 use skrifa::MetadataProvider;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use kurbo::{Affine, BezPath, Shape};
-use peniko::{Brush, Color, Fill};
 #[cfg(feature = "runtime")]
 use vello::Scene;
 

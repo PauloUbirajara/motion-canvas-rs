@@ -1,9 +1,9 @@
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
-use std::sync::Arc;
-use std::time::Duration;
 use kurbo::{Affine, BezPath, Stroke};
 use peniko::{Brush, Color};
+use std::sync::Arc;
+use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
 

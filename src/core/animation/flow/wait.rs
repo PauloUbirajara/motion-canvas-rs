@@ -3,8 +3,8 @@ use std::time::Duration;
 
 /// An animation that simply waits for a duration.
 ///
-/// `Wait` is a no-op animation that is useful for creating pauses between 
-/// other animations in a [`Chain`](crate::flows::chain::Chain) or for 
+/// `Wait` is a no-op animation that is useful for creating pauses between
+/// other animations in a [`Chain`](crate::flows::chain::Chain) or for
 /// defining relative start times in an [`Any`](crate::flows::any::Any).
 pub struct Wait {
     pub(crate) duration: Duration,
@@ -12,7 +12,7 @@ pub struct Wait {
 }
 
 impl Animation for Wait {
-    /// Increments the internal elapsed timer. 
+    /// Increments the internal elapsed timer.
     /// Returns `true` if the elapsed time reaches the target duration.
     fn update(&mut self, dt: Duration) -> (bool, Duration) {
         self.elapsed += dt;

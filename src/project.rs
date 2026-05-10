@@ -1,7 +1,7 @@
 use crate::core::scene::BaseScene;
 use crate::core::scene::Scene2D;
-use std::path::PathBuf;
 use peniko::Color;
+use std::path::PathBuf;
 
 const DEFAULT_FPS: u32 = 60;
 const DEFAULT_WIDTH: u32 = 800;

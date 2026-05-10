@@ -2,9 +2,9 @@ use crate::assets::hash::Hasher;
 use crate::core::animation::base::Node;
 use crate::core::animation::tween::Signal;
 use glam::Vec2;
-use std::time::Duration;
 use kurbo::{Affine, BezPath, Stroke};
 use peniko::{Brush, Color};
+use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
 

@@ -1,7 +1,7 @@
-pub mod shapes;
-pub mod media;
 pub mod container;
+pub mod media;
+pub mod shapes;
 
-pub use shapes::*;
-pub use media::*;
 pub use container::*;
+pub use media::*;
+pub use shapes::*;

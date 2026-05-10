@@ -1,7 +1,7 @@
 use crate::core::animation::Node;
+use kurbo::Affine;
 #[cfg(feature = "runtime")]
 use vello::Scene;
-use kurbo::Affine;
 
 /// A trait for objects that can manage a 2D visual scene.
 pub trait Scene2D {
