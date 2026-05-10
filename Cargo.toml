@@ -10,7 +10,13 @@ homepage = "https://github.com/PauloUbirajara/motion-canvas-rs"
 repository = "https://github.com/PauloUbirajara/motion-canvas-rs"
 keywords = ["animation", "graphics", "vello", "typst", "vector"]
 categories = ["graphics", "rendering", "multimedia"]
-exclude = [".github/*", "assets/*"]
+exclude = [
+    ".github/*",
+    "assets/*",
+    "examples/audios/*",
+    "examples/images/*",
+    "run-tests.sh",
+]
 
 [package.metadata.docs.rs]
 all-features = true
