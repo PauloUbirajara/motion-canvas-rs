@@ -93,6 +93,12 @@ impl GridNode {
         self
     }
 
+    /// Sets uniform spacing between grid lines on both axes.
+    pub fn with_spacing_all(mut self, spacing: f32) -> Self {
+        self.spacing = Signal::new(Vec2::splat(spacing));
+        self
+    }
+
     /// Sets the stroke color and width for the grid lines.
     pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
         self.stroke_color = Signal::new(color);

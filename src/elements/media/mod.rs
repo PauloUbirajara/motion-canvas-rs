@@ -10,7 +10,7 @@ pub mod text;
 
 #[cfg(feature = "audio")]
 pub use audio::{AudioNode, AudioAnimation};
-pub use text::TextNode;
+pub use text::{TextNode, TextAlign};
 
 #[cfg(feature = "code")]
 pub use code::CodeNode;

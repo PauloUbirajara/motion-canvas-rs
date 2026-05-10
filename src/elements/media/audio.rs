@@ -11,8 +11,7 @@ use std::time::Duration;
 /// ```rust
 /// # use motion_canvas_rs::prelude::*;
 /// # use std::time::Duration;
-/// let music = AudioNode::default()
-///     .with_path("assets/bgm.mp3")
+/// let music = AudioNode::new("assets/bgm.mp3")
 ///     .with_volume(0.5)
 ///     .with_start(Duration::from_secs(10));
 /// ```
@@ -26,6 +25,12 @@ pub struct AudioNode {
     pub start_crop: Duration,
     /// The amount of audio to ignore at the end.
     pub end_crop: Duration,
+}
+
+impl Default for AudioNode {
+    fn default() -> Self {
+        Self::new("")
+    }
 }
 
 impl AudioNode {
