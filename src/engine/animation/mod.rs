@@ -68,6 +68,17 @@ impl Timeline {
 }
 
 /// Run animations in parallel.
+///
+/// # Example
+/// ```rust
+/// # use std::time::Duration;
+/// # use motion_canvas_rs::prelude::*;
+/// # let node = Circle::default();
+/// all![
+///     node.position.to(Vec2::new(100.0, 100.0), Duration::from_secs(1)),
+///     node.opacity.to(1.0, Duration::from_millis(500)),
+/// ];
+/// ```
 #[macro_export]
 macro_rules! all {
     ($($x:expr),* $(,)?) => {
@@ -75,7 +86,19 @@ macro_rules! all {
     };
 }
 
-/// Run animations in race.
+/// Run animations in race (completes when the first one finishes).
+///
+/// # Example
+/// ```rust
+/// # use std::time::Duration;
+/// # use motion_canvas_rs::prelude::*;
+/// # let node = Circle::default();
+/// # let target = Vec2::ZERO;
+/// any![
+///     wait(Duration::from_secs(5)),
+///     node.position.to(target, Duration::from_secs(2)),
+/// ];
+/// ```
 #[macro_export]
 macro_rules! any {
     ($($x:expr),* $(,)?) => {
@@ -84,6 +107,19 @@ macro_rules! any {
 }
 
 /// Run animations sequentially.
+///
+/// # Example
+/// ```rust
+/// # use std::time::Duration;
+/// # use motion_canvas_rs::prelude::*;
+/// # let node = Circle::default();
+/// # let (p1, p2) = (Vec2::ZERO, Vec2::ZERO);
+/// chain![
+///     node.position.to(p1, Duration::from_secs(1)),
+///     wait(Duration::from_millis(500)),
+///     node.position.to(p2, Duration::from_secs(1)),
+/// ];
+/// ```
 #[macro_export]
 macro_rules! chain {
     ($($x:expr),* $(,)?) => {
@@ -92,6 +128,19 @@ macro_rules! chain {
 }
 
 /// Create a sequence with staggered start times.
+///
+/// # Example
+/// ```rust
+/// # use std::time::Duration;
+/// # use motion_canvas_rs::prelude::*;
+/// # let nodes = [Circle::default(), Circle::default(), Circle::default()];
+/// sequence![
+///     Duration::from_millis(100),
+///     nodes[0].opacity.to(1.0, Duration::from_secs(1)),
+///     nodes[1].opacity.to(1.0, Duration::from_secs(1)),
+///     nodes[2].opacity.to(1.0, Duration::from_secs(1)),
+/// ];
+/// ```
 #[macro_export]
 macro_rules! sequence {
     ($stagger:expr, $($x:expr),* $(,)?) => {
@@ -99,7 +148,18 @@ macro_rules! sequence {
     };
 }
 
-/// Delay an animation.
+/// Delay the start of an animation.
+///
+/// # Example
+/// ```rust
+/// # use std::time::Duration;
+/// # use motion_canvas_rs::prelude::*;
+/// # let node = Circle::default();
+/// delay!(
+///     Duration::from_secs(1),
+///     node.scale.to(Vec2::splat(2.0), Duration::from_secs(1))
+/// );
+/// ```
 #[macro_export]
 macro_rules! delay {
     ($duration:expr, $inner:expr $(,)?) => {
@@ -110,19 +170,45 @@ macro_rules! delay {
     };
 }
 
-/// Loop an animation factory.
+/// Loop an animation factory a specified number of times.
+///
+/// # Example
+/// ```rust
+/// # use std::time::Duration;
+/// # use motion_canvas_rs::prelude::*;
+/// # let node = Circle::default();
+/// loop_anim!(
+///     node.rotation.to(std::f32::consts::TAU, Duration::from_secs(1)),
+///     Some(5)
+/// );
+/// ```
 #[macro_export]
 macro_rules! loop_anim {
     ($anim:expr, $count:expr $(,)?) => {
         $crate::engine::animation::flow::loop_anim(
-            Box::new(move || {
+            move || {
                 Into::<Box<dyn $crate::engine::animation::base::Animation>>::into($anim)
-            }),
+            },
             $count,
         )
     };
 }
+
 /// Run animations in parallel with a shared easing override.
+///
+/// # Example
+/// ```rust
+/// # use std::time::Duration;
+/// # use motion_canvas_rs::prelude::*;
+/// # let (node1, node2) = (Circle::default(), Circle::default());
+/// with_easing!(
+///     easings::elastic_out,
+///     [
+///         node1.scale.to(Vec2::splat(1.5), Duration::from_secs(1)),
+///         node2.scale.to(Vec2::splat(1.5), Duration::from_secs(1)),
+///     ]
+/// );
+/// ```
 #[macro_export]
 macro_rules! with_easing {
     ($easing:expr, [$($x:expr),* $(,)?]) => {
@@ -131,6 +217,13 @@ macro_rules! with_easing {
 }
 
 /// Play an audio node.
+///
+/// # Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// # let bg_music = AudioNode::new("music.mp3");
+/// play!(bg_music);
+/// ```
 #[cfg(feature = "audio")]
 #[macro_export]
 macro_rules! play {
@@ -140,6 +233,12 @@ macro_rules! play {
 }
 
 /// Wait on the audio timeline.
+///
+/// # Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// audio_wait!(2.5);
+/// ```
 #[cfg(feature = "audio")]
 #[macro_export]
 macro_rules! audio_wait {

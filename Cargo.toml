@@ -1,6 +1,6 @@
 [package]
 name = "motion-canvas-rs"
-version = "0.1.9"
+version = "0.2.0"
 edition = "2021"
 authors = ["Paulo Ubirajara"]
 description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
@@ -10,7 +10,13 @@ homepage = "https://github.com/PauloUbirajara/motion-canvas-rs"
 repository = "https://github.com/PauloUbirajara/motion-canvas-rs"
 keywords = ["animation", "graphics", "vello", "typst", "vector"]
 categories = ["graphics", "rendering", "multimedia"]
-exclude = [".github/*", "media/*"]
+exclude = [
+    ".github/*",
+    "assets/*",
+    "examples/audios/*",
+    "examples/images/*",
+    "run-tests.sh",
+]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -116,3 +122,7 @@ name = "shapes"
 
 [[example]]
 name = "signals"
+
+[[example]]
+name = "world_map"
+required-features = ["image", "svg"]
