@@ -1,5 +1,5 @@
 use motion_canvas_rs::prelude::*;
-use std::time::Duration;
+use std::{ops::Add, time::Duration};
 
 /// Country landmark data: (name, x, y) on a 1010x666 map (SVG)
 struct Landmark {
@@ -12,70 +12,130 @@ struct Landmark {
 const MAP_W: f32 = 800.0;
 const MAP_H: f32 = 600.0;
 
-/// Coordinates on the 1010x666 map grid.
-const LANDMARKS: [Landmark; 10] = [
+/// Coordinates on the 800x600 map grid.
+const LANDMARKS: [Landmark; 22] = [
     Landmark {
         name: "Iceland",
-        x: 335.0,
+        x: 337.0,
         y: 215.0,
     },
     Landmark {
         name: "Norway",
-        x: 395.0,
+        x: 397.0,
         y: 235.0,
     },
     Landmark {
         name: "Sweden",
-        x: 410.0,
+        x: 412.0,
         y: 225.0,
     },
     Landmark {
+        name: "Finland",
+        x: 437.0,
+        y: 220.0,
+    },
+    Landmark {
         name: "Denmark",
-        x: 397.0,
+        x: 399.0,
         y: 254.0,
     },
     Landmark {
         name: "Netherlands",
-        x: 388.0,
+        x: 390.0,
         y: 268.0,
     },
     Landmark {
+        name: "Luxembourg",
+        x: 392.0,
+        y: 278.0,
+    },
+    Landmark {
         name: "Germany",
-        x: 398.0,
+        x: 400.0,
         y: 270.0,
     },
     Landmark {
         name: "Switzerland",
-        x: 394.0,
-        y: 285.0,
+        x: 396.0,
+        y: 286.0,
+    },
+    Landmark {
+        name: "Egypt",
+        x: 442.0,
+        y: 340.0,
+    },
+    Landmark {
+        name: "Russia",
+        x: 542.0,
+        y: 220.0,
+    },
+    Landmark {
+        name: "China",
+        x: 602.0,
+        y: 320.0,
     },
     Landmark {
         name: "Singapore",
-        x: 598.0,
+        x: 600.0,
         y: 395.0,
     },
     Landmark {
         name: "Japan",
-        x: 675.0,
+        x: 677.0,
         y: 315.0,
     },
     Landmark {
         name: "Australia",
-        x: 663.0,
+        x: 665.0,
         y: 455.0,
+    },
+    Landmark {
+        name: "New Zealand",
+        x: 749.0,
+        y: 499.0,
+    },
+    Landmark {
+        name: "Brazil",
+        x: 272.0,
+        y: 425.0,
+    },
+    Landmark {
+        name: "Paraguay",
+        x: 254.0,
+        y: 452.0,
+    },
+    Landmark {
+        name: "El Salvador",
+        x: 189.0,
+        y: 371.0,
+    },
+    Landmark {
+        name: "Mexico",
+        x: 157.0,
+        y: 345.0,
+    },
+    Landmark {
+        name: "USA",
+        x: 177.0,
+        y: 310.0,
+    },
+    Landmark {
+        name: "Canada",
+        x: 167.0,
+        y: 240.0,
     },
 ];
 
 /// Helper: duration that starts slow and speeds up
 fn tour_duration(index: usize) -> Duration {
     // First leg: 4.5s, last leg: 1.2s. Linear interpolation.
-    let t = index as f32 / 9.0;
-    let secs = 4.5 * (1.0 - t) + 1.2 * t;
+    let t = index as f32 / (LANDMARKS.len() - 1) as f32;
+    let secs = 4.0 * (1.1 - t) + 1.2 * t;
     Duration::from_secs_f32(secs)
 }
 
-/// Sky blue background, in the Palette tone family
-const SKY_BG: Color = Color::rgb8(0x3a, 0x6e, 0x9e);
+/// Sky blue background
+const SKY_BG: Color = Color::rgb8(0xcf, 0xe5, 0xe8);
 
 /// Center of map in world coords
 const MAP_CX: f32 = MAP_W / 2.0;
@@ -409,14 +469,7 @@ fn main() {
         .with_position(Vec2::new(LANDMARKS[0].x, LANDMARKS[0].y))
         .with_path("./examples/images/plane.svg")
         .with_size(Vec2::new(12.0, 12.0))
-        .with_opacity(0.0);
-
-    // ── Title Text (HUD — outside camera) ──
-    let title = TextNode::default()
-        .with_position(Vec2::new(w as f32 / 2.0, 60.0))
-        .with_text("World Map")
-        .with_font_size(48.0)
-        .with_fill(Palette::DARK_GRAY)
+        .with_scale(0.0)
         .with_opacity(0.0);
 
     // ── Landmark pins + name labels ──
@@ -480,9 +533,6 @@ fn main() {
     let camera = camera.with_nodes(camera_children);
     project.scene.add(Box::new(camera.clone()));
 
-    // HUD (fixed on screen)
-    project.scene.add(Box::new(title.clone()));
-
     // ═══════════════════════════════════════════════════
     //  ANIMATION TIMELINE
     // ═══════════════════════════════════════════════════
@@ -519,14 +569,6 @@ fn main() {
         ));
     }
 
-    // Title fades in during the zoom — no separate wait
-    phase1_anims.push(Box::new(
-        title
-            .opacity
-            .to(1.0, Duration::from_millis(1200))
-            .ease(easings::cubic_out),
-    ));
-
     let phase1_intro: Box<dyn Animation> = chain![
         // Everything happens at once: zoom, clouds scatter, map reveals, title appears
         all(phase1_anims),
@@ -558,7 +600,7 @@ fn main() {
         wait(Duration::from_millis(800)),
     ];
 
-    // Phase 3: Tour through each country (staggered — no stopping between legs)
+    // Phase 3: Tour through each country (scale in -> move -> scale out -> show landmark)
     let mut tour_legs: Vec<Box<dyn Animation>> = Vec::new();
     for i in 0..LANDMARKS.len() - 1 {
         let from = &LANDMARKS[i];
@@ -571,18 +613,24 @@ fn main() {
         let angle = dy.atan2(dx);
 
         let leg: Box<dyn Animation> = chain![
-            // Everything happens at once: rotate, hide prev name, fly, draw line, pan camera
+            // 1. Scale plane in at the start of the leg
             all![
-                // Rotate plane toward destination (quick)
                 plane
                     .rotation
                     .to(angle, Duration::from_millis(200))
                     .ease(easings::cubic_out),
-                // Hide previous landmark's name
+                plane
+                    .scale
+                    .to(Vec2::splat(1.0), Duration::from_millis(300))
+                    .ease(easings::cubic_out),
+                // Hide current landmark name as we depart
                 name_labels[i]
                     .opacity
                     .to(0.0, Duration::from_millis(200))
                     .ease(easings::cubic_out),
+            ],
+            // 2. Move plane to destination
+            all![
                 // Show route line
                 route_lines[i].opacity.to(1.0, Duration::from_millis(100)),
                 // Draw line to destination
@@ -590,18 +638,25 @@ fn main() {
                     .end
                     .to(Vec2::new(to.x, to.y), dur)
                     .ease(easings::cubic_in_out),
-                // Move plane to destination
-                plane
-                    .position
-                    .to(Vec2::new(to.x, to.y), dur)
-                    .ease(easings::cubic_in_out),
-                // Camera follows to destination
-                camera
-                    .position
-                    .to(Vec2::new(to.x, to.y), dur)
-                    .ease(easings::cubic_in_out),
+                all![
+                    // Move plane to destination
+                    plane
+                        .position
+                        .to(Vec2::new(to.x, to.y), dur)
+                        .ease(easings::cubic_in_out),
+                    // Camera follows to destination
+                    camera
+                        .position
+                        .to(Vec2::new(to.x, to.y), dur.add(Duration::from_millis(500)))
+                        .ease(easings::cubic_in_out),
+                ]
             ],
-            // Reveal destination pin + name
+            // 3. Scale plane out at the destination
+            plane
+                .scale
+                .to(Vec2::splat(0.0), Duration::from_millis(300))
+                .ease(easings::cubic_in),
+            // 4. Reveal destination pin + name
             all![
                 pins[i + 1].opacity.to(1.0, Duration::from_millis(300)),
                 pins[i + 1]
@@ -612,6 +667,13 @@ fn main() {
                     .opacity
                     .to(1.0, Duration::from_millis(300)),
             ],
+            // 5. Wait a bit for viewer to read
+            wait(Duration::from_millis(600)),
+            // 6. Name disappears before plane scales in for next leg
+            name_labels[i + 1]
+                .opacity
+                .to(0.0, Duration::from_millis(200))
+                .ease(easings::cubic_out),
         ];
         tour_legs.push(leg);
     }
@@ -633,52 +695,20 @@ fn main() {
             camera
                 .zoom
                 .to(1.0, Duration::from_secs(3))
-                .ease(easings::cubic_in_out),
+                .ease(easings::sine_in_out),
         ],
-        // Pulse all pins
-        sequence![
-            Duration::from_millis(80),
-            pins[0]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[1]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[2]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[3]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[4]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[5]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[6]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[7]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[8]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-            pins[9]
-                .radius
-                .to(10.0, Duration::from_millis(300))
-                .ease(easings::elastic_out),
-        ],
+        // Pulse all pins (dynamic loop)
+        {
+            let mut pulse_anims: Vec<Box<dyn Animation>> = Vec::new();
+            for pin in &pins {
+                pulse_anims.push(Box::new(
+                    pin.radius
+                        .to(10.0, Duration::from_millis(300))
+                        .ease(easings::elastic_out),
+                ));
+            }
+            sequence(Duration::from_millis(60), pulse_anims)
+        },
         plane.opacity.to(0.0, Duration::from_millis(500)),
         wait(Duration::from_secs(3)),
     ];

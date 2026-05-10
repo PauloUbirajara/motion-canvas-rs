@@ -25,12 +25,17 @@ impl ImageManager {
             let size = tree.size();
             // Rasterize at 4x native resolution for crispness when zoomed
             let scale = 4u32;
-            let raster_w = (size.width() as u32) * scale;
-            let raster_h = (size.height() as u32) * scale;
+            // Add 2px padding to avoid "white square border" texture filtering artifacts
+            let pad = 2;
+            let raster_w = (size.width() as u32) * scale + pad * 2;
+            let raster_h = (size.height() as u32) * scale + pad * 2;
             let mut pixmap = resvg::tiny_skia::Pixmap::new(raster_w, raster_h)?;
+            
+            // Render with padding offset
             resvg::render(
                 &tree,
-                resvg::tiny_skia::Transform::from_scale(scale as f32, scale as f32),
+                resvg::tiny_skia::Transform::from_translate(pad as f32, pad as f32)
+                    .post_scale(scale as f32, scale as f32),
                 &mut pixmap.as_mut(),
             );
 
