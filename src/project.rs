@@ -15,26 +15,48 @@ const DEFAULT_USE_FFMPEG: bool = false;
 const DEFAULT_PREVIEW_QUALITY: f32 = 0.9;
 const DEFAULT_EXPORT_QUALITY: f32 = 4.0;
 
+/// The central configuration and state for a motion canvas animation.
+///
+/// `Project` stores all metadata about the animation, including dimensions,
+/// frame rate, and export settings. It also owns the [`BaseScene`] which
+/// contains the actual animation nodes.
 pub struct Project {
+    /// Target width of the animation.
     pub width: u32,
+    /// Target height of the animation.
     pub height: u32,
+    /// Frames per second.
     pub fps: u32,
+    /// Human-readable title of the project.
     pub title: String,
+    /// The root scene orchestration node.
     pub scene: BaseScene,
+    /// Directory where exported frames and videos will be saved.
     pub output_path: PathBuf,
+    /// Whether to use frame-level caching during export.
     pub use_cache: bool,
+    /// Whether to automatically attempt FFmpeg encoding after export.
     pub use_ffmpeg: bool,
+    /// Whether to use GPU acceleration for rendering.
     pub use_gpu: bool,
+    /// Background clear color for the animation.
     pub background_color: Color,
+    /// If true, the playback window will close automatically when the animation ends.
     pub close_on_finish: bool,
+    /// The current playback/export time.
     pub current_time: std::time::Duration,
+    /// Playback state (paused or playing).
     pub paused: bool,
+    /// Playback speed multiplier.
     pub speed: f32,
+    /// Quality factor for SVG rendering during interactive preview.
     pub preview_quality: f32,
+    /// Quality factor for SVG rendering during export.
     pub export_quality: f32,
 }
 
 impl Project {
+    /// Creates a new project with the given dimensions and default settings.
     pub fn new(width: u32, height: u32) -> Self {
         Self {
             width,
@@ -64,66 +86,81 @@ impl Default for Project {
 }
 
 impl Project {
+    /// Sets the target frames per second.
     pub fn with_fps(mut self, fps: u32) -> Self {
         self.fps = fps;
         self
     }
 
+    /// Sets the width and height of the animation.
     pub fn with_dimensions(mut self, width: u32, height: u32) -> Self {
         self.width = width;
         self.height = height;
         self
     }
 
+    /// Sets the project title.
     pub fn with_title(mut self, title: &str) -> Self {
         self.title = title.to_string();
         self
     }
 
+    /// Sets the output directory for exports.
     pub fn with_output_path(mut self, path: &str) -> Self {
         self.output_path = PathBuf::from(path);
         self
     }
 
+    /// Enables or disables frame-level caching.
     pub fn with_cache(mut self, use_cache: bool) -> Self {
         self.use_cache = use_cache;
         self
     }
 
+    /// Enables or disables automatic FFmpeg encoding.
     pub fn with_ffmpeg(mut self, use_ffmpeg: bool) -> Self {
         self.use_ffmpeg = use_ffmpeg;
         self
     }
 
+    /// Enables or disables GPU acceleration.
     pub fn with_gpu(mut self, use_gpu: bool) -> Self {
         self.use_gpu = use_gpu;
         self
     }
 
+    /// Sets the background clear color.
     pub fn with_background(mut self, color: Color) -> Self {
         self.background_color = color;
         self
     }
 
+    /// Sets whether the window should close automatically on finish.
     pub fn with_close_on_finish(mut self, close: bool) -> Self {
         self.close_on_finish = close;
         self
     }
 
+    /// Sets the preview quality factor.
     pub fn with_preview_quality(mut self, quality: f32) -> Self {
         self.preview_quality = quality;
         self
     }
 
+    /// Sets the export quality factor.
     pub fn with_export_quality(mut self, quality: f32) -> Self {
         self.export_quality = quality;
         self
     }
 
+    /// Convenience method to enable automatic window closing on finish.
     pub fn close_on_finish(self) -> Self {
         self.with_close_on_finish(true)
     }
 
+    /// Resets the scene and advances it to the specified target time.
+    ///
+    /// This is used for seeking in the interactive preview.
     pub fn seek_to(&mut self, target_time: std::time::Duration) {
         self.scene.reset();
         self.current_time = std::time::Duration::ZERO;
@@ -134,9 +171,9 @@ impl Project {
         }
     }
 
+    /// Returns the sanitized filename for a specific frame index.
     pub fn get_frame_name(&self, frame_index: u32) -> String {
         let sanitized = crate::assets::sanitize_title(&self.title);
         format!("{}_{:04}.png", sanitized, frame_index)
     }
 }
-

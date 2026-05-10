@@ -17,13 +17,23 @@ use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
 use crate::Project;
 use crate::core::scene::Scene2D;
 
+/// A manifest representing the current state of exported frames.
+///
+/// Used by the caching system to avoid re-rendering frames that haven't changed.
 #[derive(Serialize, Deserialize, Default)]
 pub struct CacheManifest {
+    /// The width of the frames in the cache.
     pub width: u32,
+    /// The height of the frames in the cache.
     pub height: u32,
+    /// A map from frame index to its state hash.
     pub frames: HashMap<u32, u64>, // frame_index -> state_hash
 }
 
+/// Headless renderer used for exporting scenes to raw image data.
+///
+/// `Exporter` handles the low-level wgpu buffer mapping and texture copies required
+/// to extract high-quality frames from the GPU.
 pub struct Exporter {
     width: u32,
     height: u32,
@@ -41,6 +51,7 @@ pub struct Exporter {
 }
 
 impl Exporter {
+    /// Initializes a new exporter with pre-allocated GPU resources.
     pub fn new(
         width: u32,
         height: u32,
@@ -202,7 +213,12 @@ impl Exporter {
 }
 
 /// Exports the project to a sequence of PNG frames and optionally encodes them to a video file.
-/// This function keeps the Project focused on data by handling the side-effect heavy export process.
+///
+/// `run_export_session` iterates through every frame of the project's timeline,
+/// rendering them at full resolution. It supports:
+/// - **Caching**: Skips re-rendering if the frame's `state_hash` hasn't changed.
+/// - **Background Saving**: Saves PNGs in parallel using a background thread to avoid blocking the GPU.
+/// - **FFmpeg Integration**: Streams raw frames directly to FFmpeg for high-speed video encoding.
 #[cfg(feature = "export")]
 pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     // Set high-quality scale for SVGs during export (e.g., 4x)
@@ -394,4 +410,3 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     audio_handler.finish(&project.title, project.use_ffmpeg)?;
     Ok(())
 }
-

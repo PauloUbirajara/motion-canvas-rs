@@ -7,6 +7,10 @@ use vello::{
 use winit::window::Window;
 use indicatif::ProgressBar;
 
+/// High-level renderer that bridges the engine's `Scene2D` with Vello and wgpu.
+///
+/// `VelloRenderer` manages the GPU context, surfaces, and the core Vello renderer instance.
+/// It is responsible for translating the declarative scene into drawing commands on the screen.
 pub struct VelloRenderer {
     context: RenderContext,
     surface: Option<RenderSurface<'static>>,
@@ -17,6 +21,7 @@ pub struct VelloRenderer {
 }
 
 impl VelloRenderer {
+    /// Creates a new renderer with the specified GPU preference and background color.
     pub fn new(use_gpu: bool, background_color: vello::peniko::Color) -> Self {
         Self {
             context: RenderContext::new(),
@@ -28,6 +33,10 @@ impl VelloRenderer {
         }
     }
 
+    /// (Re)initializes the rendering surface for a specific window.
+    ///
+    /// This is typically called when the window is first created or resumed (on Android/iOS).
+    /// It performs an asynchronous surface creation and blocks until a GPU device is acquired.
     pub fn resume(&mut self, window: &Window, pb: &ProgressBar) {
         let size = window.inner_size();
         let surface: RenderSurface = {
@@ -71,6 +80,10 @@ impl VelloRenderer {
         self.renderer = Some(renderer);
     }
 
+    /// Renders a single frame of the provided scene.
+    ///
+    /// This method resets the internal Vello scene, records all drawing commands from
+    /// the `scene_2d`, and submits them to the GPU for presentation.
     pub fn render(&mut self, scene_2d: &dyn Scene2D, width: u32, height: u32) {
         if let (Some(surface), Some(renderer)) = (&self.surface, &mut self.renderer) {
             self.scene.reset();

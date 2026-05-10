@@ -26,12 +26,18 @@ Controls:
   v (Down)  / J : Decrease speed (min 0.1x)
 "#;
 
+/// An interactive preview window for viewing animations.
+///
+/// `AnimationWindow` uses `winit` for window management and event handling,
+/// providing real-time playback with a CLI progress bar (via `indicatif`).
 pub struct AnimationWindow {
     project: Project,
     pb: ProgressBar,
 }
 
 impl AnimationWindow {
+    /// Creates a new animation window for the given project.
+    /// Initializes the TUI header and progress bar.
     pub fn new(project: Project) -> crate::Result<Self> {
         let video_duration = project.scene.video_timeline.duration();
         let audio_duration = {
@@ -60,6 +66,11 @@ impl AnimationWindow {
         Ok(Self { project, pb })
     }
 
+    /// Starts the interactive event loop.
+    ///
+    /// This method blocks the current thread until the window is closed or the animation finishes
+    /// (if `close_on_finish` is set). It handles window resizing, keyboard input, and 
+    /// scheduled updates.
     pub fn run(mut self) -> crate::Result<()> {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
@@ -285,6 +296,7 @@ impl AnimationWindow {
     }
 }
 
+/// Convenience function to run a project in a preview window.
 pub fn run_window_session(project: Project) -> crate::Result<()> {
     // Set lower-quality scale for SVGs during preview for better performance (e.g., 0.9x)
     #[cfg(any(feature = "image", feature = "svg"))]
