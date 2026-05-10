@@ -63,13 +63,15 @@ cargo add motion-canvas-rs --features math,image,audio
 
 ## Project Structure
 
-The engine is organized into a modular structure:
+The engine is organized into the following structure:
 
-- `src/lib.rs`: Library entry point with clean module re-exports.
-- `src/engine/nodes/`: Individual node implementations.
-- `src/engine/animation/`: Core animation traits and flow controls.
-- `src/engine/easings.rs`: Comprehensive easing function library.
-- `examples/`: Ready-to-run demonstration scripts.
+- `src/lib.rs`: Library entry point and unified prelude.
+- `src/core/`: Pure logic layer (animations, easings, timeline, scene).
+- `src/elements/`: High-level node hierarchy (shapes, media, containers).
+- `src/assets/`: Resource management (fonts, images, audio, palettes).
+- `src/runtime/`: Side-effect-heavy runners (windowing, export, renderer).
+- `src/project.rs`: Core `Project` configuration struct.
+- `examples/`: Comprehensive demonstration scripts.
 
 ## Quick Start
 

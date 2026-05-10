@@ -1,4 +1,4 @@
-use motion_canvas_rs::engine::easings;
+use motion_canvas_rs::easings;
 
 #[test]
 fn test_easings_boundaries() {
