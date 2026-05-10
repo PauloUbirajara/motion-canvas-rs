@@ -180,9 +180,10 @@ fn main() {
     );
 
     let s1_logo = ImageNode::default()
-        .with_position(Vec2::new(950.0, 420.0))
+        .with_position(Vec2::new(1142.0, 543.0))
         .with_path("examples/images/motion-canvas-rs.svg")
         .with_scale(0.3)
+        .with_size(Vec2::new(768.0, 768.0))
         .with_opacity(0.0);
 
     for n in [&s1_title, &s1_sub, &s1_built, &s1_desc, &s1_desc2] {
