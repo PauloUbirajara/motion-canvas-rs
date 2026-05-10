@@ -1,8 +1,9 @@
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use std::time::Duration;
-use vello::kurbo::{Affine, Line as KurboLine, Stroke};
-use vello::peniko::{Brush, Color};
+use kurbo::{Affine, Line as KurboLine, Stroke};
+use peniko::{Brush, Color};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 const DEFAULT_START: Vec2 = Vec2::ZERO;
@@ -135,6 +136,7 @@ impl Line {
 }
 
 impl Node for Line {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let stroke_color = self.stroke_color.get();
         let stroke_width = self.stroke_width.get();

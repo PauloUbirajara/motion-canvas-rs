@@ -3,8 +3,8 @@ use crate::elements::shapes::{PathData, PathNode};
 use glam::Vec2;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use vello::kurbo::Affine;
-use vello::peniko::Color;
+use kurbo::Affine;
+use peniko::Color;
 
 const DEFAULT_EASING: fn(f32) -> f32 = crate::core::easings::cubic_in_out;
 

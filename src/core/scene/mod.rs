@@ -1,9 +1,12 @@
 use crate::core::animation::Node;
+#[cfg(feature = "runtime")]
 use vello::Scene;
+use kurbo::Affine;
 
 /// A trait for objects that can manage a 2D visual scene.
 pub trait Scene2D {
     /// Renders all elements of the scene into a Vello scene.
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene);
     /// Advances the state of the scene by the given delta time.
     fn update(&mut self, dt: std::time::Duration);
@@ -64,9 +67,10 @@ impl BaseScene {
 }
 
 impl Scene2D for BaseScene {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene) {
         for node in &self.nodes {
-            node.render(scene, vello::kurbo::Affine::IDENTITY, 1.0);
+            node.render(scene, Affine::IDENTITY, 1.0);
         }
     }
 

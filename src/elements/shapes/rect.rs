@@ -1,8 +1,9 @@
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use std::time::Duration;
-use vello::kurbo::{Affine, RoundedRect as KurboRoundedRect};
-use vello::peniko::{Brush, Color, Fill};
+use kurbo::{Affine, RoundedRect as KurboRoundedRect};
+use peniko::{Brush, Color, Fill};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 const DEFAULT_SIZE: Vec2 = Vec2::new(100.0, 100.0);
@@ -141,6 +142,7 @@ impl Rect {
 }
 
 impl Node for Rect {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let size = self.size.get();
         let fill_color_val = self.fill_color.get();
@@ -188,7 +190,7 @@ impl Node for Rect {
             let mut final_stroke = stroke_color;
             final_stroke.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
             scene.stroke(
-                &vello::kurbo::Stroke::new(stroke_width as f64),
+                &kurbo::Stroke::new(stroke_width as f64),
                 combined_transform,
                 &Brush::Solid(final_stroke),
                 None,

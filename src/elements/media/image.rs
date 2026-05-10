@@ -2,8 +2,9 @@ use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use std::sync::Arc;
 use std::time::Duration;
-use vello::kurbo::Affine;
-use vello::peniko::Image as PenikoImage;
+use kurbo::Affine;
+use peniko::Image as PenikoImage;
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 use crate::assets::image_manager::ImageManager;
@@ -117,6 +118,7 @@ impl ImageNode {
 }
 
 impl Node for ImageNode {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let Some(ref img) = self.image else {
             return;
@@ -153,10 +155,10 @@ impl Node for ImageNode {
         if final_opacity < 1.0 {
             // Use Identity transform for the layer to avoid coordinate system confusion with clip rect
             scene.push_layer(
-                vello::peniko::Mix::Normal,
+                peniko::Mix::Normal,
                 final_opacity,
                 Affine::IDENTITY,
-                &vello::kurbo::Rect::new(-10000.0, -10000.0, 10000.0, 10000.0),
+                &kurbo::Rect::new(-10000.0, -10000.0, 10000.0, 10000.0),
             );
             scene.draw_image(img, transform);
             scene.pop_layer();

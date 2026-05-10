@@ -1,8 +1,10 @@
 use crate::core::animation::base::Node;
 use crate::core::animation::tween::{Signal, Tweenable};
 use std::time::Duration;
+#[cfg(feature = "runtime")]
 use vello::Scene;
-use vello::kurbo::Affine;
+#[cfg(feature = "runtime")]
+use kurbo::Affine;
 
 /// A logical node that synchronizes one signal to another using a mapping function.
 ///
@@ -42,6 +44,7 @@ where
     T: Tweenable + PartialEq,
     S: Tweenable + PartialEq,
 {
+    #[cfg(feature = "runtime")]
     fn render(&self, _scene: &mut Scene, _transform: Affine, _opacity: f32) {
         // Bindings are purely logical, no rendering
     }

@@ -2,7 +2,7 @@
 use crate::core::animation::Tweenable;
 use crate::assets::font_manager::FontManager;
 use glam::Vec2;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use similar::TextDiff;
 use skrifa::instance::{LocationRef, Size};
 use skrifa::MetadataProvider;
@@ -15,15 +15,13 @@ use vello::kurbo::{Affine, BezPath};
 use vello::peniko::{Brush, Color};
 use vello::Scene;
 
-lazy_static! {
-    /// The global set of syntax definitions for highlighting.
-    pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
-    /// The global set of highlighting themes.
-    pub static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
-    /// Internal cache to avoid re-tokenizing identical code blocks.
-    pub static ref GLOBAL_CODE_CACHE: Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>> =
-        Mutex::new(HashMap::new());
-}
+/// The global set of syntax definitions for highlighting.
+pub static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
+/// The global set of highlighting themes.
+pub static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
+/// Internal cache to avoid re-tokenizing identical code blocks.
+pub static GLOBAL_CODE_CACHE: Lazy<Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 /// The default syntax highlighting theme name.
 pub const DEFAULT_THEME: &str = "base16-ocean.dark";

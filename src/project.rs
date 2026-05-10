@@ -1,7 +1,7 @@
 use crate::core::scene::BaseScene;
 use crate::core::scene::Scene2D;
-use vello::peniko::Color;
 use std::path::PathBuf;
+use peniko::Color;
 
 const DEFAULT_FPS: u32 = 60;
 const DEFAULT_WIDTH: u32 = 800;
@@ -12,7 +12,7 @@ const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
 const DEFAULT_USE_FFMPEG: bool = false;
-const DEFAULT_PREVIEW_QUALITY: f32 = 0.9;
+const DEFAULT_PREVIEW_QUALITY: f32 = 1.0;
 const DEFAULT_EXPORT_QUALITY: f32 = 4.0;
 
 /// The central configuration and state for a motion canvas animation.

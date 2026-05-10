@@ -1,10 +1,10 @@
-use std::future::Future;
 use std::collections::HashMap;
 use std::fs;
+use std::future::Future;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::{mpsc, Arc};
 use std::thread;
 use std::time::Duration;
 
@@ -14,8 +14,8 @@ use serde::{Deserialize, Serialize};
 use vello::wgpu;
 use vello::{util::RenderContext, Renderer, RendererOptions, Scene};
 
-use crate::Project;
 use crate::core::scene::Scene2D;
+use crate::Project;
 
 /// A manifest representing the current state of exported frames.
 ///
@@ -365,8 +365,7 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
         pb.set_position(current_saved as u64);
         pb.set_message(format!("(Skipped {})", skipped_count));
 
-        let current_time =
-            Duration::from_secs_f32(frame_count as f32 / project.fps as f32);
+        let current_time = Duration::from_secs_f32(frame_count as f32 / project.fps as f32);
         audio_handler.collect_events(&mut project.scene, current_time);
 
         let is_video_finished = project.scene.video_timeline.finished();
@@ -405,7 +404,6 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
         let json = serde_json::to_string_pretty(&manifest)?;
         fs::write(project.output_path.join(".motion_canvas_cache"), json)?;
     }
-
 
     audio_handler.finish(&project.title, project.use_ffmpeg)?;
     Ok(())

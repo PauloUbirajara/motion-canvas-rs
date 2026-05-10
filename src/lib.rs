@@ -3,6 +3,7 @@
 pub mod core;
 pub mod elements;
 pub mod assets;
+#[cfg(feature = "runtime")]
 pub mod runtime;
 pub mod project;
 
@@ -13,7 +14,7 @@ pub use project::Project;
 
 /// Common mathematical types
 pub use glam::Vec2;
-pub use vello::peniko::Color;
+pub use peniko::Color;
 
 /// Custom Result type for the library
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -51,6 +52,8 @@ pub mod prelude {
     pub use crate::easings;
     pub use crate::flows;
     pub use crate::nodes;
+    
+    #[cfg(feature = "runtime")]
     pub use crate::runtime::ProjectRuntimeExt;
 
     // Glob-export for direct access (e.g. Circle, all!, quad_in)
@@ -70,7 +73,9 @@ pub mod prelude {
     pub use crate::Result;
     
     pub use glam::Vec2;
-    pub use vello::kurbo::{Affine, BezPath};
-    pub use vello::peniko::Color;
+    pub use kurbo::{Affine, BezPath};
+    pub use peniko::Color;
+
+    #[cfg(feature = "runtime")]
     pub use vello::Scene;
 }

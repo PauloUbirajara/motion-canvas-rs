@@ -1,11 +1,11 @@
-use std::future::Future;
 use crate::core::scene::Scene2D;
+use indicatif::ProgressBar;
+use std::future::Future;
 use vello::{
     util::{RenderContext, RenderSurface},
     Renderer, RendererOptions, Scene,
 };
 use winit::window::Window;
-use indicatif::ProgressBar;
 
 /// High-level renderer that bridges the engine's `Scene2D` with Vello and wgpu.
 ///
@@ -72,10 +72,11 @@ impl VelloRenderer {
             })
             .unwrap();
 
-        // Safety: We ensure the window outlives the renderer by having them both 
+        // Safety: We ensure the window outlives the renderer by having them both
         // owned by the same event loop closure.
-        let surface_static = unsafe { std::mem::transmute::<RenderSurface<'_>, RenderSurface<'static>>(surface) };
-        
+        let surface_static =
+            unsafe { std::mem::transmute::<RenderSurface<'_>, RenderSurface<'static>>(surface) };
+
         self.surface = Some(surface_static);
         self.renderer = Some(renderer);
     }

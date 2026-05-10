@@ -1,4 +1,4 @@
-use vello::peniko::Color;
+use peniko::Color;
 
 /// A collection of curated colors for consistent animation design.
 ///

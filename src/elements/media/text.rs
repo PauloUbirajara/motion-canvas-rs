@@ -1,20 +1,19 @@
 use crate::assets::font_manager::FontManager;
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use skrifa::instance::{LocationRef, Size};
 use skrifa::MetadataProvider;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use vello::kurbo::{Affine, BezPath, Shape};
-use vello::peniko::{Brush, Color, Fill};
+use kurbo::{Affine, BezPath, Shape};
+use peniko::{Brush, Color, Fill};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
-lazy_static! {
-    static ref GLOBAL_TEXT_CACHE: Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>> =
-        Mutex::new(HashMap::new());
-}
+static GLOBAL_TEXT_CACHE: Lazy<Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;
@@ -241,6 +240,7 @@ impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
 }
 
 impl Node for TextNode {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let text = self.text.get();
         let size = self.font_size.get();

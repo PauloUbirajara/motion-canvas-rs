@@ -1,7 +1,8 @@
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use std::time::Duration;
-use vello::kurbo::Affine;
+use kurbo::Affine;
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 /// A container that groups multiple nodes together and applies a shared transformation.
@@ -118,6 +119,7 @@ impl Clone for GroupNode {
 }
 
 impl Node for GroupNode {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let opacity = self.opacity.get();
 

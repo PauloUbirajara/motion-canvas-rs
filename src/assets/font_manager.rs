@@ -1,7 +1,6 @@
 use font_kit::family_name::FamilyName;
 use font_kit::properties::Properties;
 use font_kit::source::SystemSource;
-use lazy_static::lazy_static;
 use skrifa::FontRef;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -27,10 +26,10 @@ const GENERIC_FALLBACKS: &[(FamilyName, &str)] = &[
     (FamilyName::Serif, "Serif"),
 ];
 
-lazy_static! {
-    static ref FONT_CACHE: Mutex<HashMap<String, Arc<FontData>>> = Mutex::new(HashMap::new());
-    static ref FONT_WARNINGS: Mutex<HashMap<String, bool>> = Mutex::new(HashMap::new());
-}
+use once_cell::sync::Lazy;
+
+static FONT_CACHE: Lazy<Mutex<HashMap<String, Arc<FontData>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+static FONT_WARNINGS: Lazy<Mutex<HashMap<String, bool>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 /// Global manager for font discovery, loading, and caching.
 ///

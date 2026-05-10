@@ -2,8 +2,9 @@ use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use std::sync::Arc;
 use std::time::Duration;
-use vello::kurbo::{Affine, BezPath, Stroke};
-use vello::peniko::{Brush, Color};
+use kurbo::{Affine, BezPath, Stroke};
+use peniko::{Brush, Color};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 const FLATTEN_TOLERANCE: f64 = 0.1;
@@ -33,13 +34,13 @@ impl PathData {
         let mut segments = Vec::new();
         let mut total_length = 0.0;
         let mut last_point: Option<Vec2> = None;
-        vello::kurbo::flatten(&path, FLATTEN_TOLERANCE, |el| match el {
-            vello::kurbo::PathEl::MoveTo(p) => {
+        kurbo::flatten(&path, FLATTEN_TOLERANCE, |el| match el {
+            kurbo::PathEl::MoveTo(p) => {
                 let pt = Vec2::new(p.x as f32, p.y as f32);
                 segments.push((pt, 0.0));
                 last_point = Some(pt);
             }
-            vello::kurbo::PathEl::LineTo(p) => {
+            kurbo::PathEl::LineTo(p) => {
                 if let Some(last) = last_point {
                     let pt = Vec2::new(p.x as f32, p.y as f32);
                     total_length += last.distance(pt);
@@ -194,6 +195,7 @@ impl PathNode {
 }
 
 impl Node for PathNode {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let stroke_color = self.stroke_color.get();
         let stroke_width = self.stroke_width.get();

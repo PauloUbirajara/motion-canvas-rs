@@ -1,8 +1,9 @@
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use std::time::Duration;
-use vello::kurbo::{Affine, Circle as KurboCircle};
-use vello::peniko::{Brush, Color, Fill};
+use kurbo::{Affine, Circle as KurboCircle};
+use peniko::{Brush, Color, Fill};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 const DEFAULT_RADIUS: f32 = 50.0;
@@ -130,6 +131,7 @@ impl Circle {
 }
 
 impl Node for Circle {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let radius = self.radius.get();
         let fill_color = self.fill_color.get();
@@ -170,7 +172,7 @@ impl Node for Circle {
             let mut final_stroke = stroke_color;
             final_stroke.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
             scene.stroke(
-                &vello::kurbo::Stroke::new(stroke_width as f64),
+                &kurbo::Stroke::new(stroke_width as f64),
                 combined_transform,
                 &Brush::Solid(final_stroke),
                 None,

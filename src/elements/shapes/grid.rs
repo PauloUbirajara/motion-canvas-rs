@@ -3,8 +3,9 @@ use crate::core::animation::base::Node;
 use crate::core::animation::tween::Signal;
 use glam::Vec2;
 use std::time::Duration;
-use vello::kurbo::{Affine, BezPath, Stroke};
-use vello::peniko::{Brush, Color};
+use kurbo::{Affine, BezPath, Stroke};
+use peniko::{Brush, Color};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 /// A procedural grid shape.
@@ -114,6 +115,7 @@ impl GridNode {
 }
 
 impl Node for GridNode {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let opacity = self.opacity.get() * parent_opacity;
         if opacity <= 0.0 {

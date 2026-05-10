@@ -4,13 +4,15 @@ use glam::Vec2;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use vello::kurbo::{Affine, BezPath, Shape};
-use vello::peniko::{Brush, Color, Fill};
+use kurbo::{Affine, BezPath, Shape};
+use peniko::{Brush, Color, Fill};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
-lazy_static::lazy_static! {
-    static ref GLOBAL_MATH_CACHE: Mutex<HashMap<MathCacheKey, Arc<Vec<(Affine, BezPath)>>>> = Mutex::new(HashMap::new());
-}
+use once_cell::sync::Lazy;
+
+static GLOBAL_MATH_CACHE: Lazy<Mutex<HashMap<MathCacheKey, Arc<Vec<(Affine, BezPath)>>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;
@@ -286,6 +288,7 @@ impl crate::core::animation::Animation for MathTransition {
 }
 
 impl Node for MathNode {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let color = self.fill_color.get();
 

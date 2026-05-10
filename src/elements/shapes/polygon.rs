@@ -1,8 +1,9 @@
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use std::time::Duration;
-use vello::kurbo::{Affine, BezPath, Stroke};
-use vello::peniko::{Brush, Color, Fill};
+use kurbo::{Affine, BezPath, Stroke};
+use peniko::{Brush, Color, Fill};
+#[cfg(feature = "runtime")]
 use vello::Scene;
 
 const DEFAULT_FILL_COLOR: Color = Color::rgb8(9, 9, 11);
@@ -142,6 +143,7 @@ impl Polygon {
 }
 
 impl Node for Polygon {
+    #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
         let points = self.points.get();
         if points.len() < 2 {

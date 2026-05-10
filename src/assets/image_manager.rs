@@ -1,12 +1,10 @@
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use vello::peniko::{Blob, Extend, Format, Image as PenikoImage};
 
-lazy_static! {
-    static ref IMAGE_CACHE: Mutex<HashMap<String, Arc<PenikoImage>>> = Mutex::new(HashMap::new());
-    static ref GLOBAL_SCALE: Mutex<f32> = Mutex::new(1.0);
-}
+static IMAGE_CACHE: Lazy<Mutex<HashMap<String, Arc<PenikoImage>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+static GLOBAL_SCALE: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
 
 /// Global manager for loading and caching image assets.
 ///

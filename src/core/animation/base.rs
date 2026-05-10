@@ -1,5 +1,8 @@
 use std::time::Duration;
+#[cfg(feature = "runtime")]
 use vello::Scene;
+#[cfg(feature = "runtime")]
+use kurbo::Affine;
 
 /// Represents an audio playback event on the project timeline.
 #[derive(Clone, Debug)]
@@ -65,10 +68,11 @@ impl<T: ?Sized + Animation> Animation for Box<T> {
 /// Nodes are typically stored in `Scene2D`.
 pub trait Node: Send + Sync + 'static {
     /// Renders the node into the provided Vello scene.
+    #[cfg(feature = "runtime")]
     fn render(
         &self,
         vello_scene: &mut Scene,
-        parent_transform: vello::kurbo::Affine,
+        parent_transform: Affine,
         parent_opacity: f32,
     );
 
