@@ -147,8 +147,8 @@ impl Project {
                     frames: HashMap::new(),
                 });
 
-            #[cfg(feature = "audio")]
-            crate::engine::nodes::audio::set_audio_playback(false);
+            let mut audio_handler = crate::engine::util::audio::create_audio_handler();
+            audio_handler.setup();
 
             let mut exporter = crate::render::export::Exporter::new(
                 self.width,
@@ -161,19 +161,8 @@ impl Project {
             let mut rendered_count = 0;
             let mut skipped_count = 0;
 
-            #[cfg(feature = "audio")]
-            let mut audio_events = Vec::new();
             let video_duration = self.scene.video_timeline.duration();
-            let audio_duration = {
-                #[cfg(feature = "audio")]
-                {
-                    self.scene.audio_timeline.duration()
-                }
-                #[cfg(not(feature = "audio"))]
-                {
-                    std::time::Duration::ZERO
-                }
-            };
+            let audio_duration = audio_handler.get_duration(&self.scene);
             let total_duration = video_duration.max(audio_duration);
             let total_frames = (total_duration.as_secs_f32() * self.fps as f32).ceil() as u32;
 
@@ -194,7 +183,7 @@ impl Project {
                         width,
                         height,
                         self.fps,
-                        cfg!(feature = "audio"),
+                        audio_handler.has_audio(),
                     )
                     .map_err(|e| {
                         eprintln!("Failed to start FFmpeg: {}. Falling back to PNGs.", e);
@@ -283,28 +272,15 @@ impl Project {
                 pb.set_position(current_saved as u64);
                 pb.set_message(format!("(Skipped {})", skipped_count));
 
+                let current_time =
+                    std::time::Duration::from_secs_f32(frame_count as f32 / self.fps as f32);
+                audio_handler.collect_events(&mut self.scene, current_time);
+
                 let is_video_finished = self.scene.video_timeline.finished();
-                let is_audio_finished = {
-                    #[cfg(feature = "audio")]
-                    {
-                        self.scene.audio_timeline.finished()
-                    }
-                    #[cfg(not(feature = "audio"))]
-                    {
-                        true
-                    }
-                };
+                let is_audio_finished = audio_handler.is_finished(&self.scene);
 
                 if is_video_finished && is_audio_finished {
                     break;
-                }
-
-                #[cfg(feature = "audio")]
-                {
-                    let current_time =
-                        std::time::Duration::from_secs_f32(frame_count as f32 / self.fps as f32);
-                    self.scene
-                        .collect_audio_events(current_time, &mut audio_events);
                 }
 
                 self.scene.update(dt);
@@ -338,14 +314,7 @@ impl Project {
             }
 
 
-            #[cfg(feature = "audio")]
-            if self.use_ffmpeg {
-                crate::engine::util::export::merge_audio(&self.title, &audio_events)?;
-            }
-
-            #[cfg(feature = "audio")]
-            crate::engine::nodes::audio::set_audio_playback(true);
-
+            audio_handler.finish(&self.title, self.use_ffmpeg)?;
             Ok(())
         }
     }

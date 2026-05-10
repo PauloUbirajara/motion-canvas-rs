@@ -1,3 +1,4 @@
+pub mod audio;
 pub mod code_tokenizer;
 pub mod export;
 pub mod font_manager;
