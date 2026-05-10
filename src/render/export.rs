@@ -48,7 +48,7 @@ impl Exporter {
                 surface_format: None,
                 use_cpu: !use_gpu,
                 antialiasing_support: vello::AaSupport::all(),
-                num_init_threads: None,
+                num_init_threads: std::num::NonZeroUsize::new(1),
             },
         )
         .unwrap();

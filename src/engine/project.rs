@@ -23,6 +23,8 @@ const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
 const DEFAULT_USE_FFMPEG: bool = false;
+const DEFAULT_PREVIEW_QUALITY: f32 = 0.9;
+const DEFAULT_EXPORT_QUALITY: f32 = 4.0;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct CacheManifest {
@@ -46,6 +48,8 @@ pub struct Project {
     pub current_time: std::time::Duration,
     pub paused: bool,
     pub speed: f32,
+    pub preview_quality: f32,
+    pub export_quality: f32,
 }
 
 impl Project {
@@ -65,6 +69,8 @@ impl Project {
             current_time: std::time::Duration::ZERO,
             paused: false,
             speed: 1.0,
+            preview_quality: DEFAULT_PREVIEW_QUALITY,
+            export_quality: DEFAULT_EXPORT_QUALITY,
         }
     }
 }
@@ -122,16 +128,32 @@ impl Project {
         self
     }
 
+    pub fn with_preview_quality(mut self, quality: f32) -> Self {
+        self.preview_quality = quality;
+        self
+    }
+
+    pub fn with_export_quality(mut self, quality: f32) -> Self {
+        self.export_quality = quality;
+        self
+    }
+
     pub fn close_on_finish(self) -> Self {
         self.with_close_on_finish(true)
     }
 
+    /// Exports the project to a sequence of PNG frames and optionally encodes them to a video file.
+    /// This method will set the SVG rasterization quality to `export_quality` (default 4.0x) for high-fidelity output.
     pub fn export(&mut self) -> crate::Result<()> {
         #[cfg(not(feature = "export"))]
         return Err("Export failed: 'export' feature is disabled.".into());
 
         #[cfg(feature = "export")]
         {
+            // Set high-quality scale for SVGs during export (e.g., 4x)
+            #[cfg(any(feature = "image", feature = "svg"))]
+            crate::engine::util::image_manager::ImageManager::set_global_scale(self.export_quality);
+
             println!("Exporting project: {}", self.title);
             fs::create_dir_all(&self.output_path)?;
 
@@ -319,7 +341,13 @@ impl Project {
         }
     }
 
+    /// Opens a playback window to preview the animation in real-time.
+    /// This method will set the SVG rasterization quality to `preview_quality` (default 0.9x) for better performance.
     pub fn show(self) -> crate::Result<()> {
+        // Set lower-quality scale for SVGs during preview for better performance (e.g., 0.9x)
+        #[cfg(any(feature = "image", feature = "svg"))]
+        crate::engine::util::image_manager::ImageManager::set_global_scale(self.preview_quality);
+
         let window = AnimationWindow::new(self)?;
         window.run()
     }

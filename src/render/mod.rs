@@ -11,6 +11,7 @@ use winit::{
     keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowBuilder},
 };
+use indicatif::{ProgressBar, ProgressStyle};
 
 const TUI_HEADER: &str = "--- motion-canvas-rs playback ---";
 const TUI_CONTROLS: &str = r#"
@@ -26,8 +27,6 @@ Controls:
   ^ (Up)    / K : Increase speed
   v (Down)  / J : Decrease speed (min 0.1x)
 "#;
-const TUI_FOOTER: &str = "---------------------------------";
-
 pub mod export;
 use std::future::Future;
 
@@ -52,7 +51,7 @@ impl<'a> VelloRenderer<'a> {
         }
     }
 
-    pub fn resume(&mut self, window: &'a Window) {
+    pub fn resume(&mut self, window: &'a Window, pb: &ProgressBar) {
         let size = window.inner_size();
         let surface: RenderSurface = {
             let mut future = std::pin::pin!(self.context.create_surface(
@@ -73,16 +72,19 @@ impl<'a> VelloRenderer<'a> {
         };
 
         let device_handle = &self.context.devices[surface.dev_id];
-        let renderer = Renderer::new(
-            &device_handle.device,
-            RendererOptions {
-                surface_format: Some(surface.format),
-                use_cpu: !self.use_gpu,
-                antialiasing_support: vello::AaSupport::all(),
-                num_init_threads: None,
-            },
-        )
-        .unwrap();
+        let renderer = pb
+            .suspend(|| {
+                Renderer::new(
+                    &device_handle.device,
+                    RendererOptions {
+                        surface_format: Some(surface.format),
+                        use_cpu: !self.use_gpu,
+                        antialiasing_support: vello::AaSupport::all(),
+                        num_init_threads: std::num::NonZeroUsize::new(1),
+                    },
+                )
+            })
+            .unwrap();
 
         self.surface = Some(surface);
         self.renderer = Some(renderer);
@@ -121,17 +123,47 @@ impl<'a> VelloRenderer<'a> {
 
 pub struct AnimationWindow {
     project: crate::engine::Project,
+    pb: ProgressBar,
 }
 
 impl AnimationWindow {
     pub fn new(project: crate::engine::Project) -> Result<Self, Box<dyn std::error::Error>> {
-        Ok(Self { project })
+        let video_duration = project.scene.video_timeline.duration();
+        let audio_duration = {
+            #[cfg(feature = "audio")]
+            {
+                project.scene.audio_timeline.duration()
+            }
+            #[cfg(not(feature = "audio"))]
+            {
+                Duration::ZERO
+            }
+        };
+        let total_duration = video_duration.max(audio_duration);
+
+        println!("{}", TUI_HEADER);
+        println!("{}", TUI_CONTROLS);
+
+        let pb = ProgressBar::new((total_duration.as_secs_f32() * 1000.0) as u64);
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len}ms | {msg}")
+                .unwrap()
+                .progress_chars("=>-"),
+        );
+
+        pb.set_message("Initializing...");
+        pb.enable_steady_tick(Duration::from_millis(100));
+        Ok(Self { project, pb })
     }
 
     pub fn run(mut self) -> Result<(), Box<dyn std::error::Error>> {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
-            .with_title(&self.project.title)
+            .with_title(format!(
+                "{} (Preview Quality: {:.1}x)",
+                self.project.title, self.project.preview_quality
+            ))
             .with_inner_size(winit::dpi::LogicalSize::new(
                 self.project.width,
                 self.project.height,
@@ -188,7 +220,7 @@ impl AnimationWindow {
                 let renderer = renderer_opt.get_or_insert_with(|| {
                     VelloRenderer::new(self.project.use_gpu, self.project.background_color)
                 });
-                renderer.resume(&window);
+                renderer.resume(&window, &self.pb);
             }
 
             _ => (),
@@ -292,22 +324,21 @@ impl AnimationWindow {
             *last_update = Instant::now();
         }
 
-        // Minimal TUI: Print status
-        print!("\x1B[2J\x1B[H");
-        println!("{}", TUI_HEADER);
-        println!("{}", TUI_CONTROLS);
-        println!("{}", TUI_FOOTER);
-        println!(
-            "[Playback] Time: {:.2}s | Speed: {:.1}x | {}",
+        // Update indicatif progress bar
+        self.pb
+            .set_position((self.project.current_time.as_secs_f32() * 1000.0) as u64);
+
+        let status = if self.project.paused {
+            "PAUSED "
+        } else {
+            "PLAYING"
+        };
+        self.pb.set_message(format!(
+            "Time: {:.2}s | Speed: {:.1}x | {}",
             self.project.current_time.as_secs_f32(),
             self.project.speed,
-            if self.project.paused {
-                "PAUSED "
-            } else {
-                "PLAYING"
-            }
-        );
-        std::io::Write::flush(&mut std::io::stdout()).unwrap();
+            status
+        ));
 
         let current_hash = self.project.scene.state_hash();
         if current_hash != *last_hash {
@@ -328,7 +359,7 @@ impl AnimationWindow {
         };
 
         if is_video_finished && is_audio_finished {
-            println!("Animation finished.");
+            self.pb.finish_with_message("Animation finished.");
             *finished = true;
 
             if self.project.close_on_finish {

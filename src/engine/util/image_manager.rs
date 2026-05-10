@@ -5,9 +5,21 @@ use vello::peniko::{Blob, Extend, Format, Image as PenikoImage};
 
 lazy_static! {
     static ref IMAGE_CACHE: Mutex<HashMap<String, Arc<PenikoImage>>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_SCALE: Mutex<f32> = Mutex::new(1.0);
 }
 
 pub struct ImageManager;
+
+impl ImageManager {
+    pub fn set_global_scale(scale: f32) {
+        let mut s = GLOBAL_SCALE.lock().unwrap();
+        if *s != scale {
+            *s = scale;
+            // Invalidate cache when scale changes to ensure images are re-rasterized
+            IMAGE_CACHE.lock().unwrap().clear();
+        }
+    }
+}
 
 impl ImageManager {
     pub fn get_image(path: &str) -> Option<Arc<PenikoImage>> {
@@ -23,19 +35,19 @@ impl ImageManager {
             let tree = usvg::Tree::from_data(&svg_data, &opt).ok()?;
 
             let size = tree.size();
-            // Rasterize at 4x native resolution for crispness when zoomed
-            let scale = 4u32;
+            // Rasterize at global scale (default 0.9x for preview, 4x for export)
+            let scale = *GLOBAL_SCALE.lock().unwrap();
             // Add 2px padding to avoid "white square border" texture filtering artifacts
             let pad = 2;
-            let raster_w = (size.width() as u32) * scale + pad * 2;
-            let raster_h = (size.height() as u32) * scale + pad * 2;
+            let raster_w = ((size.width() as f32 * scale) as u32).max(1) + pad * 2;
+            let raster_h = ((size.height() as f32 * scale) as u32).max(1) + pad * 2;
             let mut pixmap = resvg::tiny_skia::Pixmap::new(raster_w, raster_h)?;
             
             // Render with padding offset
             resvg::render(
                 &tree,
                 resvg::tiny_skia::Transform::from_translate(pad as f32, pad as f32)
-                    .post_scale(scale as f32, scale as f32),
+                    .post_scale(scale, scale),
                 &mut pixmap.as_mut(),
             );
 
