@@ -52,13 +52,11 @@ impl AnimationWindow {
         let pb = ProgressBar::new((total_duration.as_secs_f32() * 1000.0) as u64);
         pb.set_style(
             ProgressStyle::default_bar()
-                .template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len}ms | {msg}")
+                .template("{msg} [{bar:40.cyan/blue}] {pos}/{len}ms | {status}")
                 .unwrap()
                 .progress_chars("=>-"),
         );
 
-        pb.set_message("Initializing...");
-        pb.enable_steady_tick(Duration::from_millis(100));
         Ok(Self { project, pb })
     }
 
@@ -230,20 +228,27 @@ impl AnimationWindow {
         }
 
         // Update indicatif progress bar
-        self.pb
-            .set_position((self.project.current_time.as_secs_f32() * 1000.0) as u64);
+        let current_ms = (self.project.current_time.as_secs_f32() * 1000.0) as u64;
+        self.pb.set_position(current_ms);
 
-        let status = if self.project.paused {
-            "PAUSED "
-        } else {
-            "PLAYING"
-        };
-        self.pb.set_message(format!(
-            "Time: {:.2}s | Speed: {:.1}x | {}",
-            self.project.current_time.as_secs_f32(),
-            self.project.speed,
-            status
-        ));
+        let total_secs = self.project.current_time.as_secs() as u32;
+        let hours = total_secs / 3600;
+        let minutes = (total_secs % 3600) / 60;
+        let seconds = total_secs % 60;
+        let status_str = if self.project.paused { "PAUSED" } else { "PLAYING" };
+
+        self.pb.set_message(format!("[{:02}:{:02}:{:02}]", hours, minutes, seconds));
+        self.pb.set_style(
+            ProgressStyle::default_bar()
+                .template(&format!(
+                    "{{msg}} [{{bar:40.cyan/blue}}] {{pos}}/{{len}}ms | Time: {:.2}s | Speed: {:.1}x | {}",
+                    self.project.current_time.as_secs_f32(),
+                    self.project.speed,
+                    status_str
+                ))
+                .unwrap()
+                .progress_chars("=>-"),
+        );
 
         let current_hash = self.project.scene.state_hash();
         if current_hash != *last_hash {

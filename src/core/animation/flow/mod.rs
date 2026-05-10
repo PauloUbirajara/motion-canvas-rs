@@ -2,19 +2,19 @@ pub mod all;
 pub mod any;
 pub mod chain;
 pub mod delay;
+pub mod easing;
 pub mod loop_anim;
 pub mod sequence;
 pub mod wait;
-pub mod with_easing;
 
 pub use all::all;
 pub use any::any;
 pub use chain::chain;
 pub use delay::delay;
+pub use easing::with_easing;
 pub use loop_anim::loop_anim;
 pub use sequence::sequence;
 pub use wait::wait;
-pub use with_easing::with_easing;
 
 #[macro_export]
 macro_rules! all {
@@ -40,7 +40,10 @@ macro_rules! chain {
 #[macro_export]
 macro_rules! delay {
     ($d:expr, $anim:expr $(,)?) => {
-        $crate::flows::delay($d, Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>)
+        $crate::flows::delay(
+            $d,
+            Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>,
+        )
     };
 }
 
@@ -54,7 +57,12 @@ macro_rules! sequence {
 #[macro_export]
 macro_rules! loop_anim {
     ($factory:expr, $iters:expr $(,)?) => {
-        $crate::flows::loop_anim(Box::new(move || Box::new($factory) as Box<dyn $crate::core::animation::base::Animation>), $iters)
+        $crate::flows::loop_anim(
+            Box::new(move || {
+                Box::new($factory) as Box<dyn $crate::core::animation::base::Animation>
+            }),
+            $iters,
+        )
     };
 }
 
@@ -69,7 +77,8 @@ macro_rules! with_easing {
 #[macro_export]
 macro_rules! play {
     ($node:expr) => {
-        Box::new($crate::elements::media::AudioAnimation::new($node)) as Box<dyn $crate::core::animation::base::Animation>
+        Box::new($crate::elements::media::AudioAnimation::new($node))
+            as Box<dyn $crate::core::animation::base::Animation>
     };
 }
 
