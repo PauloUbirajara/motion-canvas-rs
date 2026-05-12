@@ -144,6 +144,11 @@ impl HasOpacity for ImageNode {
         self.opacity.clone()
     }
 }
+impl HasOpacity for SvgNode {
+    fn opacity_signal(&self) -> Signal<f32> {
+        self.opacity.clone()
+    }
+}
 
 fn main() {
     let mut project = Project::default()

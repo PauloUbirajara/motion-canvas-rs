@@ -12,8 +12,6 @@ const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
 const DEFAULT_USE_FFMPEG: bool = false;
-const DEFAULT_PREVIEW_QUALITY: f32 = 1.0;
-const DEFAULT_EXPORT_QUALITY: f32 = 4.0;
 
 /// The central configuration and state for a motion canvas animation.
 ///
@@ -49,10 +47,6 @@ pub struct Project {
     pub paused: bool,
     /// Playback speed multiplier.
     pub speed: f32,
-    /// Quality factor for SVG rendering during interactive preview.
-    pub preview_quality: f32,
-    /// Quality factor for SVG rendering during export.
-    pub export_quality: f32,
 }
 
 impl Project {
@@ -73,8 +67,6 @@ impl Project {
             current_time: std::time::Duration::ZERO,
             paused: false,
             speed: 1.0,
-            preview_quality: DEFAULT_PREVIEW_QUALITY,
-            export_quality: DEFAULT_EXPORT_QUALITY,
         }
     }
 }
@@ -138,18 +130,6 @@ impl Project {
     /// Sets whether the window should close automatically on finish.
     pub fn with_close_on_finish(mut self, close: bool) -> Self {
         self.close_on_finish = close;
-        self
-    }
-
-    /// Sets the preview quality factor.
-    pub fn with_preview_quality(mut self, quality: f32) -> Self {
-        self.preview_quality = quality;
-        self
-    }
-
-    /// Sets the export quality factor.
-    pub fn with_export_quality(mut self, quality: f32) -> Self {
-        self.export_quality = quality;
         self
     }
 
