@@ -179,7 +179,7 @@ fn main() {
         305.0,
     );
 
-    let s1_logo = ImageNode::default()
+    let s1_logo = SvgNode::default()
         .with_position(Vec2::new(1142.0, 543.0))
         .with_path("examples/images/motion-canvas-rs.svg")
         .with_scale(0.3)

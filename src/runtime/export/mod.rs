@@ -221,10 +221,6 @@ impl Exporter {
 /// - **FFmpeg Integration**: Streams raw frames directly to FFmpeg for high-speed video encoding.
 #[cfg(feature = "export")]
 pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
-    // Set high-quality scale for SVGs during export (e.g., 4x)
-    #[cfg(any(feature = "image", feature = "svg"))]
-    crate::assets::image_manager::ImageManager::set_global_scale(project.export_quality);
-
     println!("Exporting project: {}", project.title);
     fs::create_dir_all(&project.output_path)?;
 

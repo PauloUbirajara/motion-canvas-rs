@@ -74,10 +74,7 @@ impl AnimationWindow {
     pub fn run(mut self) -> crate::Result<()> {
         let event_loop = EventLoop::new()?;
         let window = WindowBuilder::new()
-            .with_title(format!(
-                "{} (Preview Quality: {:.1}x)",
-                self.project.title, self.project.preview_quality
-            ))
+            .with_title(format!("{}", self.project.title,))
             .with_inner_size(winit::dpi::LogicalSize::new(
                 self.project.width,
                 self.project.height,
@@ -303,10 +300,6 @@ impl AnimationWindow {
 
 /// Convenience function to run a project in a preview window.
 pub fn run_window_session(project: Project) -> crate::Result<()> {
-    // Set lower-quality scale for SVGs during preview for better performance (e.g., 0.9x)
-    #[cfg(any(feature = "image", feature = "svg"))]
-    crate::assets::image_manager::ImageManager::set_global_scale(project.preview_quality);
-
     let window = AnimationWindow::new(project)?;
     window.run()
 }

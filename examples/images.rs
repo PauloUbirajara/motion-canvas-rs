@@ -13,7 +13,7 @@ fn main() {
         .with_path("./examples/images/motion-canvas-logo.png")
         .with_size(Vec2::new(200.0, 200.0));
 
-    let svg = ImageNode::default()
+    let svg = SvgNode::default()
         .with_position(Vec2::new(150.0, 150.0))
         .with_path("./examples/images/motion-canvas-rs.svg")
         .with_size(Vec2::new(200.0, 200.0));

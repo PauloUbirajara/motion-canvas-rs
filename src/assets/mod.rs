@@ -3,7 +3,6 @@
 //! This module handles external resources such as images, fonts, audio,
 //! and specialized compilation tasks like Typst math and code syntax highlighting.
 
-#[cfg(feature = "audio")]
 pub mod audio;
 #[cfg(feature = "code")]
 pub mod code_tokenizer;
@@ -14,6 +13,8 @@ pub mod hash;
 #[cfg(any(feature = "image", feature = "svg"))]
 pub mod image_manager;
 pub mod palette;
+#[cfg(feature = "svg")]
+pub mod svg_manager;
 #[cfg(feature = "math")]
 pub mod typst_support;
 

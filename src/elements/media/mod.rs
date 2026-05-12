@@ -6,6 +6,8 @@ pub mod code;
 pub mod image;
 #[cfg(feature = "math")]
 pub mod math;
+#[cfg(feature = "svg")]
+pub mod svg;
 pub mod text;
 
 #[cfg(feature = "audio")]
@@ -20,3 +22,6 @@ pub use image::ImageNode;
 
 #[cfg(feature = "math")]
 pub use math::MathNode;
+
+#[cfg(feature = "svg")]
+pub use svg::SvgNode;
