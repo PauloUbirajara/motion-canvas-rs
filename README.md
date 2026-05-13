@@ -20,28 +20,29 @@ Add the library to your `Cargo.toml`. To enable all features (math, code blocks,
 # Enable everything
 cargo add motion-canvas-rs --features full
 
-# Or pick only what you need (e.g., just math, images, and audio)
-cargo add motion-canvas-rs --features math,image,audio
+# Or pick only what you need (e.g., just math, SVGs, and audio)
+cargo add motion-canvas-rs --features math,svg,audio
 ```
 
 ## Features
 
 | Feature | Description | Enables |
 |:---|:---|:---|
-| `math` | Typst-powered LaTeX math rendering. | `MathNode` |
-| `code` | Syntax-highlighted code blocks via Syntect. | `CodeNode` |
-| `image` | Bitmap (webp, JPEG) and Vector (SVG) support. | `ImageNode` |
 | `audio` | Independent audio timeline and MP3 playback. | `play!`, `AudioNode` |
+| `code` | Syntax-highlighted code blocks via Syntect. | `CodeNode` |
 | `export` | Headless frame rendering and video generation. | `project.export()` |
+| `image` | Bitmap image support (WebP, JPEG, PNG). | `ImageNode` |
+| `math` | Typst-powered LaTeX math rendering. | `MathNode` |
+| `svg` | Vector graphics support via Vello SVG. | `SvgNode` |
 | `full` | Meta-feature that enables all of the above. | Everything |
 
 ### Key Capabilities
-- **High-performance**: GPU-accelerated vector rendering via Vello.
 - **Arc-length Sampling**: Accurate path animations and offsets.
-- **Easing Library**: 30+ standardized easing functions.
-- **FFmpeg Integration**: Direct streaming of animation frames or merging with audio.
 - **Audio Support**: Synchronized MP3 playback and independent audio timelines.
 - **Clean API**: Streamlined prelude for high-speed prototyping.
+- **Easing Library**: 30+ standardized easing functions.
+- **FFmpeg Integration**: Direct streaming of animation frames or merging with audio.
+- **High-performance**: GPU-accelerated vector rendering via Vello.
 - **Node Primitives**: Built-in support for Circles, Rects, Polygons, Lines, and Groups.
 
 ## Supported Nodes
@@ -53,25 +54,26 @@ cargo add motion-canvas-rs --features math,image,audio
 | `Circle` | Basic circle primitive. | `position`, `rotation`, `scale`, `radius`, `anchor` |
 | `CodeNode` | Syntax-highlighted code with transitions. | `position`, `rotation`, `scale`, `code`, `anchor` |
 | `GroupNode` | Hierarchical grouping of any nodes. | `position`, `rotation`, `scale`, `children`, `anchor` |
-| `ImageNode` | Bitmap and SVG image display. | `position`, `rotation`, `scale`, `size`, `anchor` |
+| `ImageNode` | Bitmap image display (WebP, PNG, JPG). | `position`, `rotation`, `scale`, `size`, `anchor` |
 | `Line` | Simple line between two points. | `position`, `rotation`, `scale`, `start`, `end`, `anchor` |
 | `MathNode` | Typst-powered mathematical formulas. | `position`, `rotation`, `scale`, `equation`, `anchor` |
 | `PathNode` | Complex path sampling and animation. | `position`, `rotation`, `scale`, `arc-length`, `anchor` |
 | `Polygon` | Regular and custom polygon shapes. | `position`, `rotation`, `scale`, `points`, `anchor` |
 | `Rect` | Rectangle with optional corner radius. | `position`, `rotation`, `scale`, `size`, `radius`, `anchor` |
+| `SvgNode` | Vector SVG image display and animation. | `position`, `rotation`, `scale`, `size`, `anchor` |
 | `TextNode` | High-quality text rendering (skrifa). | `position`, `rotation`, `scale`, `text`, `anchor` |
 
 ## Project Structure
 
 The engine is organized into the following structure:
 
-- `src/lib.rs`: Library entry point and unified prelude.
+- `examples/`: Comprehensive demonstration scripts.
+- `src/assets/`: Resource management (fonts, images, audio, palettes).
 - `src/core/`: Pure logic layer (animations, easings, timeline, scene).
 - `src/elements/`: High-level node hierarchy (shapes, media, containers).
-- `src/assets/`: Resource management (fonts, images, audio, palettes).
-- `src/runtime/`: Side-effect-heavy runners (windowing, export, renderer).
+- `src/lib.rs`: Library entry point and unified prelude.
 - `src/project.rs`: Core `Project` configuration struct.
-- `examples/`: Comprehensive demonstration scripts.
+- `src/runtime/`: Side-effect-heavy runners (windowing, export, renderer).
 
 ## Quick Start
 
@@ -438,5 +440,5 @@ This project is heavily inspired by the original [Motion Canvas](https://github.
 Special thanks to:
 - [easings.net](https://easings.net/) for the standardized easing function library.
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
-- **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.
 - [vemaps.com](https://vemaps.com/world/wrld-21) for the world map SVG used in the `world_map` example.
+- **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.
