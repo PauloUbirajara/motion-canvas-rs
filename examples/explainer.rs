@@ -144,6 +144,11 @@ impl HasOpacity for ImageNode {
         self.opacity.clone()
     }
 }
+impl HasOpacity for SvgNode {
+    fn opacity_signal(&self) -> Signal<f32> {
+        self.opacity.clone()
+    }
+}
 
 fn main() {
     let mut project = Project::default()
@@ -179,7 +184,7 @@ fn main() {
         305.0,
     );
 
-    let s1_logo = ImageNode::default()
+    let s1_logo = SvgNode::default()
         .with_position(Vec2::new(1142.0, 543.0))
         .with_path("examples/images/motion-canvas-rs.svg")
         .with_scale(0.3)

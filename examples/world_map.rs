@@ -437,7 +437,7 @@ fn main() {
         .close_on_finish();
 
     // ── Map (rendered at native SVG size for crispness) ──
-    let map = ImageNode::default()
+    let map = SvgNode::default()
         .with_position(Vec2::new(MAP_CX, MAP_CY))
         .with_path("./examples/images/world.svg")
         .with_size(Vec2::new(MAP_W, MAP_H))
@@ -465,10 +465,11 @@ fn main() {
         .with_centered(true);
 
     // ── Plane ──
-    let plane = ImageNode::default()
+    let plane = SvgNode::default()
         .with_position(Vec2::new(LANDMARKS[0].x, LANDMARKS[0].y))
         .with_path("./examples/images/plane.svg")
         .with_size(Vec2::new(12.0, 12.0))
+        .with_anchor(Vec2::new(2.0, -2.65))
         .with_scale(0.0)
         .with_opacity(0.0);
 
@@ -610,7 +611,7 @@ fn main() {
         // Compute heading angle from straight line
         let dx = to.x - from.x;
         let dy = to.y - from.y;
-        let angle = dy.atan2(dx);
+        let angle = dy.atan2(dx) + (std::f32::consts::PI);
 
         let leg: Box<dyn Animation> = chain![
             // 1. Scale plane in at the start of the leg
