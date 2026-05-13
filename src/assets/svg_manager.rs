@@ -26,10 +26,10 @@ impl SvgManager {
         let tree = Tree::from_data(&svg_data, &opt).ok()?;
 
         let scene = vello_svg::render_tree(&tree);
-        
+
         let arc_tree = Arc::new(tree);
         let arc_scene = Arc::new(scene);
-        
+
         cache.insert(path.to_string(), (arc_tree.clone(), arc_scene.clone()));
         Some((arc_tree, arc_scene))
     }
