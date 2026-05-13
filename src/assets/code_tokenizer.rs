@@ -2,11 +2,11 @@
 use crate::assets::font_manager::FontManager;
 use crate::core::animation::Tweenable;
 use glam::Vec2;
-use once_cell::sync::Lazy;
 use similar::TextDiff;
 use skrifa::instance::{LocationRef, Size};
 use skrifa::MetadataProvider;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::sync::{Arc, Mutex};
 use syntect::easy::HighlightLines;
 use syntect::highlighting::ThemeSet;
@@ -16,12 +16,12 @@ use vello::peniko::{Brush, Color};
 use vello::Scene;
 
 /// The global set of syntax definitions for highlighting.
-pub static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
+pub static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 /// The global set of highlighting themes.
-pub static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
+pub static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
 /// Internal cache to avoid re-tokenizing identical code blocks.
-pub static GLOBAL_CODE_CACHE: Lazy<Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+pub static GLOBAL_CODE_CACHE: LazyLock<Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// The default syntax highlighting theme name.
 pub const DEFAULT_THEME: &str = "base16-ocean.dark";

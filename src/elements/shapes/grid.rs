@@ -126,7 +126,7 @@ impl Node for GridNode {
         let cols = self.columns.get().max(0.0);
         let rows = self.rows.get().max(0.0);
         let spacing = self.spacing.get();
-        let stroke_color = self.stroke_color.get().with_alpha_factor(opacity);
+        let stroke_color = self.stroke_color.get().multiply_alpha(opacity);
         let stroke_width = self.stroke_width.get();
 
         let transform = parent_transform * Affine::translate((pos.x as f64, pos.y as f64));

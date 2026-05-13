@@ -75,18 +75,18 @@ impl AudioManager {
     }
 }
 
-use once_cell::sync::Lazy;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Source};
 use std::fs::File;
 use std::io::BufReader;
+use std::sync::LazyLock;
 
-static AUDIO_HANDLE: Lazy<OutputStreamHandle> = Lazy::new(|| {
+static AUDIO_HANDLE: LazyLock<OutputStreamHandle> = LazyLock::new(|| {
     let (stream, handle) =
         OutputStream::try_default().expect("Failed to initialize audio output stream");
     std::mem::forget(stream); // Keep the stream alive forever
     handle
 });
-static AUDIO_PLAYBACK_ENABLED: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(true));
+static AUDIO_PLAYBACK_ENABLED: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(true));
 
 /// Enables or disables real-time audio playback during preview.
 pub fn set_audio_playback(enabled: bool) {

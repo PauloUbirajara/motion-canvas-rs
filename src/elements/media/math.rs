@@ -9,10 +9,10 @@ use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
 
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
-static GLOBAL_MATH_CACHE: Lazy<Mutex<HashMap<MathCacheKey, Arc<Vec<(Affine, BezPath)>>>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+static GLOBAL_MATH_CACHE: LazyLock<Mutex<HashMap<MathCacheKey, Arc<Vec<(Affine, BezPath)>>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;

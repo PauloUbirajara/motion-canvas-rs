@@ -2,18 +2,18 @@ use crate::assets::font_manager::FontManager;
 use crate::core::animation::{Node, Signal};
 use glam::Vec2;
 use kurbo::{Affine, BezPath, Shape};
-use once_cell::sync::Lazy;
 use peniko::{Brush, Color, Fill};
 use skrifa::instance::{LocationRef, Size};
 use skrifa::MetadataProvider;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
 
-static GLOBAL_TEXT_CACHE: Lazy<Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+static GLOBAL_TEXT_CACHE: LazyLock<Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 const DEFAULT_FONT_SIZE: f32 = 32.0;
 const DEFAULT_COLOR: Color = Color::WHITE;
