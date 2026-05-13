@@ -44,15 +44,15 @@ fn test_timeline_sequential_behavior() {
     project
         .scene
         .video_timeline
-        .add(circle.radius.to(20.0, Duration::from_secs(1)));
+        .add(Box::new(circle.radius.to(20.0, Duration::from_secs(1))));
     project
         .scene
         .video_timeline
-        .add(circle.radius.to(30.0, Duration::from_secs(1)));
+        .add(Box::new(circle.radius.to(30.0, Duration::from_secs(1))));
     project
         .scene
         .video_timeline
-        .add(circle.radius.to(40.0, Duration::from_secs(1)));
+        .add(Box::new(circle.radius.to(40.0, Duration::from_secs(1))));
 
     // Expected total duration: 3s
     assert_eq!(

@@ -1,0 +1,431 @@
+use crate::assets::font_manager::FontManager;
+use crate::core::animation::{Node, Signal};
+use glam::Vec2;
+use kurbo::{Affine, BezPath, Shape};
+use once_cell::sync::Lazy;
+use peniko::{Brush, Color, Fill};
+use skrifa::instance::{LocationRef, Size};
+use skrifa::MetadataProvider;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+#[cfg(feature = "runtime")]
+use vello::Scene;
+
+static GLOBAL_TEXT_CACHE: Lazy<Mutex<HashMap<TextCacheKey, Arc<Vec<(Affine, BezPath)>>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
+const DEFAULT_FONT_SIZE: f32 = 32.0;
+const DEFAULT_COLOR: Color = Color::WHITE;
+const DEFAULT_OPACITY: f32 = 1.0;
+const DEFAULT_FONT_FAMILY: &str = "JetBrains Mono";
+const FONT_FALLBACKS: &[&str] = &["Inter", "Arial", "sans-serif"];
+const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
+
+/// Horizontal alignment options for text within a `TextNode`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum TextAlign {
+    /// Align text to the left edge.
+    Left,
+    /// Align text to the center.
+    Center,
+    /// Align text to the right edge.
+    Right,
+}
+
+impl crate::core::animation::tween::Tweenable for TextAlign {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        if t >= 1.0 {
+            return *b;
+        }
+        *a
+    }
+
+    fn state_hash(&self) -> u64 {
+        *self as u64
+    }
+}
+
+impl Default for TextAlign {
+    fn default() -> Self {
+        Self::Center
+    }
+}
+
+#[derive(Hash, Eq, PartialEq)]
+struct TextCacheKey {
+    text: String,
+    font_size_bits: u32,
+    font_family: String,
+    text_align: TextAlign,
+}
+
+/// A visual node that renders vectorized text using system or embedded fonts.
+///
+/// `TextNode` supports multi-line text, custom font sizes, colors, and alignments.
+/// It uses a global cache to optimize the rendering of frequently used text strings.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let text = TextNode::default()
+///     .with_position(Vec2::new(640.0, 360.0))
+///     .with_text("Hello World")
+///     .with_font_size(48.0)
+///     .with_fill(Color::WHITE)
+///     .with_font("Inter")
+///     .with_text_align(TextAlign::Center);
+/// ```
+pub struct TextNode {
+    /// The absolute position of the text's center (before anchor adjustment).
+    pub position: Signal<Vec2>,
+    /// Rotation in radians.
+    pub rotation: Signal<f32>,
+    /// Scaling factor for the text.
+    pub scale: Signal<Vec2>,
+    /// The string content to display.
+    pub text: Signal<String>,
+    /// The font size in pixels.
+    pub font_size: Signal<f32>,
+    /// The solid color used to fill the text.
+    pub fill_color: Signal<Color>,
+    /// Opacity from 0.0 (transparent) to 1.0 (opaque).
+    pub opacity: Signal<f32>,
+    /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
+    pub anchor: Signal<Vec2>,
+    /// The horizontal alignment of the text lines.
+    pub text_align: Signal<TextAlign>,
+    /// The preferred font family name.
+    pub font_family: String,
+    cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
+}
+
+impl Default for TextNode {
+    fn default() -> Self {
+        Self {
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
+            text: Signal::new("".to_string()),
+            font_size: Signal::new(DEFAULT_FONT_SIZE),
+            fill_color: Signal::new(DEFAULT_COLOR),
+            opacity: Signal::new(DEFAULT_OPACITY),
+            anchor: Signal::new(Vec2::ZERO),
+            text_align: Signal::new(TextAlign::Center),
+            font_family: DEFAULT_FONT_FAMILY.to_string(),
+            cache: Arc::new(Mutex::new(None)),
+        }
+    }
+}
+
+impl TextNode {
+    /// Creates a new text node with given position, content, size, and color.
+    pub fn new(position: Vec2, text: &str, size: f32, color: Color) -> Self {
+        Self::default()
+            .with_position(position)
+            .with_text(text)
+            .with_font_size(size)
+            .with_fill(color)
+    }
+
+    /// Sets the absolute position of the text.
+    pub fn with_position(mut self, position: Vec2) -> Self {
+        self.position = Signal::new(position);
+        self
+    }
+
+    /// Sets the rotation of the text in radians.
+    pub fn with_rotation(mut self, angle: f32) -> Self {
+        self.rotation = Signal::new(angle);
+        self
+    }
+
+    /// Sets a uniform scale factor for both axes.
+    pub fn with_scale(mut self, scale: f32) -> Self {
+        self.scale = Signal::new(Vec2::splat(scale));
+        self
+    }
+
+    /// Sets non-uniform scaling factors for X and Y axes.
+    pub fn with_scale_xy(mut self, scale: Vec2) -> Self {
+        self.scale = Signal::new(scale);
+        self
+    }
+
+    /// Sets the opacity of the text (0.0 to 1.0).
+    pub fn with_opacity(mut self, opacity: f32) -> Self {
+        self.opacity = Signal::new(opacity);
+        self
+    }
+
+    /// Sets the font family to be used for rendering.
+    pub fn with_font(mut self, family: &str) -> Self {
+        self.font_family = family.to_string();
+        self
+    }
+
+    /// Sets the string content.
+    pub fn with_text(mut self, text: &str) -> Self {
+        self.text = Signal::new(text.to_string());
+        self
+    }
+
+    /// Sets the font size in pixels.
+    pub fn with_font_size(mut self, size: f32) -> Self {
+        self.font_size = Signal::new(size);
+        self
+    }
+
+    /// Sets the solid fill color.
+    pub fn with_fill(mut self, color: Color) -> Self {
+        self.fill_color = Signal::new(color);
+        self
+    }
+
+    /// Sets the horizontal alignment.
+    pub fn with_text_align(mut self, align: TextAlign) -> Self {
+        self.text_align = Signal::new(align);
+        self
+    }
+
+    /// Sets the relative transformation origin (anchor).
+    /// (-1, -1) is top-left, (0, 0) is center, (1, 1) is bottom-right.
+    pub fn with_anchor(mut self, anchor: Vec2) -> Self {
+        self.anchor = Signal::new(anchor);
+        self
+    }
+}
+
+impl Clone for TextNode {
+    fn clone(&self) -> Self {
+        Self {
+            position: self.position.clone(),
+            rotation: self.rotation.clone(),
+            scale: self.scale.clone(),
+            text: self.text.clone(),
+            font_size: self.font_size.clone(),
+            fill_color: self.fill_color.clone(),
+            opacity: self.opacity.clone(),
+            anchor: self.anchor.clone(),
+            text_align: self.text_align.clone(),
+            font_family: self.font_family.clone(),
+            cache: self.cache.clone(),
+        }
+    }
+}
+
+struct PathSink<'a>(&'a mut BezPath);
+
+impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.0.move_to((x as f64, y as f64));
+    }
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.0.line_to((x as f64, y as f64));
+    }
+    fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) {
+        self.0
+            .quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
+    }
+    fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
+        self.0.curve_to(
+            (cx0 as f64, cy0 as f64),
+            (cx1 as f64, cy1 as f64),
+            (x as f64, y as f64),
+        );
+    }
+    fn close(&mut self) {
+        self.0.close_path();
+    }
+}
+
+impl Node for TextNode {
+    #[cfg(feature = "runtime")]
+    fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
+        let text = self.text.get();
+        let size = self.font_size.get();
+        let color = self.fill_color.get();
+        let opacity = self.opacity.get();
+
+        let pos = self.position.get();
+        let rot = self.rotation.get();
+        let sc = self.scale.get();
+        let anchor = self.anchor.get();
+        let text_align = self.text_align.get();
+
+        let key = TextCacheKey {
+            text: text.clone(),
+            font_size_bits: size.to_bits(),
+            font_family: self.font_family.clone(),
+            text_align,
+        };
+
+        // 1. Check global cache
+        let mut global = GLOBAL_TEXT_CACHE.lock().unwrap();
+        if let Some(paths) = global.get(&key) {
+            let mut local = self.cache.lock().unwrap();
+            *local = Some(paths.clone());
+        } else {
+            // 3. Rebuild
+            let mut paths = Vec::new();
+            let mut fallback_list = vec![self.font_family.as_str(), DEFAULT_FONT_FAMILY];
+            fallback_list.extend_from_slice(FONT_FALLBACKS);
+
+            if let Some(font_data) = FontManager::get_font_with_fallback(&fallback_list) {
+                let font_ref = FontManager::get_font_ref(&font_data);
+                let charmap = font_ref.charmap();
+                let outlines = font_ref.outline_glyphs();
+
+                let lines: Vec<&str> = text.split('\n').collect();
+                let line_height = size * 1.2;
+
+                // Measure line widths
+                let mut line_widths = Vec::with_capacity(lines.len());
+                for line in &lines {
+                    let mut width = 0.0;
+                    for c in line.chars() {
+                        let glyph_id = charmap.map(c).unwrap_or_default();
+                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
+                        if let Some(metrics) = font_ref
+                            .glyph_metrics(Size::new(size), LocationRef::default())
+                            .advance_width(glyph_id)
+                        {
+                            advance = metrics as f64;
+                        }
+                        width += advance;
+                    }
+                    line_widths.push(width);
+                }
+
+                let max_width = line_widths.iter().copied().fold(0.0f64, f64::max);
+                let mut y_offset = 0.0;
+
+                for (i, line) in lines.iter().enumerate() {
+                    let line_width = line_widths[i];
+                    let mut x_offset = match text_align {
+                        TextAlign::Left => 0.0,
+                        TextAlign::Center => (max_width - line_width) / 2.0,
+                        TextAlign::Right => max_width - line_width,
+                    };
+
+                    for c in line.chars() {
+                        let glyph_id = charmap.map(c).unwrap_or_default();
+                        let mut pb = BezPath::new();
+                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
+
+                        if let Some(glyph) = outlines.get(glyph_id) {
+                            let mut sink = PathSink(&mut pb);
+                            let font_size = Size::new(size);
+                            let _ = glyph.draw(font_size, &mut sink);
+
+                            if let Some(metrics) = font_ref
+                                .glyph_metrics(font_size, LocationRef::default())
+                                .advance_width(glyph_id)
+                            {
+                                advance = metrics as f64;
+                            }
+                        }
+
+                        let base_transform =
+                            Affine::translate((x_offset, size as f64 + y_offset as f64))
+                                * Affine::scale_non_uniform(1.0, -1.0);
+                        paths.push((base_transform, pb));
+                        x_offset += advance;
+                    }
+                    y_offset += line_height;
+                }
+            }
+            let arc_paths = Arc::new(paths);
+            global.insert(key, arc_paths.clone());
+            let mut local = self.cache.lock().unwrap();
+            *local = Some(arc_paths);
+        }
+
+        let cache_guard = self.cache.lock().unwrap();
+        let Some(c) = cache_guard.as_ref() else {
+            return;
+        };
+
+        // Calculate bounding box for centering and anchor
+        let mut min_x = f64::MAX;
+        let mut min_y = f64::MAX;
+        let mut max_x = f64::MIN;
+        let mut max_y = f64::MIN;
+
+        for (glyph_transform, pb) in c.as_ref() {
+            let bounds = pb.bounding_box();
+            let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+            let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+            min_x = min_x.min(p0.x).min(p1.x);
+            min_y = min_y.min(p0.y).min(p1.y);
+            max_x = max_x.max(p0.x).max(p1.x);
+            max_y = max_y.max(p0.y).max(p1.y);
+        }
+
+        let size_vec = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
+        };
+
+        let center_offset = if min_x == f64::MAX {
+            Vec2::ZERO
+        } else {
+            Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
+        };
+
+        let anchor_offset = anchor * size_vec * 0.5;
+
+        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+            * Affine::rotate(rot as f64)
+            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
+
+        let root_transform = parent_transform * local_transform;
+        let mut render_color = color;
+        render_color.a = (color.a as f32 * opacity * parent_opacity).clamp(0.0, 255.0) as u8;
+        let brush = Brush::Solid(render_color);
+        for (glyph_transform, pb) in c.as_ref() {
+            scene.fill(
+                Fill::NonZero,
+                root_transform * *glyph_transform,
+                &brush,
+                None,
+                pb,
+            );
+        }
+    }
+    fn update(&mut self, _dt: Duration) {}
+    fn state_hash(&self) -> u64 {
+        use crate::assets::hash::Hasher;
+        let mut h = Hasher::new();
+        h.update_u64(self.position.state_hash());
+        h.update_u64(self.rotation.state_hash());
+        h.update_u64(self.scale.state_hash());
+        h.update_u64(self.text.state_hash());
+        h.update_u64(self.font_size.state_hash());
+        h.update_u64(self.fill_color.state_hash());
+        h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.anchor.state_hash());
+        h.update_u64(self.text_align.state_hash());
+        h.update_bytes(self.font_family.as_bytes());
+        h.finish()
+    }
+
+    fn clone_node(&self) -> Box<dyn Node> {
+        Box::new(self.clone())
+    }
+
+    fn reset(&mut self) {
+        self.position.reset();
+        self.rotation.reset();
+        self.scale.reset();
+        self.text.reset();
+        self.font_size.reset();
+        self.fill_color.reset();
+        self.opacity.reset();
+        self.anchor.reset();
+        self.text_align.reset();
+    }
+}
