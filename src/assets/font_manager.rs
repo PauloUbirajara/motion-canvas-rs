@@ -168,7 +168,7 @@ impl FontManager {
 
             let db = FONT_DB.lock().unwrap();
             for face in db.faces() {
-                // In fontdb 0.23, face.families is a Vec of (String, Language)
+                // In fontdb 0.21, face.families is also a Vec of (String, Language)
                 for (fam_name, _) in &face.families {
                     if fam_name.contains("Math") {
                         if let Some(font) = Self::load_from_db(&db, face.id, fam_name) {
