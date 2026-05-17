@@ -95,11 +95,42 @@ fn test_math_builder() {
 #[cfg(feature = "code")]
 fn test_code_builder() {
     let code = CodeNode::default()
-        .with_language("javascript")
-        .with_code("console.log('hi')");
+        .with_language("rust")
+        .with_code("let mut engine = MotionCanvas::new();\nengine.render();");
 
-    assert_eq!(code.language, "javascript");
-    assert_eq!(code.code.get().text, "console.log('hi')");
+    assert_eq!(code.language, "rust");
+
+    use motion_canvas_rs::assets::code_tokenizer::tokenize_code;
+
+    println!("--- TOKEN POSITIONS & WIDTHS ---");
+    let tokens = tokenize_code(
+        "let mut engine = MotionCanvas::new();\nengine.render();",
+        24.0,
+        "rust",
+        "base16-ocean.dark",
+        "Fira Code",
+        &["Courier New", "monospace"],
+    );
+    for t in &tokens {
+        println!(
+            "Token {:?}: pos={:?}, width={}, glyphs={}",
+            t.text,
+            t.pos,
+            t.width,
+            t.glyphs.len()
+        );
+        if t.text.contains('.') || t.text.contains(':') {
+            for (idx, (transform, pb)) in t.glyphs.iter().enumerate() {
+                println!(
+                    "  Glyph #{}: transform={:?}, elements={:?}",
+                    idx,
+                    transform,
+                    pb.elements()
+                );
+            }
+        }
+    }
+    println!("---------------------------------");
 }
 
 #[test]

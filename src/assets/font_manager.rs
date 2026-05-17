@@ -23,8 +23,6 @@ const GENERIC_FALLBACKS: &[(Family<'static>, &str)] = &[
     (Family::Serif, "Serif"),
 ];
 
-// --- Global State ---
-
 static FONT_DB: LazyLock<Mutex<Database>> = LazyLock::new(|| {
     let mut db = Database::new();
     db.load_system_fonts();
@@ -67,8 +65,16 @@ impl FontManager {
 
         // 2. Database search
         let db = FONT_DB.lock().unwrap();
+        let family_enum = match family.to_lowercase().as_str() {
+            "monospace" => Family::Monospace,
+            "sans-serif" | "sans" => Family::SansSerif,
+            "serif" => Family::Serif,
+            "cursive" => Family::Cursive,
+            "fantasy" => Family::Fantasy,
+            _ => Family::Name(family),
+        };
         let query = Query {
-            families: &[Family::Name(family)],
+            families: &[family_enum],
             ..Query::default()
         };
 
@@ -82,13 +88,15 @@ impl FontManager {
         None
     }
 
-    /// Fixed: with_face_data provides the slice directly.
     fn load_from_db(db: &Database, id: fontdb::ID, name: &str) -> Option<Arc<FontData>> {
-        // with_face_data returns Option<T>, but our closure returns T.
+        let actual_name = db
+            .face(id)
+            .and_then(|face| face.families.first().map(|(fam, _)| fam.clone()))
+            .unwrap_or_else(|| name.to_string());
         db.with_face_data(id, |data, index| {
             Arc::new(FontData {
-                name: name.to_string(),
-                data: data.to_vec(), // We copy the font bytes into our Arc container
+                name: actual_name.clone(),
+                data: data.to_vec(),
                 index,
             })
         })
@@ -168,7 +176,6 @@ impl FontManager {
 
             let db = FONT_DB.lock().unwrap();
             for face in db.faces() {
-                // In fontdb 0.21, face.families is also a Vec of (String, Language)
                 for (fam_name, _) in &face.families {
                     if fam_name.contains("Math") {
                         if let Some(font) = Self::load_from_db(&db, face.id, fam_name) {
