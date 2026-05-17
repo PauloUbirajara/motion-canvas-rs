@@ -1,5 +1,8 @@
 use indicatif::{ProgressBar, ProgressStyle};
-use std::time::{Duration, Instant};
+use std::{
+    sync::LazyLock,
+    time::{Duration, Instant},
+};
 use winit::{
     event::{Event, KeyEvent, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -11,8 +14,11 @@ use crate::core::scene::Scene2D;
 use crate::runtime::renderer::VelloRenderer;
 use crate::Project;
 
+const SEEK_DURATION_SECS: u64 = 5;
 const TUI_HEADER: &str = "--- motion-canvas-rs playback ---";
-const TUI_CONTROLS: &str = r#"
+const TUI_CONTROLS: LazyLock<String> = LazyLock::new(|| {
+    format!(
+        r#"
 Controls:
   R         : [R]estart
   Esc   / Q : [Q]uit
@@ -20,11 +26,13 @@ Controls:
 
   . (Dot)       : Step +1 frame
   , (Comma)     : Step -1 frame
-  > (Right) / L : Seek +10s
-  < (Left)  / H : Seek -10s
+  > (Right) / L : Seek +{SEEK_DURATION_SECS}s
+  < (Left)  / H : Seek -{SEEK_DURATION_SECS}s
   ^ (Up)    / K : Increase speed
   v (Down)  / J : Decrease speed (min 0.1x)
-"#;
+"#
+    )
+});
 
 /// An interactive preview window for viewing animations.
 ///
@@ -53,7 +61,7 @@ impl AnimationWindow {
         let total_duration = video_duration.max(audio_duration);
 
         println!("{}", TUI_HEADER);
-        println!("{}", TUI_CONTROLS);
+        println!("{}", *TUI_CONTROLS);
 
         let pb = ProgressBar::new((total_duration.as_secs_f32() * 1000.0) as u64);
         pb.set_style(
@@ -86,6 +94,7 @@ impl AnimationWindow {
         let mut last_hash = 0u64;
         let mut finished = false;
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
+        let mut time_accumulator = 0.0f32;
 
         event_loop.run(move |event, elwt| match event {
             Event::WindowEvent {
@@ -124,6 +133,7 @@ impl AnimationWindow {
                 &mut last_update,
                 &mut last_hash,
                 &mut finished,
+                &mut time_accumulator,
                 dt,
             ),
 
@@ -159,7 +169,7 @@ impl AnimationWindow {
                 self.project.speed = 1.0;
             }
             KeyCode::ArrowRight | KeyCode::KeyL => {
-                let target = self.project.current_time + Duration::from_secs(10);
+                let target = self.project.current_time + Duration::from_secs(SEEK_DURATION_SECS);
                 self.project.seek_to(target);
                 *last_update = Instant::now();
                 window.request_redraw();
@@ -168,7 +178,7 @@ impl AnimationWindow {
                 let target = self
                     .project
                     .current_time
-                    .saturating_sub(Duration::from_secs(10));
+                    .saturating_sub(Duration::from_secs(SEEK_DURATION_SECS));
                 self.project.seek_to(target);
                 *last_update = Instant::now();
                 window.request_redraw();
@@ -209,6 +219,7 @@ impl AnimationWindow {
         last_update: &mut Instant,
         last_hash: &mut u64,
         finished: &mut bool,
+        time_accumulator: &mut f32,
         dt: Duration,
     ) {
         if *finished {
@@ -224,10 +235,16 @@ impl AnimationWindow {
 
         // Process all pending updates (catch-up)
         if !self.project.paused {
-            let effective_dt = dt.mul_f32(self.project.speed);
+            let dt_secs = dt.as_secs_f32();
             while elapsed >= dt {
-                self.project.scene.update(effective_dt);
-                self.project.current_time += effective_dt;
+                *time_accumulator += dt_secs * self.project.speed;
+
+                while *time_accumulator >= dt_secs {
+                    self.project.scene.update(dt);
+                    self.project.current_time += dt;
+                    *time_accumulator -= dt_secs;
+                }
+
                 elapsed -= dt;
                 *last_update += dt;
             }

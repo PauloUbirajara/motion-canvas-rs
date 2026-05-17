@@ -84,7 +84,9 @@ fn build_scene1() -> (PhysicsNode, TextNode, TextNode) {
     let title = make_title("Gravity");
     let subtitle = make_subtitle("A single box falls under gravity");
 
-    let mut p = PhysicsNode::new().with_opacity(0.0);
+    let mut p = PhysicsNode::new()
+        .with_timestep(1.0 / 60.0)
+        .with_opacity(0.0);
 
     p.add_static(make_floor(460.0, 600.0, FLOOR_COLOR));
     p.add_dynamic(

@@ -225,7 +225,9 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     fs::create_dir_all(&project.output_path)?;
 
     let sanitized = crate::assets::sanitize_title(&project.title);
-    let cache_file = project.output_path.join(format!(".motion_canvas_cache_{}", sanitized));
+    let cache_file = project
+        .output_path
+        .join(format!(".motion_canvas_cache_{}", sanitized));
     let mut manifest: CacheManifest = (project.use_cache && cache_file.exists())
         .then(|| fs::read_to_string(&cache_file).ok())
         .flatten()

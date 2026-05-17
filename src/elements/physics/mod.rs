@@ -16,6 +16,7 @@ use vello::Scene;
 pub const DEFAULT_BOUNCINESS: f32 = 0.5;
 pub const DEFAULT_GRAVITY_Y: f32 = 981.0;
 pub const DEFAULT_FRICTION: f32 = 0.5;
+pub const DEFAULT_TIMESTEP_SECS: f32 = 1.0 / 60.0;
 
 /// Controls the operational layout ownership framework of a physical item mid-timeline.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -286,6 +287,8 @@ pub struct PhysicsNode {
     engine: PhysicsEngine,
     entries: Vec<(RigidBodyHandle, BodyWrapper)>,
     initial_states: Vec<(RigidBodyHandle, Vector<f32>, f32, Vector<f32>, f32)>,
+    pub timestep: f32,
+    accumulator: f32,
 }
 
 impl Default for PhysicsNode {
@@ -295,6 +298,8 @@ impl Default for PhysicsNode {
             engine: PhysicsEngine::default(),
             entries: Vec::new(),
             initial_states: Vec::new(),
+            timestep: DEFAULT_TIMESTEP_SECS,
+            accumulator: 0.0,
         }
     }
 }
@@ -304,6 +309,8 @@ impl Clone for PhysicsNode {
         let mut cloned = PhysicsNode {
             opacity: self.opacity.clone(),
             engine: PhysicsEngine::new(self.engine.gravity.x, self.engine.gravity.y),
+            timestep: self.timestep,
+            accumulator: self.accumulator,
             ..Default::default()
         };
 
@@ -340,6 +347,11 @@ impl Clone for PhysicsNode {
 impl PhysicsNode {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_timestep(mut self, timestep: f32) -> Self {
+        self.timestep = timestep;
+        self
     }
 
     pub fn with_gravity(mut self, gravity: Vec2) -> Self {
@@ -493,49 +505,87 @@ impl Node for PhysicsNode {
             }
         }
 
-        // ─── Step 1: Sync Signals down to Rapier Core ───
-        for (handle, wrapper) in &mut self.entries {
-            let current_mode = wrapper.mode();
-            let visual_pos = wrapper.position_signal().get();
-            let visual_rot = wrapper.rotation_signal().get();
+        self.accumulator += dt_secs;
 
-            if let Some(rb) = self.engine.rigid_body_set.get_mut(*handle) {
-                match current_mode {
-                    PhysicsMode::Disabled => {
-                        rb.set_body_type(RigidBodyType::KinematicPositionBased, false);
-                        rb.sleep();
-                    }
-                    PhysicsMode::Kinematic => {
-                        rb.set_body_type(RigidBodyType::KinematicPositionBased, true);
-                        rb.set_next_kinematic_translation(Vector::new(visual_pos.x, visual_pos.y));
-                        rb.set_next_kinematic_rotation(rapier2d::math::Rotation::new(visual_rot));
-                    }
-                    PhysicsMode::Dynamic => {
-                        if !rb.is_dynamic() {
-                            rb.set_body_type(RigidBodyType::Dynamic, true);
+        while self.accumulator >= self.timestep {
+            // ─── Step 1: Sync Signals down to Rapier Core ───
+            for (handle, wrapper) in &mut self.entries {
+                let visual_pos = wrapper.position_signal().get();
+                let visual_rot = wrapper.rotation_signal().get();
+
+                if let Some(rb) = self.engine.rigid_body_set.get_mut(*handle) {
+                    match wrapper {
+                        BodyWrapper::Static(_) => {
+                            if !rb.is_fixed() {
+                                rb.set_body_type(RigidBodyType::Fixed, true);
+                            }
                             rb.set_translation(Vector::new(visual_pos.x, visual_pos.y), true);
                             rb.set_rotation(rapier2d::math::Rotation::new(visual_rot), true);
-                            rb.wake_up(true);
+                        }
+                        BodyWrapper::Dynamic(db) => {
+                            let current_mode = db.mode.get();
+                            match current_mode {
+                                PhysicsMode::Disabled => {
+                                    if !rb.is_kinematic() {
+                                        rb.set_body_type(
+                                            RigidBodyType::KinematicPositionBased,
+                                            false,
+                                        );
+                                    }
+                                    rb.sleep();
+                                }
+                                PhysicsMode::Kinematic => {
+                                    if !rb.is_kinematic() {
+                                        rb.set_body_type(
+                                            RigidBodyType::KinematicPositionBased,
+                                            true,
+                                        );
+                                    }
+                                    rb.set_next_kinematic_translation(Vector::new(
+                                        visual_pos.x,
+                                        visual_pos.y,
+                                    ));
+                                    rb.set_next_kinematic_rotation(rapier2d::math::Rotation::new(
+                                        visual_rot,
+                                    ));
+                                }
+                                PhysicsMode::Dynamic => {
+                                    if !rb.is_dynamic() {
+                                        rb.set_body_type(RigidBodyType::Dynamic, true);
+                                        rb.set_translation(
+                                            Vector::new(visual_pos.x, visual_pos.y),
+                                            true,
+                                        );
+                                        rb.set_rotation(
+                                            rapier2d::math::Rotation::new(visual_rot),
+                                            true,
+                                        );
+                                        rb.wake_up(true);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // ─── Step 2: Step Headless Physics Simulation Engine ───
-        self.engine.step(dt_secs);
+            // ─── Step 2: Step Headless Physics Simulation Engine ───
+            self.engine.step(self.timestep);
 
-        // ─── Step 3: Flush Simulation Outputs to Layout Signals ───
-        for (handle, wrapper) in &mut self.entries {
-            if wrapper.mode() == PhysicsMode::Dynamic {
-                if let Some(rb) = self.engine.rigid_body_set.get(*handle) {
-                    let rb_pos = rb.translation();
-                    let rb_rot = rb.rotation().angle();
+            // ─── Step 3: Flush Simulation Outputs to Layout Signals ───
+            for (handle, wrapper) in &mut self.entries {
+                if wrapper.mode() == PhysicsMode::Dynamic {
+                    if let Some(rb) = self.engine.rigid_body_set.get(*handle) {
+                        let rb_pos = rb.translation();
+                        let rb_rot = rb.rotation().angle();
 
-                    wrapper.position_signal().set(Vec2::new(rb_pos.x, rb_pos.y));
-                    wrapper.rotation_signal().set(rb_rot);
+                        wrapper.position_signal().set(Vec2::new(rb_pos.x, rb_pos.y));
+                        wrapper.rotation_signal().set(rb_rot);
+                    }
                 }
             }
+
+            self.accumulator -= self.timestep;
         }
     }
 
@@ -564,19 +614,59 @@ impl Node for PhysicsNode {
     }
 
     fn reset(&mut self) {
-        for (handle, pos, rot, linvel, angvel) in &self.initial_states {
-            if let Some(rb) = self.engine.rigid_body_set.get_mut(*handle) {
-                rb.set_translation(*pos, true);
-                rb.set_rotation(rapier2d::math::Rotation::new(*rot), true);
-                rb.set_linvel(*linvel, true);
-                rb.set_angvel(*angvel, true);
-            }
-        }
+        // Reset sub-nodes/children first
         for (_, wrapper) in &mut self.entries {
             match wrapper {
                 BodyWrapper::Dynamic(n) => n.reset(),
                 BodyWrapper::Static(n) => n.reset(),
             }
         }
+
+        // Recreate clean PhysicsEngine with gravity preserved to clear out internal contact manifold & islands caches
+        let mut new_engine = PhysicsEngine::new(self.engine.gravity.x, self.engine.gravity.y);
+        let mut new_entries = Vec::new();
+        let mut new_initial_states = Vec::new();
+
+        for ((handle, entry), (_, init_pos, init_rot, init_linvel, init_angvel)) in
+            self.entries.iter().zip(&self.initial_states)
+        {
+            let Some(rb) = self.engine.rigid_body_set.get(*handle) else {
+                continue;
+            };
+
+            let rb_builder = if rb.is_dynamic() {
+                RigidBodyBuilder::dynamic()
+                    .translation(*init_pos)
+                    .rotation(*init_rot)
+                    .linvel(*init_linvel)
+                    .angvel(*init_angvel)
+            } else if rb.is_kinematic() {
+                RigidBodyBuilder::kinematic_position_based()
+                    .translation(*init_pos)
+                    .rotation(*init_rot)
+            } else {
+                RigidBodyBuilder::fixed()
+                    .translation(*init_pos)
+                    .rotation(*init_rot)
+            };
+
+            let col_builder = self.build_collider_from_handle(*handle);
+
+            let rb_built = rb_builder.build();
+            let new_handle = new_engine.rigid_body_set.insert(rb_built);
+            new_engine.collider_set.insert_with_parent(
+                col_builder.build(),
+                new_handle,
+                &mut new_engine.rigid_body_set,
+            );
+
+            new_entries.push((new_handle, entry.clone()));
+            new_initial_states.push((new_handle, *init_pos, *init_rot, *init_linvel, *init_angvel));
+        }
+
+        self.engine = new_engine;
+        self.entries = new_entries;
+        self.initial_states = new_initial_states;
+        self.accumulator = 0.0;
     }
 }
