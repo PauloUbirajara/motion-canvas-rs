@@ -33,6 +33,7 @@ cargo add motion-canvas-rs --features math,svg,audio
 | `export` | Headless frame rendering and video generation. | `project.export()` |
 | `image` | Bitmap image support (WebP, JPEG, PNG). | `ImageNode` |
 | `math` | Typst-powered LaTeX math rendering. | `MathNode` |
+| `physics` | Simplified 2D physics engine integration via Rapier. | `PhysicsNode`, `RigidBodyNode`, `StaticBodyNode` |
 | `svg` | Vector graphics support via Vello SVG. | `SvgNode` |
 | `full` | Meta-feature that enables all of the above. | Everything |
 
@@ -58,8 +59,11 @@ cargo add motion-canvas-rs --features math,svg,audio
 | `Line` | Simple line between two points. | `position`, `rotation`, `scale`, `start`, `end`, `anchor` |
 | `MathNode` | Typst-powered mathematical formulas. | `position`, `rotation`, `scale`, `equation`, `anchor` |
 | `PathNode` | Complex path sampling and animation. | `position`, `rotation`, `scale`, `arc-length`, `anchor` |
+| `PhysicsNode` | Container orchestrating a 2D physics simulation world. | `opacity`, `gravity`, `is_moving_container` |
 | `Polygon` | Regular and custom polygon shapes. | `position`, `rotation`, `scale`, `points`, `anchor` |
 | `Rect` | Rectangle with optional corner radius. | `position`, `rotation`, `scale`, `size`, `radius`, `anchor` |
+| `RigidBodyNode` | Dynamic physical body reacting to gravity, collisions, and forces. | `position`, `rotation`, `shape`, `bounciness`, `friction`, `initial_velocity`, `initial_angular_velocity` |
+| `StaticBodyNode` | Immovable physical body acting as boundaries or obstacles. | `position`, `rotation`, `shape`, `bounciness`, `friction` |
 | `SvgNode` | Vector SVG image display and animation. | `position`, `rotation`, `scale`, `size`, `anchor` |
 | `TextNode` | High-quality text rendering (skrifa). | `position`, `rotation`, `scale`, `text`, `anchor` |
 
@@ -114,7 +118,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 22 examples that can be found in the [examples directory](./examples).
+The project includes 23 examples that can be found in the [examples directory](./examples).
 
 <details>
     <summary> [ <a href="./examples/advanced_flow.rs">code</a> ] <b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -371,6 +375,20 @@ cargo run --example news_feed
 </details>
 
 <details>
+<summary> [ <a href="./examples/physics_demo.rs">code</a> ] <b>Physics Simulation</b> - 2D physics simulation using Rapier.</summary>
+
+```sh
+cargo run --example physics_demo --features physics
+```
+
+| Preview |
+| - |
+| ![Physics Simulation](./assets/examples/physics_demo.webp) |
+| [Physics Simulation Video](./assets/examples/physics_demo.mp4) |
+
+</details>
+
+<details>
 <summary> [ <a href="./examples/polygon.rs">code</a> ] <b>Polygon</b> - Regular and custom polygon primitives.</summary>
 
 ```sh
@@ -439,6 +457,7 @@ This project is heavily inspired by the original [Motion Canvas](https://github.
 
 Special thanks to:
 - [easings.net](https://easings.net/) for the standardized easing function library.
+- [rapier.rs](https://rapier.rs/) for the incredible 2D physics engine powering our physics simulation in the `physics_demo` example (`rapier2d`).
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
 - [vemaps.com](https://vemaps.com/world/wrld-21) for the world map SVG used in the `world_map` example.
 - **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.
