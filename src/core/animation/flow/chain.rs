@@ -55,10 +55,14 @@ impl Animation for Chain {
         }
     }
 
-    /// Collects audio events only from the currently active child animation.
+    /// Collects audio events only from the currently active child animation with proper relative offset.
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<AudioEvent>) {
         if self.index < self.animations.len() {
-            self.animations[self.index].collect_audio_events(current_time, events);
+            let preceding_dur: Duration = self.animations[..self.index]
+                .iter()
+                .map(|a| a.duration())
+                .sum();
+            self.animations[self.index].collect_audio_events(current_time + preceding_dur, events);
         }
     }
 

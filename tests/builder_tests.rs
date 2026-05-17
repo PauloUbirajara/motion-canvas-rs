@@ -203,3 +203,40 @@ fn test_physics_body_builders() {
     assert_eq!(static_body.bounciness, 0.4);
     assert_eq!(static_body.friction, 0.8);
 }
+
+#[test]
+#[cfg(feature = "audio")]
+fn test_audio_event_offsets() {
+    use motion_canvas_rs::core::scene::BaseScene;
+    use motion_canvas_rs::prelude::*;
+    use std::time::Duration;
+
+    let mut scene = BaseScene::new();
+
+    // Create a chain of audio animations
+    let play1 = play!(AudioNode::new("a.mp3").with_volume(0.5)); // duration 1s
+    let wait1 = audio_wait!(2.0); // duration 2s
+    let play2 = play!(AudioNode::new("b.mp3").with_volume(1.0)); // duration 1s
+
+    scene.audio_timeline.add(chain!(play1, wait1, play2));
+
+    // Simulate the frame-by-frame export loop
+    let mut events = Vec::new();
+    let dt = Duration::from_millis(100);
+    for _ in 0..40 {
+        scene
+            .audio_timeline
+            .collect_audio_events(Duration::ZERO, &mut events);
+        scene.audio_timeline.update(dt);
+    }
+    scene.collect_audio_events(Duration::ZERO, &mut events);
+
+    // Filter events to find the ones we pushed
+    let a_event = events.iter().find(|e| e.path == "a.mp3").unwrap();
+    let b_event = events.iter().find(|e| e.path == "b.mp3").unwrap();
+
+    // play1 starts at 0.0s
+    assert_eq!(a_event.start_time, Duration::from_secs(0));
+    // play2 starts at play1 duration (1s) + wait1 duration (2s) = 3s
+    assert_eq!(b_event.start_time, Duration::from_secs(3));
+}

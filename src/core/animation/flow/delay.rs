@@ -52,7 +52,8 @@ impl Animation for Delay {
     /// Collects audio events from the inner animation only if the delay has passed.
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<AudioEvent>) {
         if self.elapsed >= self.duration {
-            self.inner.collect_audio_events(current_time, events);
+            self.inner
+                .collect_audio_events(current_time + self.duration, events);
         }
     }
 
