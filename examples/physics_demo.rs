@@ -77,10 +77,7 @@ fn make_label(text: &str, x: f32, y: f32, color: Color) -> TextNode {
 }
 
 // ═══════════════════════════════════════════════════════════
-// SCENE BUILDERS — return (PhysicsNode, title, subtitle, labels)
-//
-// Every PhysicsNode starts at opacity 0.
-// Simulation ONLY runs when opacity > 0.
+// SCENE BUILDERS
 // ═══════════════════════════════════════════════════════════
 
 fn build_scene1() -> (PhysicsNode, TextNode, TextNode) {
@@ -143,7 +140,6 @@ fn build_scene3() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
 
     p.add_static(make_floor(460.0, 800.0, FLOOR_COLOR));
 
-    // Ramps rotated by 0.25 rad (~14 degrees) down to the right
     p.add_static(
         StaticBodyNode::new(Box::new(
             Rect::default()
@@ -167,7 +163,6 @@ fn build_scene3() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_shape(PhysicsShape::Cuboid(Vec2::new(150.0, 8.0))),
     );
 
-    // Circle rolls
     p.add_dynamic(
         RigidBodyNode::new(Box::new(
             Circle::default().with_radius(25.0).with_fill(ACCENT_BLUE),
@@ -177,7 +172,6 @@ fn build_scene3() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_bounciness(0.2),
     );
 
-    // Rect tumbles/slides (or gets stuck due to shape friction)
     p.add_dynamic(
         RigidBodyNode::new(Box::new(
             Rect::default()
@@ -241,17 +235,78 @@ fn build_scene4() -> (PhysicsNode, TextNode, TextNode) {
     (p, title, subtitle)
 }
 
-fn build_scene5() -> (PhysicsNode, TextNode, TextNode) {
-    let title = make_title("Static Bodies");
-    let subtitle = make_subtitle("Can be used for obstacles, containers, and more");
+// Scene 5 rewritten to return binding nodes driven entirely by explicit external signal maps
+fn build_scene5() -> (
+    PhysicsNode,
+    TextNode,
+    TextNode,
+    Signal<f32>,
+    Vec<Box<dyn Node>>,
+) {
+    let title = make_title("Kinematic Containers");
+    let subtitle = make_subtitle("Have infinite mass, but can be moved and used for obstacles");
 
-    let mut p = PhysicsNode::new()
-        .with_moving_container(true)
-        .with_opacity(0.0);
+    let mut p = PhysicsNode::new().with_opacity(0.0);
 
-    p.add_static(make_floor(450.0, 400.0, FLOOR_COLOR));
-    p.add_static(make_wall(CX - 200.0, 350.0, 20.0, 220.0));
-    p.add_static(make_wall(CX + 200.0, 350.0, 20.0, 220.0));
+    // 1. Declare independent clock signal variable parameter
+    let time_var = Signal::new(0.0f32);
+
+    // 2. Instantiate uielding layout container walls inside Kinematic mode
+    let floor = RigidBodyNode::new(Box::new(
+        Rect::default()
+            .with_size(Vec2::new(400.0, 30.0))
+            .with_fill(FLOOR_COLOR)
+            .with_radius(4.0),
+    ))
+    .with_position(Vec2::new(CX, 450.0))
+    .with_shape(PhysicsShape::Cuboid(Vec2::new(200.0, 15.0)))
+    .with_mode(PhysicsMode::Kinematic);
+
+    let left_wall = RigidBodyNode::new(Box::new(
+        Rect::default()
+            .with_size(Vec2::new(20.0, 220.0))
+            .with_fill(WALL_COLOR)
+            .with_radius(2.0),
+    ))
+    .with_position(Vec2::new(CX - 200.0, 350.0))
+    .with_shape(PhysicsShape::Cuboid(Vec2::new(10.0, 110.0)))
+    .with_mode(PhysicsMode::Kinematic);
+
+    let right_wall = RigidBodyNode::new(Box::new(
+        Rect::default()
+            .with_size(Vec2::new(20.0, 220.0))
+            .with_fill(WALL_COLOR)
+            .with_radius(2.0),
+    ))
+    .with_position(Vec2::new(CX + 200.0, 350.0))
+    .with_shape(PhysicsShape::Cuboid(Vec2::new(10.0, 110.0)))
+    .with_mode(PhysicsMode::Kinematic);
+
+    // 3. Connect bindings mapping 2x horizontal sin and 3x vertical cos oscillation waves
+    let t_clone1 = time_var.clone();
+    let floor_link = floor.position.bind(time_var.clone(), move |t| {
+        let dx = (t * 4.0).sin() * 70.0; // 2x Horizontal speed wave frequency
+        let dy = (t * 6.0).cos() * 15.0; // 3x Vertical speed wave frequency
+        Vec2::new(CX + dx, 450.0 + dy)
+    });
+
+    let t_clone2 = time_var.clone();
+    let left_link = left_wall.position.bind(time_var.clone(), move |t| {
+        let dx = (t * 4.0).sin() * 70.0;
+        let dy = (t * 6.0).cos() * 15.0;
+        Vec2::new((CX - 200.0) + dx, 350.0 + dy)
+    });
+
+    let t_clone3 = time_var.clone();
+    let right_link = right_wall.position.bind(time_var.clone(), move |t| {
+        let dx = (t * 4.0).sin() * 70.0;
+        let dy = (t * 6.0).cos() * 15.0;
+        Vec2::new((CX + 200.0) + dx, 350.0 + dy)
+    });
+
+    p.add_dynamic(floor);
+    p.add_dynamic(left_wall);
+    p.add_dynamic(right_wall);
 
     let ball_colors = [
         ACCENT_RED,
@@ -281,7 +336,12 @@ fn build_scene5() -> (PhysicsNode, TextNode, TextNode) {
         );
     }
 
-    (p, title, subtitle)
+    let links: Vec<Box<dyn Node>> = vec![
+        Box::new(floor_link),
+        Box::new(left_link),
+        Box::new(right_link),
+    ];
+    (p, title, subtitle, time_var, links)
 }
 
 fn build_scene6() -> (PhysicsNode, TextNode, TextNode) {
@@ -292,7 +352,6 @@ fn build_scene6() -> (PhysicsNode, TextNode, TextNode) {
         .with_gravity(Vec2::new(0.0, 0.0))
         .with_opacity(0.0);
 
-    // Boundary
     p.add_static(make_wall(CX, 100.0, 800.0, 20.0));
     p.add_static(make_wall(CX, 480.0, 800.0, 20.0));
     p.add_static(make_wall(80.0, 290.0, 20.0, 400.0));
@@ -370,8 +429,6 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
 
     p.add_static(make_floor(460.0, 800.0, FLOOR_COLOR));
 
-    // Three ramps, tilted by 0.35 rad (~20 degrees)
-    // Left ramp (low friction)
     p.add_static(
         StaticBodyNode::new(Box::new(
             Rect::default()
@@ -385,7 +442,6 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_friction(0.0),
     );
 
-    // Middle ramp (medium friction)
     p.add_static(
         StaticBodyNode::new(Box::new(
             Rect::default()
@@ -399,7 +455,6 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_friction(0.7),
     );
 
-    // Right ramp (high friction)
     p.add_static(
         StaticBodyNode::new(Box::new(
             Rect::default()
@@ -413,8 +468,6 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_friction(0.9),
     );
 
-    // Three rects dropped above the ramps
-    // Left rect (0.0 friction)
     p.add_dynamic(
         RigidBodyNode::new(Box::new(
             Rect::default()
@@ -428,7 +481,6 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_friction(0.0),
     );
 
-    // Middle rect (0.2 friction)
     p.add_dynamic(
         RigidBodyNode::new(Box::new(
             Rect::default()
@@ -442,7 +494,6 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_friction(0.2),
     );
 
-    // Right rect (0.9 friction)
     p.add_dynamic(
         RigidBodyNode::new(Box::new(
             Rect::default()
@@ -485,13 +536,11 @@ fn build_scene8() -> (PhysicsNode, TextNode, TextNode) {
     ];
 
     for i in 0..100 {
-        // Stack vertically one-by-one above the box, staggered slightly for cascading chaos
         let x = CX + (if i % 2 == 0 { 8.0 } else { -8.0 });
         let y = -100.0 - (i as f32 * 140.0);
         let color = all_colors[i % all_colors.len()];
 
         if i % 3 == 0 {
-            // Large ball radius (from 24.0 to 48.0 px)
             let r = 24.0 + (i % 4) as f32 * 8.0;
             p.add_dynamic(
                 RigidBodyNode::new(Box::new(Circle::default().with_radius(r).with_fill(color)))
@@ -500,7 +549,6 @@ fn build_scene8() -> (PhysicsNode, TextNode, TextNode) {
                     .with_bounciness(0.85),
             );
         } else {
-            // Large square side length (from 45.0 to 69.0 px)
             let s = 45.0 + (i % 3) as f32 * 12.0;
             p.add_dynamic(
                 RigidBodyNode::new(Box::new(
@@ -519,13 +567,6 @@ fn build_scene8() -> (PhysicsNode, TextNode, TextNode) {
     (p, title, subtitle)
 }
 
-// ═══════════════════════════════════════════════════════════
-// MAIN — Show one scene at a time.
-//
-// Each PhysicsNode starts at opacity 0 (simulation paused).
-// We fade it in → simulation begins → watch → fade out.
-// ═══════════════════════════════════════════════════════════
-
 fn main() {
     let mut project = Project::default()
         .with_dimensions(W, H)
@@ -538,7 +579,7 @@ fn main() {
     let (p2, t2, s2, labels2) = build_scene2();
     let (p3, t3, s3, labels3) = build_scene3();
     let (p4, t4, s4) = build_scene4();
-    let (p5, t5, s5) = build_scene5();
+    let (p5, t5, s5, time5_var, links5) = build_scene5();
     let (p6, t6, s6) = build_scene6();
     let (p7, t7, s7, labels7) = build_scene7();
     let (p8, t8, s8) = build_scene8();
@@ -577,6 +618,10 @@ fn main() {
     project.scene.add(Box::new(p5.clone()));
     project.scene.add(Box::new(t5.clone()));
     project.scene.add(Box::new(s5.clone()));
+
+    for link in links5 {
+        project.scene.add(link);
+    }
 
     project.scene.add(Box::new(p6.clone()));
     project.scene.add(Box::new(t6.clone()));
@@ -655,11 +700,15 @@ fn main() {
             t4.opacity.to(0.0, FADE),
             s4.opacity.to(0.0, FADE),
         ],
-        // Scene 5: Static Bodies
+        // Scene 5: Kinematic Containers
         t5.opacity.to(1.0, FADE),
         wait!(1),
-        all![p5.opacity.to(1.0, FADE), s5.opacity.to(1.0, FADE),],
-        wait!(10.0),
+        all![
+            p5.opacity.to(1.0, FADE),
+            s5.opacity.to(1.0, FADE),
+            time5_var.to(4.0, Duration::from_secs(4)),
+        ],
+        wait!(4.0),
         all![
             p5.opacity.to(0.0, FADE),
             t5.opacity.to(0.0, FADE),
@@ -679,13 +728,14 @@ fn main() {
         t7.opacity.to(1.0, FADE),
         wait!(1),
         all![p7.opacity.to(1.0, FADE), s7.opacity.to(1.0, FADE),],
-        wait!(8.0),
+        wait!(3.0),
         all![
             p7.opacity.to(0.0, FADE),
             t7.opacity.to(0.0, FADE),
             s7.opacity.to(0.0, FADE),
             labels7_c[0].opacity.to(0.0, FADE),
             labels7_c[1].opacity.to(0.0, FADE),
+            labels7_c[2].opacity.to(0.0, FADE),
         ],
         // Scene 8: Final Example
         t8.opacity.to(1.0, FADE),
