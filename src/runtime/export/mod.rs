@@ -224,7 +224,8 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     println!("Exporting project: {}", project.title);
     fs::create_dir_all(&project.output_path)?;
 
-    let cache_file = project.output_path.join(".motion_canvas_cache");
+    let sanitized = crate::assets::sanitize_title(&project.title);
+    let cache_file = project.output_path.join(format!(".motion_canvas_cache_{}", sanitized));
     let mut manifest: CacheManifest = (project.use_cache && cache_file.exists())
         .then(|| fs::read_to_string(&cache_file).ok())
         .flatten()
@@ -398,7 +399,7 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     // Save updated cache
     if project.use_cache {
         let json = serde_json::to_string_pretty(&manifest)?;
-        fs::write(project.output_path.join(".motion_canvas_cache"), json)?;
+        fs::write(&cache_file, json)?;
     }
 
     audio_handler.finish(&project.title, project.use_ffmpeg)?;
