@@ -90,64 +90,11 @@ fn hline(y: f32) -> Line {
         .with_stroke(Color::rgba8(255, 255, 255, 25), 1.0)
 }
 // Shorthand for show/hide
-fn show(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
-    n.opacity_signal()
-        .to(1.0, d)
-        .ease(easings::cubic_out)
-        .into()
+fn show(opacity: &Signal<f32>, d: Duration) -> Box<dyn Animation> {
+    opacity.to(1.0, d).ease(easings::cubic_out).into()
 }
-fn hide(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
-    n.opacity_signal().to(0.0, d).ease(easings::cubic_in).into()
-}
-
-// Trait to unify opacity access across different node types
-trait HasOpacity {
-    fn opacity_signal(&self) -> Signal<f32>;
-}
-impl HasOpacity for TextNode {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for Circle {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for Rect {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for Line {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for Polygon {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for CodeNode {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for GroupNode {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for ImageNode {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for SvgNode {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
+fn hide(opacity: &Signal<f32>, d: Duration) -> Box<dyn Animation> {
+    opacity.to(0.0, d).ease(easings::cubic_in).into()
 }
 
 fn main() {
@@ -929,178 +876,193 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
             .ease(easings::cubic_out),
         sequence![
             ms(120),
-            show(&s1_title, ms(500)),
-            show(&s1_sub, ms(500)),
-            show(&s1_built, ms(500)),
-            show(&s1_logo, ms(600)),
-            show(&s1_desc, ms(500)),
-            show(&s1_desc2, ms(500)),
+            show(&s1_title.opacity, ms(500)),
+            show(&s1_sub.opacity, ms(500)),
+            show(&s1_built.opacity, ms(500)),
+            show(&s1_logo.opacity, ms(600)),
+            show(&s1_desc.opacity, ms(500)),
+            show(&s1_desc2.opacity, ms(500)),
         ],
         wait(secs(5)),
         all![
-            hide(&s1_title, hide_dur),
-            hide(&s1_sub, hide_dur),
-            hide(&s1_built, hide_dur),
-            hide(&s1_desc, hide_dur),
-            hide(&s1_desc2, hide_dur),
-            hide(&s1_logo, hide_dur),
+            hide(&s1_title.opacity, hide_dur),
+            hide(&s1_sub.opacity, hide_dur),
+            hide(&s1_built.opacity, hide_dur),
+            hide(&s1_desc.opacity, hide_dur),
+            hide(&s1_desc2.opacity, hide_dur),
+            hide(&s1_logo.opacity, hide_dur),
             s1_line.end.to(Vec2::new(LEFT, 100.0), hide_dur)
         ],
         wait(ms(150)),
         // ── S2: FIVE STEPS ──
-        show(&s2_h, ms(500)),
+        show(&s2_h.opacity, ms(500)),
         wait(ms(400)),
         sequence![
             ms(250),
-            show(&s2_texts[0], ms(400)),
-            show(&s2_texts[1], ms(400)),
-            show(&s2_texts[2], ms(400)),
-            show(&s2_texts[3], ms(400)),
-            show(&s2_texts[4], ms(400)),
+            show(&s2_texts[0].opacity, ms(400)),
+            show(&s2_texts[1].opacity, ms(400)),
+            show(&s2_texts[2].opacity, ms(400)),
+            show(&s2_texts[3].opacity, ms(400)),
+            show(&s2_texts[4].opacity, ms(400)),
         ],
         wait(secs(8)),
         all![
-            hide(&s2_h, hide_dur),
-            hide(&s2_texts[0], hide_dur),
-            hide(&s2_texts[1], hide_dur),
-            hide(&s2_texts[2], hide_dur),
-            hide(&s2_texts[3], hide_dur),
-            hide(&s2_texts[4], hide_dur)
+            hide(&s2_h.opacity, hide_dur),
+            hide(&s2_texts[0].opacity, hide_dur),
+            hide(&s2_texts[1].opacity, hide_dur),
+            hide(&s2_texts[2].opacity, hide_dur),
+            hide(&s2_texts[3].opacity, hide_dur),
+            hide(&s2_texts[4].opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S3: STRUCT ──
         sequence![
             ms(120),
-            show(&s3_h, ms(500)),
-            show(&s3_explain, ms(400)),
-            show(&s3_analogy, ms(400))
+            show(&s3_h.opacity, ms(500)),
+            show(&s3_explain.opacity, ms(400)),
+            show(&s3_analogy.opacity, ms(400))
         ],
         wait(ms(500)),
-        show(&s3_code, ms(500)),
+        show(&s3_code.opacity, ms(500)),
         wait(secs(6)),
         sequence![
             ms(300),
-            show(&s3_note, ms(400)),
-            show(&s3_note2, ms(400)),
-            show(&s3_note3, ms(400))
+            show(&s3_note.opacity, ms(400)),
+            show(&s3_note2.opacity, ms(400)),
+            show(&s3_note3.opacity, ms(400))
         ],
         wait(secs(6)),
         all![
-            hide(&s3_h, hide_dur),
-            hide(&s3_explain, hide_dur),
-            hide(&s3_analogy, hide_dur),
-            hide(&s3_code, hide_dur),
-            hide(&s3_note, hide_dur),
-            hide(&s3_note2, hide_dur),
-            hide(&s3_note3, hide_dur)
+            hide(&s3_h.opacity, hide_dur),
+            hide(&s3_explain.opacity, hide_dur),
+            hide(&s3_analogy.opacity, hide_dur),
+            hide(&s3_code.opacity, hide_dur),
+            hide(&s3_note.opacity, hide_dur),
+            hide(&s3_note2.opacity, hide_dur),
+            hide(&s3_note3.opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S4: IMPL / BUILDER ──
         sequence![
             ms(120),
-            show(&s4_h, ms(500)),
-            show(&s4_explain, ms(400)),
-            show(&s4_analogy, ms(400))
+            show(&s4_h.opacity, ms(500)),
+            show(&s4_explain.opacity, ms(400)),
+            show(&s4_analogy.opacity, ms(400))
         ],
         wait(ms(500)),
-        show(&s4_code, ms(500)),
+        show(&s4_code.opacity, ms(500)),
         wait(secs(7)),
-        show(&s4_usage, ms(400)),
-        show(&s4_usage_code, ms(500)),
+        show(&s4_usage.opacity, ms(400)),
+        show(&s4_usage_code.opacity, ms(500)),
         wait(secs(2)),
-        show(&s4_note, ms(400)),
+        show(&s4_note.opacity, ms(400)),
         wait(secs(5)),
         all![
-            hide(&s4_h, hide_dur),
-            hide(&s4_explain, hide_dur),
-            hide(&s4_analogy, hide_dur),
-            hide(&s4_code, hide_dur),
-            hide(&s4_usage, hide_dur),
-            hide(&s4_usage_code, hide_dur),
-            hide(&s4_note, hide_dur)
+            hide(&s4_h.opacity, hide_dur),
+            hide(&s4_explain.opacity, hide_dur),
+            hide(&s4_analogy.opacity, hide_dur),
+            hide(&s4_code.opacity, hide_dur),
+            hide(&s4_usage.opacity, hide_dur),
+            hide(&s4_usage_code.opacity, hide_dur),
+            hide(&s4_note.opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S5: TRAIT / NODE ──
         sequence![
             ms(120),
-            show(&s5_h, ms(500)),
-            show(&s5_explain, ms(400)),
-            show(&s5_analogy, ms(400))
+            show(&s5_h.opacity, ms(500)),
+            show(&s5_explain.opacity, ms(400)),
+            show(&s5_analogy.opacity, ms(400))
         ],
         wait(ms(500)),
-        show(&s5_code, ms(500)),
+        show(&s5_code.opacity, ms(500)),
         wait(secs(6)),
         sequence![
             ms(300),
-            show(&s5_r, ms(400)),
-            show(&s5_u, ms(400)),
-            show(&s5_s, ms(400)),
-            show(&s5_c, ms(400))
+            show(&s5_r.opacity, ms(400)),
+            show(&s5_u.opacity, ms(400)),
+            show(&s5_s.opacity, ms(400)),
+            show(&s5_c.opacity, ms(400))
         ],
         wait(secs(2)),
-        show(&s5_every, ms(400)),
+        show(&s5_every.opacity, ms(400)),
         wait(secs(4)),
         all![
-            hide(&s5_h, hide_dur),
-            hide(&s5_explain, hide_dur),
-            hide(&s5_analogy, hide_dur),
-            hide(&s5_code, hide_dur),
-            hide(&s5_r, hide_dur),
-            hide(&s5_u, hide_dur),
-            hide(&s5_s, hide_dur),
-            hide(&s5_c, hide_dur),
-            hide(&s5_every, hide_dur)
+            hide(&s5_h.opacity, hide_dur),
+            hide(&s5_explain.opacity, hide_dur),
+            hide(&s5_analogy.opacity, hide_dur),
+            hide(&s5_code.opacity, hide_dur),
+            hide(&s5_r.opacity, hide_dur),
+            hide(&s5_u.opacity, hide_dur),
+            hide(&s5_s.opacity, hide_dur),
+            hide(&s5_c.opacity, hide_dur),
+            hide(&s5_every.opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S6: NODE GALLERY ──
-        sequence![ms(120), show(&s6_h, ms(500)), show(&s6_sub, ms(400))],
+        sequence![
+            ms(120),
+            show(&s6_h.opacity, ms(500)),
+            show(&s6_sub.opacity, ms(400))
+        ],
         wait(ms(400)),
         sequence![
             ms(200),
-            all![show(&demo_c, ms(400)), show(&lc, ms(400))],
-            all![show(&demo_r, ms(400)), show(&lr, ms(400))],
-            all![show(&demo_l, ms(400)), show(&ll, ms(400))],
-            all![show(&demo_p, ms(400)), show(&lp, ms(400))],
-            all![show(&demo_t, ms(400)), show(&lt, ms(400))],
+            all![show(&demo_c.opacity, ms(400)), show(&lc.opacity, ms(400))],
+            all![show(&demo_r.opacity, ms(400)), show(&lr.opacity, ms(400))],
+            all![show(&demo_l.opacity, ms(400)), show(&ll.opacity, ms(400))],
+            all![show(&demo_p.opacity, ms(400)), show(&lp.opacity, ms(400))],
+            all![show(&demo_t.opacity, ms(400)), show(&lt.opacity, ms(400))],
         ],
         wait(secs(2)),
         sequence![
             ms(200),
-            show(&s6_box_h, ms(400)),
-            show(&s6_box1, ms(400)),
-            show(&s6_box_code, ms(500))
+            show(&s6_box_h.opacity, ms(400)),
+            show(&s6_box1.opacity, ms(400)),
+            show(&s6_box_code.opacity, ms(500))
         ],
         wait(secs(7)),
         all![
-            hide(&s6_h, hide_dur),
-            hide(&s6_sub, hide_dur),
-            hide(&demo_c, hide_dur),
-            hide(&demo_r, hide_dur),
-            hide(&demo_l, hide_dur),
-            hide(&demo_p, hide_dur),
-            hide(&demo_t, hide_dur),
-            hide(&lc, hide_dur),
-            hide(&lr, hide_dur),
-            hide(&ll, hide_dur),
-            hide(&lp, hide_dur),
-            hide(&lt, hide_dur),
-            hide(&s6_box_h, hide_dur),
-            hide(&s6_box1, hide_dur),
-            hide(&s6_box_code, hide_dur)
+            hide(&s6_h.opacity, hide_dur),
+            hide(&s6_sub.opacity, hide_dur),
+            hide(&demo_c.opacity, hide_dur),
+            hide(&demo_r.opacity, hide_dur),
+            hide(&demo_l.opacity, hide_dur),
+            hide(&demo_p.opacity, hide_dur),
+            hide(&demo_t.opacity, hide_dur),
+            hide(&lc.opacity, hide_dur),
+            hide(&lr.opacity, hide_dur),
+            hide(&ll.opacity, hide_dur),
+            hide(&lp.opacity, hide_dur),
+            hide(&lt.opacity, hide_dur),
+            hide(&s6_box_h.opacity, hide_dur),
+            hide(&s6_box1.opacity, hide_dur),
+            hide(&s6_box_code.opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S7: SIGNALS ──
-        sequence![ms(120), show(&s7_h, ms(500)), show(&s7_sub, ms(400))],
+        sequence![
+            ms(120),
+            show(&s7_h.opacity, ms(500)),
+            show(&s7_sub.opacity, ms(400))
+        ],
         wait(ms(400)),
-        show(&s7_code, ms(500)),
+        show(&s7_code.opacity, ms(500)),
         wait(secs(5)),
-        sequence![ms(300), show(&s7_arc, ms(400)), show(&s7_mutex, ms(400))],
+        sequence![
+            ms(300),
+            show(&s7_arc.opacity, ms(400)),
+            show(&s7_mutex.opacity, ms(400))
+        ],
         wait(secs(4)),
-        show(&s7_why, ms(400)),
-        show(&s7_diagram_code, ms(500)),
+        show(&s7_why.opacity, ms(400)),
+        show(&s7_diagram_code.opacity, ms(500)),
         wait(secs(6)),
         // Live demo
-        all![show(&sig_demo, ms(300)), show(&sig_lbl, ms(300))],
+        all![
+            show(&sig_demo.opacity, ms(300)),
+            show(&sig_lbl.opacity, ms(300))
+        ],
         chain![
             sig_demo.radius.to(80.0, ms(700)).ease(easings::elastic_out),
             sig_demo.fill_color.to(TEAL, ms(500)),
@@ -1117,43 +1079,51 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         ],
         wait(secs(3)),
         all![
-            hide(&s7_h, hide_dur),
-            hide(&s7_sub, hide_dur),
-            hide(&s7_code, hide_dur),
-            hide(&s7_arc, hide_dur),
-            hide(&s7_mutex, hide_dur),
-            hide(&s7_why, hide_dur),
-            hide(&s7_diagram_code, hide_dur),
-            hide(&sig_demo, hide_dur),
-            hide(&sig_lbl, hide_dur)
+            hide(&s7_h.opacity, hide_dur),
+            hide(&s7_sub.opacity, hide_dur),
+            hide(&s7_code.opacity, hide_dur),
+            hide(&s7_arc.opacity, hide_dur),
+            hide(&s7_mutex.opacity, hide_dur),
+            hide(&s7_why.opacity, hide_dur),
+            hide(&s7_diagram_code.opacity, hide_dur),
+            hide(&sig_demo.opacity, hide_dur),
+            hide(&sig_lbl.opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S8: SIGNAL TWEEN ──
-        sequence![ms(120), show(&s8_h, ms(500)), show(&s8_sub, ms(400))],
+        sequence![
+            ms(120),
+            show(&s8_h.opacity, ms(500)),
+            show(&s8_sub.opacity, ms(400))
+        ],
         wait(ms(400)),
-        show(&s8_code, ms(500)),
+        show(&s8_code.opacity, ms(500)),
         wait(secs(6)),
-        show(&s8_how, ms(300)),
+        show(&s8_how.opacity, ms(300)),
         sequence![
             ms(100),
-            show(&s8_step_texts[0], ms(250)),
-            show(&s8_step_texts[1], ms(250)),
-            show(&s8_step_texts[2], ms(250)),
-            show(&s8_step_texts[3], ms(250)),
-            show(&s8_step_texts[4], ms(250)),
-            show(&s8_step_texts[5], ms(250)),
+            show(&s8_step_texts[0].opacity, ms(250)),
+            show(&s8_step_texts[1].opacity, ms(250)),
+            show(&s8_step_texts[2].opacity, ms(250)),
+            show(&s8_step_texts[3].opacity, ms(250)),
+            show(&s8_step_texts[4].opacity, ms(250)),
+            show(&s8_step_texts[5].opacity, ms(250)),
         ],
         wait(ms(500)),
-        sequence![ms(100), show(&s8_lazy, ms(300)), show(&s8_lazy2, ms(300))],
+        sequence![
+            ms(100),
+            show(&s8_lazy.opacity, ms(300)),
+            show(&s8_lazy2.opacity, ms(300))
+        ],
         wait(ms(500)),
         // Progress bar demo
         all![
-            show(&prog_bg, ms(200)),
-            show(&prog_fill, ms(200)),
-            show(&plbl0, ms(200)),
-            show(&plbl1, ms(200)),
-            show(&tween_ball, ms(200)),
-            show(&tween_lbl, ms(200))
+            show(&prog_bg.opacity, ms(200)),
+            show(&prog_fill.opacity, ms(200)),
+            show(&plbl0.opacity, ms(200)),
+            show(&plbl1.opacity, ms(200)),
+            show(&tween_ball.opacity, ms(200)),
+            show(&tween_lbl.opacity, ms(200))
         ],
         all![
             prog_fill
@@ -1167,42 +1137,57 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         ],
         wait(secs(3)),
         all![
-            hide(&s8_h, hide_dur),
-            hide(&s8_sub, hide_dur),
-            hide(&s8_code, hide_dur),
-            hide(&s8_how, hide_dur),
-            hide(&s8_lazy, hide_dur),
-            hide(&s8_lazy2, hide_dur),
-            hide(&prog_bg, hide_dur),
-            hide(&prog_fill, hide_dur),
-            hide(&plbl0, hide_dur),
-            hide(&plbl1, hide_dur),
-            hide(&tween_ball, hide_dur),
-            hide(&tween_lbl, hide_dur),
-            hide(&s8_step_texts[0], hide_dur),
-            hide(&s8_step_texts[1], hide_dur),
-            hide(&s8_step_texts[2], hide_dur),
-            hide(&s8_step_texts[3], hide_dur),
-            hide(&s8_step_texts[4], hide_dur),
-            hide(&s8_step_texts[5], hide_dur)
+            hide(&s8_h.opacity, hide_dur),
+            hide(&s8_sub.opacity, hide_dur),
+            hide(&s8_code.opacity, hide_dur),
+            hide(&s8_how.opacity, hide_dur),
+            hide(&s8_lazy.opacity, hide_dur),
+            hide(&s8_lazy2.opacity, hide_dur),
+            hide(&prog_bg.opacity, hide_dur),
+            hide(&prog_fill.opacity, hide_dur),
+            hide(&plbl0.opacity, hide_dur),
+            hide(&plbl1.opacity, hide_dur),
+            hide(&tween_ball.opacity, hide_dur),
+            hide(&tween_lbl.opacity, hide_dur),
+            hide(&s8_step_texts[0].opacity, hide_dur),
+            hide(&s8_step_texts[1].opacity, hide_dur),
+            hide(&s8_step_texts[2].opacity, hide_dur),
+            hide(&s8_step_texts[3].opacity, hide_dur),
+            hide(&s8_step_texts[4].opacity, hide_dur),
+            hide(&s8_step_texts[5].opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S9: TWEENABLE + EASINGS ──
-        show(&s9_h, ms(500)),
-        show(&s9_code, ms(500)),
+        show(&s9_h.opacity, ms(500)),
+        show(&s9_code.opacity, ms(500)),
         wait(secs(4)),
         sequence![
             ms(60),
-            show(&s9_easing_h, ms(300)),
-            show(&s9_easing_desc, ms(300))
+            show(&s9_easing_h.opacity, ms(300)),
+            show(&s9_easing_desc.opacity, ms(300))
         ],
         sequence![
             ms(50),
-            all![show(&eballs[0], ms(200)), show(&elabels[0], ms(200))],
-            all![show(&eballs[1], ms(200)), show(&elabels[1], ms(200))],
-            all![show(&eballs[2], ms(200)), show(&elabels[2], ms(200))],
-            all![show(&eballs[3], ms(200)), show(&elabels[3], ms(200))],
-            all![show(&eballs[4], ms(200)), show(&elabels[4], ms(200))],
+            all![
+                show(&eballs[0].opacity, ms(200)),
+                show(&elabels[0].opacity, ms(200))
+            ],
+            all![
+                show(&eballs[1].opacity, ms(200)),
+                show(&elabels[1].opacity, ms(200))
+            ],
+            all![
+                show(&eballs[2].opacity, ms(200)),
+                show(&elabels[2].opacity, ms(200))
+            ],
+            all![
+                show(&eballs[3].opacity, ms(200)),
+                show(&elabels[3].opacity, ms(200))
+            ],
+            all![
+                show(&eballs[4].opacity, ms(200)),
+                show(&elabels[4].opacity, ms(200))
+            ],
         ],
         wait(ms(300)),
         // Race!
@@ -1253,31 +1238,35 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         ],
         wait(ms(500)),
         all![
-            hide(&s9_h, hide_dur),
-            hide(&s9_code, hide_dur),
-            hide(&s9_easing_h, hide_dur),
-            hide(&s9_easing_desc, hide_dur),
-            hide(&eballs[0], hide_dur),
-            hide(&eballs[1], hide_dur),
-            hide(&eballs[2], hide_dur),
-            hide(&eballs[3], hide_dur),
-            hide(&eballs[4], hide_dur),
-            hide(&elabels[0], hide_dur),
-            hide(&elabels[1], hide_dur),
-            hide(&elabels[2], hide_dur),
-            hide(&elabels[3], hide_dur),
-            hide(&elabels[4], hide_dur)
+            hide(&s9_h.opacity, hide_dur),
+            hide(&s9_code.opacity, hide_dur),
+            hide(&s9_easing_h.opacity, hide_dur),
+            hide(&s9_easing_desc.opacity, hide_dur),
+            hide(&eballs[0].opacity, hide_dur),
+            hide(&eballs[1].opacity, hide_dur),
+            hide(&eballs[2].opacity, hide_dur),
+            hide(&eballs[3].opacity, hide_dur),
+            hide(&eballs[4].opacity, hide_dur),
+            hide(&elabels[0].opacity, hide_dur),
+            hide(&elabels[1].opacity, hide_dur),
+            hide(&elabels[2].opacity, hide_dur),
+            hide(&elabels[3].opacity, hide_dur),
+            hide(&elabels[4].opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S10: FLOW CONTROLS ──
-        sequence![ms(120), show(&s10_h, ms(500)), show(&s10_sub, ms(400))],
+        sequence![
+            ms(120),
+            show(&s10_h.opacity, ms(500)),
+            show(&s10_sub.opacity, ms(400))
+        ],
         wait(ms(400)),
         // chain demo
-        show(&s10_chain_h, ms(400)),
+        show(&s10_chain_h.opacity, ms(400)),
         all![
-            show(&chain_d[0], ms(300)),
-            show(&chain_d[1], ms(300)),
-            show(&chain_d[2], ms(300))
+            show(&chain_d[0].opacity, ms(300)),
+            show(&chain_d[1].opacity, ms(300)),
+            show(&chain_d[2].opacity, ms(300))
         ],
         wait(ms(300)),
         chain![
@@ -1296,11 +1285,11 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         ],
         wait(secs(1)),
         // all demo
-        show(&s10_all_h, ms(400)),
+        show(&s10_all_h.opacity, ms(400)),
         all![
-            show(&all_d[0], ms(300)),
-            show(&all_d[1], ms(300)),
-            show(&all_d[2], ms(300))
+            show(&all_d[0].opacity, ms(300)),
+            show(&all_d[1].opacity, ms(300)),
+            show(&all_d[2].opacity, ms(300))
         ],
         wait(ms(300)),
         all![
@@ -1319,11 +1308,11 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         ],
         wait(secs(1)),
         // sequence demo
-        show(&s10_seq_h, ms(400)),
+        show(&s10_seq_h.opacity, ms(400)),
         all![
-            show(&seq_d[0], ms(300)),
-            show(&seq_d[1], ms(300)),
-            show(&seq_d[2], ms(300))
+            show(&seq_d[0].opacity, ms(300)),
+            show(&seq_d[1].opacity, ms(300)),
+            show(&seq_d[2].opacity, ms(300))
         ],
         wait(ms(300)),
         sequence![
@@ -1342,133 +1331,149 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
                 .ease(easings::cubic_out),
         ],
         wait(secs(1)),
-        show(&s10_code, ms(500)),
+        show(&s10_code.opacity, ms(500)),
         wait(secs(8)),
         all![
-            hide(&s10_h, hide_dur),
-            hide(&s10_sub, hide_dur),
-            hide(&s10_chain_h, hide_dur),
-            hide(&s10_all_h, hide_dur),
-            hide(&s10_seq_h, hide_dur),
-            hide(&s10_code, hide_dur),
-            hide(&chain_d[0], hide_dur),
-            hide(&chain_d[1], hide_dur),
-            hide(&chain_d[2], hide_dur),
-            hide(&all_d[0], hide_dur),
-            hide(&all_d[1], hide_dur),
-            hide(&all_d[2], hide_dur),
-            hide(&seq_d[0], hide_dur),
-            hide(&seq_d[1], hide_dur),
-            hide(&seq_d[2], hide_dur)
+            hide(&s10_h.opacity, hide_dur),
+            hide(&s10_sub.opacity, hide_dur),
+            hide(&s10_chain_h.opacity, hide_dur),
+            hide(&s10_all_h.opacity, hide_dur),
+            hide(&s10_seq_h.opacity, hide_dur),
+            hide(&s10_code.opacity, hide_dur),
+            hide(&chain_d[0].opacity, hide_dur),
+            hide(&chain_d[1].opacity, hide_dur),
+            hide(&chain_d[2].opacity, hide_dur),
+            hide(&all_d[0].opacity, hide_dur),
+            hide(&all_d[1].opacity, hide_dur),
+            hide(&all_d[2].opacity, hide_dur),
+            hide(&seq_d[0].opacity, hide_dur),
+            hide(&seq_d[1].opacity, hide_dur),
+            hide(&seq_d[2].opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S11: TIMELINE + RENDERING ──
-        show(&s11_h, ms(500)),
+        show(&s11_h.opacity, ms(500)),
         wait(ms(400)),
-        show(&s11_code, ms(500)),
+        show(&s11_code.opacity, ms(500)),
         wait(secs(7)),
         sequence![
             ms(200),
-            show(&s11_leftover, ms(400)),
-            show(&s11_leftover2, ms(400))
+            show(&s11_leftover.opacity, ms(400)),
+            show(&s11_leftover2.opacity, ms(400))
         ],
         wait(secs(4)),
-        show(&s11_render_h, ms(400)),
+        show(&s11_render_h.opacity, ms(400)),
         sequence![
             ms(200),
-            show(&s11_render_texts[0], ms(350)),
-            show(&s11_render_texts[1], ms(350)),
-            show(&s11_render_texts[2], ms(350)),
-            show(&s11_render_texts[3], ms(350)),
+            show(&s11_render_texts[0].opacity, ms(350)),
+            show(&s11_render_texts[1].opacity, ms(350)),
+            show(&s11_render_texts[2].opacity, ms(350)),
+            show(&s11_render_texts[3].opacity, ms(350)),
         ],
         wait(secs(7)),
         all![
-            hide(&s11_h, hide_dur),
-            hide(&s11_code, hide_dur),
-            hide(&s11_leftover, hide_dur),
-            hide(&s11_leftover2, hide_dur),
-            hide(&s11_render_h, hide_dur),
-            hide(&s11_render_texts[0], hide_dur),
-            hide(&s11_render_texts[1], hide_dur),
-            hide(&s11_render_texts[2], hide_dur),
-            hide(&s11_render_texts[3], hide_dur)
+            hide(&s11_h.opacity, hide_dur),
+            hide(&s11_code.opacity, hide_dur),
+            hide(&s11_leftover.opacity, hide_dur),
+            hide(&s11_leftover2.opacity, hide_dur),
+            hide(&s11_render_h.opacity, hide_dur),
+            hide(&s11_render_texts[0].opacity, hide_dur),
+            hide(&s11_render_texts[1].opacity, hide_dur),
+            hide(&s11_render_texts[2].opacity, hide_dur),
+            hide(&s11_render_texts[3].opacity, hide_dur)
         ],
         wait(ms(300)),
         // ── S12: EVENT LOOP ──
-        sequence![ms(120), show(&s12_h, ms(500)), show(&s12_sub, ms(400))],
+        sequence![
+            ms(120),
+            show(&s12_h.opacity, ms(500)),
+            show(&s12_sub.opacity, ms(400))
+        ],
         wait(ms(500)),
-        show(&s12_code, ms(500)),
+        show(&s12_code.opacity, ms(500)),
         wait(secs(8)),
         sequence![
             ms(200),
-            show(&s12_why, ms(400)),
-            show(&s12_why2, ms(400)),
-            show(&s12_hash, ms(400))
+            show(&s12_why.opacity, ms(400)),
+            show(&s12_why2.opacity, ms(400)),
+            show(&s12_hash.opacity, ms(400))
         ],
         wait(secs(5)),
         all![
-            hide(&s12_h, hide_dur),
-            hide(&s12_sub, hide_dur),
-            hide(&s12_code, hide_dur),
-            hide(&s12_why, hide_dur),
-            hide(&s12_why2, hide_dur),
-            hide(&s12_hash, hide_dur)
+            hide(&s12_h.opacity, hide_dur),
+            hide(&s12_sub.opacity, hide_dur),
+            hide(&s12_code.opacity, hide_dur),
+            hide(&s12_why.opacity, hide_dur),
+            hide(&s12_why2.opacity, hide_dur),
+            hide(&s12_hash.opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S13: HEADLESS EXPORT ──
-        sequence![ms(120), show(&s13_h, ms(500)), show(&s13_sub, ms(400))],
+        sequence![
+            ms(120),
+            show(&s13_h.opacity, ms(500)),
+            show(&s13_sub.opacity, ms(400))
+        ],
         wait(ms(500)),
-        show(&s13_code, ms(500)),
+        show(&s13_code.opacity, ms(500)),
         wait(secs(8)),
         sequence![
             ms(200),
-            show(&s13_cache, ms(400)),
-            show(&s13_ffmpeg, ms(400)),
-            show(&s13_parallel, ms(400))
+            show(&s13_cache.opacity, ms(400)),
+            show(&s13_ffmpeg.opacity, ms(400)),
+            show(&s13_parallel.opacity, ms(400))
         ],
         wait(secs(5)),
         all![
-            hide(&s13_h, hide_dur),
-            hide(&s13_sub, hide_dur),
-            hide(&s13_code, hide_dur),
-            hide(&s13_cache, hide_dur),
-            hide(&s13_ffmpeg, hide_dur),
-            hide(&s13_parallel, hide_dur)
+            hide(&s13_h.opacity, hide_dur),
+            hide(&s13_sub.opacity, hide_dur),
+            hide(&s13_code.opacity, hide_dur),
+            hide(&s13_cache.opacity, hide_dur),
+            hide(&s13_ffmpeg.opacity, hide_dur),
+            hide(&s13_parallel.opacity, hide_dur)
         ],
         wait(ms(150)),
         // ── S14: UTILITIES ──
-        sequence![ms(120), show(&s14_h, ms(500)), show(&s14_sub, ms(400))],
+        sequence![
+            ms(120),
+            show(&s14_h.opacity, ms(500)),
+            show(&s14_sub.opacity, ms(400))
+        ],
         wait(ms(500)),
-        show(&s14_code, ms(500)),
+        show(&s14_code.opacity, ms(500)),
         wait(secs(8)),
-        sequence![ms(200), show(&s14_lazy, ms(400)), show(&s14_arc, ms(400))],
+        sequence![
+            ms(200),
+            show(&s14_lazy.opacity, ms(400)),
+            show(&s14_arc.opacity, ms(400))
+        ],
         wait(secs(5)),
         all![
-            hide(&s14_h, hide_dur),
-            hide(&s14_sub, hide_dur),
-            hide(&s14_code, hide_dur),
-            hide(&s14_lazy, hide_dur),
-            hide(&s14_arc, hide_dur)
+            hide(&s14_h.opacity, hide_dur),
+            hide(&s14_sub.opacity, hide_dur),
+            hide(&s14_code.opacity, hide_dur),
+            hide(&s14_lazy.opacity, hide_dur),
+            hide(&s14_arc.opacity, hide_dur)
         ],
         wait(ms(300)),
         // ── S15: FINALE ──
-        show(&fin, ms(700)),
+        show(&fin.opacity, ms(700)),
         wait(ms(500)),
         sequence![
             ms(150),
-            show(&fin_texts[0], ms(350)),
-            show(&fin_texts[1], ms(350)),
-            show(&fin_texts[2], ms(350)),
-            show(&fin_texts[3], ms(350)),
-            show(&fin_texts[4], ms(350)),
-            show(&fin_texts[5], ms(350)),
-            show(&fin_texts[6], ms(350)),
-            show(&fin_texts[7], ms(350)),
-            show(&fin_texts[8], ms(350)),
-            show(&fin_texts[9], ms(350)),
+            show(&fin_texts[0].opacity, ms(350)),
+            show(&fin_texts[1].opacity, ms(350)),
+            show(&fin_texts[2].opacity, ms(350)),
+            show(&fin_texts[3].opacity, ms(350)),
+            show(&fin_texts[4].opacity, ms(350)),
+            show(&fin_texts[5].opacity, ms(350)),
+            show(&fin_texts[6].opacity, ms(350)),
+            show(&fin_texts[7].opacity, ms(350)),
+            show(&fin_texts[8].opacity, ms(350)),
+            show(&fin_texts[9].opacity, ms(350)),
         ],
         wait(secs(2)),
-        show(&fin_hint, ms(400)),
+        show(&fin_hint.opacity, ms(400)),
         wait(secs(6)),
     ]);
 

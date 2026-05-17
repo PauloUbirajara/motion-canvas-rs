@@ -97,6 +97,10 @@ name = "advanced_flow"
 required-features = ["runtime", "math", "code", "image", "svg"]
 
 [[example]]
+name = "anchors"
+required-features = ["runtime"]
+
+[[example]]
 name = "audio_demo"
 required-features = ["runtime", "audio"]
 

@@ -1,6 +1,6 @@
 use glam::Vec2;
 use motion_canvas_rs::prelude::*;
-use vello::peniko::Color;
+use peniko::Color;
 
 #[test]
 fn test_project_builder() {
@@ -135,4 +135,40 @@ fn test_project_frame_naming() {
         .close_on_finish();
     let name_default = project_default.get_frame_name(0);
     assert_eq!(name_default, "new_project_0000.png");
+}
+
+#[test]
+#[cfg(feature = "physics")]
+fn test_physics_body_builders() {
+    use motion_canvas_rs::prelude::{PhysicsShape, RigidBodyNode, StaticBodyNode};
+
+    let circle = Circle::default();
+    let rigid = RigidBodyNode::new(Box::new(circle))
+        .with_position(Vec2::new(100.0, 100.0))
+        .with_rotation(0.5)
+        .with_shape(PhysicsShape::Ball(25.0))
+        .with_bounciness(0.7)
+        .with_friction(0.3)
+        .with_initial_velocity(Vec2::new(10.0, 20.0))
+        .with_initial_angular_velocity(2.0);
+
+    assert_eq!(rigid.position, Vec2::new(100.0, 100.0));
+    assert_eq!(rigid.rotation, 0.5);
+    assert_eq!(rigid.bounciness, 0.7);
+    assert_eq!(rigid.friction, 0.3);
+    assert_eq!(rigid.initial_velocity, Vec2::new(10.0, 20.0));
+    assert_eq!(rigid.initial_angular_velocity, 2.0);
+
+    let rect = Rect::default();
+    let static_body = StaticBodyNode::new(Box::new(rect))
+        .with_position(Vec2::new(200.0, 200.0))
+        .with_rotation(0.1)
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(50.0, 50.0)))
+        .with_bounciness(0.4)
+        .with_friction(0.8);
+
+    assert_eq!(static_body.position, Vec2::new(200.0, 200.0));
+    assert_eq!(static_body.rotation, 0.1);
+    assert_eq!(static_body.bounciness, 0.4);
+    assert_eq!(static_body.friction, 0.8);
 }
