@@ -242,8 +242,8 @@ fn build_scene4() -> (PhysicsNode, TextNode, TextNode) {
 }
 
 fn build_scene5() -> (PhysicsNode, TextNode, TextNode) {
-    let title = make_title("Containment");
-    let subtitle = make_subtitle("Static bodies form containers — balls rain in");
+    let title = make_title("Static Bodies");
+    let subtitle = make_subtitle("Can be used for obstacles, containers, and more");
 
     let mut p = PhysicsNode::new()
         .with_moving_container(true)
@@ -362,9 +362,112 @@ fn build_scene6() -> (PhysicsNode, TextNode, TextNode) {
     (p, title, subtitle)
 }
 
-fn build_scene7() -> (PhysicsNode, TextNode, TextNode) {
+fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
+    let title = make_title("Friction");
+    let subtitle = make_subtitle("Varying friction: 0.0 (ice) · 0.7 (medium) · 0.9 (rough)");
+
+    let mut p = PhysicsNode::new().with_opacity(0.0);
+
+    p.add_static(make_floor(460.0, 800.0, FLOOR_COLOR));
+
+    // Three ramps, tilted by 0.35 rad (~20 degrees)
+    // Left ramp (low friction)
+    p.add_static(
+        StaticBodyNode::new(Box::new(
+            Rect::default()
+                .with_size(Vec2::new(180.0, 16.0))
+                .with_fill(WALL_COLOR)
+                .with_radius(2.0),
+        ))
+        .with_position(Vec2::new(240.0, 280.0))
+        .with_rotation(0.35)
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(90.0, 8.0)))
+        .with_friction(0.0),
+    );
+
+    // Middle ramp (medium friction)
+    p.add_static(
+        StaticBodyNode::new(Box::new(
+            Rect::default()
+                .with_size(Vec2::new(180.0, 16.0))
+                .with_fill(WALL_COLOR)
+                .with_radius(2.0),
+        ))
+        .with_position(Vec2::new(480.0, 280.0))
+        .with_rotation(0.35)
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(90.0, 8.0)))
+        .with_friction(0.7),
+    );
+
+    // Right ramp (high friction)
+    p.add_static(
+        StaticBodyNode::new(Box::new(
+            Rect::default()
+                .with_size(Vec2::new(180.0, 16.0))
+                .with_fill(WALL_COLOR)
+                .with_radius(2.0),
+        ))
+        .with_position(Vec2::new(720.0, 280.0))
+        .with_rotation(0.35)
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(90.0, 8.0)))
+        .with_friction(0.9),
+    );
+
+    // Three rects dropped above the ramps
+    // Left rect (0.0 friction)
+    p.add_dynamic(
+        RigidBodyNode::new(Box::new(
+            Rect::default()
+                .with_size(Vec2::new(40.0, 40.0))
+                .with_fill(ACCENT_TEAL)
+                .with_radius(3.0),
+        ))
+        .with_position(Vec2::new(190.0, 150.0))
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(20.0, 20.0)))
+        .with_bounciness(0.1)
+        .with_friction(0.0),
+    );
+
+    // Middle rect (0.2 friction)
+    p.add_dynamic(
+        RigidBodyNode::new(Box::new(
+            Rect::default()
+                .with_size(Vec2::new(40.0, 40.0))
+                .with_fill(ACCENT_YELLOW)
+                .with_radius(3.0),
+        ))
+        .with_position(Vec2::new(430.0, 150.0))
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(20.0, 20.0)))
+        .with_bounciness(0.1)
+        .with_friction(0.2),
+    );
+
+    // Right rect (0.9 friction)
+    p.add_dynamic(
+        RigidBodyNode::new(Box::new(
+            Rect::default()
+                .with_size(Vec2::new(40.0, 40.0))
+                .with_fill(ACCENT_RED)
+                .with_radius(3.0),
+        ))
+        .with_position(Vec2::new(670.0, 150.0))
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(20.0, 20.0)))
+        .with_bounciness(0.1)
+        .with_friction(0.9),
+    );
+
+    let labels = vec![
+        make_label("Friction: 0.0", 240.0, 420.0, ACCENT_TEAL),
+        make_label("Friction: 0.2", 480.0, 420.0, ACCENT_YELLOW),
+        make_label("Friction: 0.9", 720.0, 420.0, ACCENT_RED),
+    ];
+
+    (p, title, subtitle, labels)
+}
+
+fn build_scene8() -> (PhysicsNode, TextNode, TextNode) {
     let title = make_title("Final Example");
-    let subtitle = make_subtitle("20 shapes, high bounciness, one container");
+    let subtitle = make_subtitle("100 shapes, high bounciness, one container");
 
     let mut p = PhysicsNode::new().with_opacity(0.0);
 
@@ -381,7 +484,7 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode) {
         ACCENT_EMERALD,
     ];
 
-    for i in 0..20 {
+    for i in 0..100 {
         // Stack vertically one-by-one above the box, staggered slightly for cascading chaos
         let x = CX + (if i % 2 == 0 { 8.0 } else { -8.0 });
         let y = -100.0 - (i as f32 * 140.0);
@@ -437,7 +540,8 @@ fn main() {
     let (p4, t4, s4) = build_scene4();
     let (p5, t5, s5) = build_scene5();
     let (p6, t6, s6) = build_scene6();
-    let (p7, t7, s7) = build_scene7();
+    let (p7, t7, s7, labels7) = build_scene7();
+    let (p8, t8, s8) = build_scene8();
 
     // ── Add all to scene (all invisible) ──
     project.scene.add(Box::new(p1.clone()));
@@ -481,6 +585,17 @@ fn main() {
     project.scene.add(Box::new(p7.clone()));
     project.scene.add(Box::new(t7.clone()));
     project.scene.add(Box::new(s7.clone()));
+    let labels7_c: Vec<_> = labels7
+        .iter()
+        .map(|l| {
+            project.scene.add(Box::new(l.clone()));
+            l.clone()
+        })
+        .collect();
+
+    project.scene.add(Box::new(p8.clone()));
+    project.scene.add(Box::new(t8.clone()));
+    project.scene.add(Box::new(s8.clone()));
 
     // ── Timeline: one scene at a time ──
     project.scene.video_timeline.add(chain![
@@ -540,7 +655,7 @@ fn main() {
             t4.opacity.to(0.0, FADE),
             s4.opacity.to(0.0, FADE),
         ],
-        // Scene 5: Containment
+        // Scene 5: Static Bodies
         t5.opacity.to(1.0, FADE),
         wait!(1),
         all![p5.opacity.to(1.0, FADE), s5.opacity.to(1.0, FADE),],
@@ -560,7 +675,7 @@ fn main() {
             t6.opacity.to(0.0, FADE),
             s6.opacity.to(0.0, FADE),
         ],
-        // Scene 7: Final Example
+        // Scene 7: Friction
         t7.opacity.to(1.0, FADE),
         wait!(1),
         all![p7.opacity.to(1.0, FADE), s7.opacity.to(1.0, FADE),],
@@ -569,7 +684,20 @@ fn main() {
             p7.opacity.to(0.0, FADE),
             t7.opacity.to(0.0, FADE),
             s7.opacity.to(0.0, FADE),
+            labels7_c[0].opacity.to(0.0, FADE),
+            labels7_c[1].opacity.to(0.0, FADE),
         ],
+        // Scene 8: Final Example
+        t8.opacity.to(1.0, FADE),
+        wait!(1),
+        all![p8.opacity.to(1.0, FADE), s8.opacity.to(1.0, FADE),],
+        wait!(10.0),
+        all![
+            p8.opacity.to(0.0, FADE),
+            t8.opacity.to(0.0, FADE),
+            s8.opacity.to(0.0, FADE),
+        ],
+        wait!(1),
     ]);
 
     project.show().expect("Failed to render");

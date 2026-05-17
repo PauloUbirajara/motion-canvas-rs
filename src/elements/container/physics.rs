@@ -14,6 +14,7 @@ use vello::Scene;
 
 pub const DEFAULT_BOUNCINESS: f32 = 0.5;
 pub const DEFAULT_GRAVITY_Y: f32 = 981.0;
+pub const DEFAULT_FRICTION: f32 = 0.5;
 
 // ─── Shape Abstraction ───────────────────────────────────
 
@@ -40,6 +41,7 @@ pub struct RigidBodyNode {
     pub rotation: f32, // in radians
     pub shape: PhysicsShape,
     pub bounciness: f32,
+    pub friction: f32,
     pub initial_velocity: Vec2,
     pub initial_angular_velocity: f32,
 }
@@ -52,6 +54,7 @@ impl RigidBodyNode {
             rotation: 0.0,
             shape: PhysicsShape::Cuboid(Vec2::new(25.0, 25.0)),
             bounciness: DEFAULT_BOUNCINESS,
+            friction: DEFAULT_FRICTION,
             initial_velocity: Vec2::ZERO,
             initial_angular_velocity: 0.0,
         }
@@ -74,6 +77,11 @@ impl RigidBodyNode {
 
     pub fn with_bounciness(mut self, bounciness: f32) -> Self {
         self.bounciness = bounciness;
+        self
+    }
+
+    pub fn with_friction(mut self, friction: f32) -> Self {
+        self.friction = friction;
         self
     }
 
@@ -109,6 +117,7 @@ impl Node for RigidBodyNode {
             rotation: self.rotation,
             shape: self.shape.clone(),
             bounciness: self.bounciness,
+            friction: self.friction,
             initial_velocity: self.initial_velocity,
             initial_angular_velocity: self.initial_angular_velocity,
         })
@@ -125,6 +134,7 @@ pub struct StaticBodyNode {
     pub rotation: f32, // in radians
     pub shape: PhysicsShape,
     pub bounciness: f32,
+    pub friction: f32,
 }
 
 impl StaticBodyNode {
@@ -135,6 +145,7 @@ impl StaticBodyNode {
             rotation: 0.0,
             shape: PhysicsShape::Cuboid(Vec2::new(25.0, 25.0)),
             bounciness: 0.0,
+            friction: DEFAULT_FRICTION,
         }
     }
 
@@ -155,6 +166,11 @@ impl StaticBodyNode {
 
     pub fn with_bounciness(mut self, bounciness: f32) -> Self {
         self.bounciness = bounciness;
+        self
+    }
+
+    pub fn with_friction(mut self, friction: f32) -> Self {
+        self.friction = friction;
         self
     }
 }
@@ -180,6 +196,7 @@ impl Node for StaticBodyNode {
             rotation: self.rotation,
             shape: self.shape.clone(),
             bounciness: self.bounciness,
+            friction: self.friction,
         })
     }
 
@@ -327,7 +344,11 @@ impl PhysicsNode {
         let rot = rb.rotation;
         let linvel = rb.initial_velocity;
         let angvel = rb.initial_angular_velocity;
-        let col = rb.shape.to_collider().restitution(rb.bounciness);
+        let col = rb
+            .shape
+            .to_collider()
+            .restitution(rb.bounciness)
+            .friction(rb.friction);
         let builder = RigidBodyBuilder::dynamic()
             .translation(Vector::new(pos.x, pos.y))
             .rotation(rot)
@@ -339,7 +360,11 @@ impl PhysicsNode {
     pub fn add_static(&mut self, sb: StaticBodyNode) {
         let pos = sb.position;
         let rot = sb.rotation;
-        let col = sb.shape.to_collider().restitution(sb.bounciness);
+        let col = sb
+            .shape
+            .to_collider()
+            .restitution(sb.bounciness)
+            .friction(sb.friction);
         let builder = RigidBodyBuilder::fixed()
             .translation(Vector::new(pos.x, pos.y))
             .rotation(rot);
@@ -496,15 +521,19 @@ impl PhysicsNode {
             }
 
             let restitution = collider.restitution();
+            let friction = collider.friction();
             let shape = collider.shape();
 
             if let Some(ball) = shape.as_ball() {
-                return ColliderBuilder::ball(ball.radius).restitution(restitution);
+                return ColliderBuilder::ball(ball.radius)
+                    .restitution(restitution)
+                    .friction(friction);
             }
 
             if let Some(cuboid) = shape.as_cuboid() {
                 return ColliderBuilder::cuboid(cuboid.half_extents.x, cuboid.half_extents.y)
-                    .restitution(restitution);
+                    .restitution(restitution)
+                    .friction(friction);
             }
         }
 
