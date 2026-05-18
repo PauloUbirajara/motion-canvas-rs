@@ -5,39 +5,16 @@
 //! signal-based scene graph of `motion-canvas-rs`. It enables physics-driven simulations
 //! (gravity, collisions, friction, restitution) to seamlessly co-exist and transition with
 //! traditional signal-driven animations.
-//!
-//! ### Core Concepts
-//! - **[`PhysicsNode`]**: The main coordinate space and simulation container. All physical bodies
-//!   (static or dynamic) must be added to a `PhysicsNode` to participate in the simulation.
-//! - **[`RigidBodyNode`]**: Represents a physical body whose layout is driven by the physics solver,
-//!   by standard signal-driven animations, or a combination of both.
-//! - **[`StaticBodyNode`]**: Represents a fixed, immovable physical body (e.g. floors, walls).
-//! - **[`PhysicsMode`]**: Dictates how a rigid body behaves:
-//!   - `Disabled`: Handled purely by manual/tweened position signals (ignored by physics).
-//!   - `Kinematic`: Acts as a solid obstacle affecting other bodies while its position is keyframed.
-//!   - `Dynamic`: Fully driven by gravity, forces, and collisions.
-//!
-//! ### Example
-//! ```rust
-//! # use motion_canvas_rs::prelude::*;
-//! # use motion_canvas_rs::elements::shapes::Rect;
-//! // 1. Create the container
-//! let mut physics = PhysicsNode::new()
-//!     .with_gravity(Vec2::new(0.0, 981.0)); // standard gravity
-//!
-//! // 2. Create static floor
-//! let floor = StaticBodyNode::new(Box::new(Rect::default().with_size(Vec2::new(800.0, 20.0))))
-//!     .with_position(Vec2::new(400.0, 300.0))
-//!     .with_shape(PhysicsShape::Cuboid(Vec2::new(400.0, 10.0)));
-//! physics.add_static(floor);
-//!
-//! // 3. Create a dynamic ball
-//! let ball = RigidBodyNode::new(Box::new(Circle::default().with_radius(20.0)))
-//!     .with_position(Vec2::new(400.0, 100.0))
-//!     .with_shape(PhysicsShape::Ball(20.0))
-//!     .with_bounciness(0.7);
-//! physics.add_dynamic(ball);
-//! ```
+
+pub mod dynamic_body;
+pub mod static_body;
+pub mod traits;
+pub mod wrapper;
+
+pub use dynamic_body::RigidBodyNode;
+pub use static_body::StaticBodyNode;
+pub use traits::PhysicsBody;
+pub use wrapper::BodyWrapper;
 
 use crate::core::animation::{Node, Signal, Tweenable};
 use crate::core::physics::PhysicsEngine;
@@ -106,295 +83,6 @@ impl PhysicsShape {
             PhysicsShape::Cuboid(half) => ColliderBuilder::cuboid(half.x, half.y),
             PhysicsShape::Ball(r) => ColliderBuilder::ball(*r),
         }
-    }
-}
-
-/// Internal composite enum representing physical wrapper nodes registered in the engine.
-#[derive(Clone)]
-pub enum BodyWrapper {
-    /// A dynamic/kinematic rigid body wrapper.
-    Dynamic(RigidBodyNode),
-    /// A static fixed body wrapper.
-    Static(StaticBodyNode),
-}
-
-impl BodyWrapper {
-    /// Returns the current physics mode of the wrapped body.
-    pub fn mode(&self) -> PhysicsMode {
-        match self {
-            BodyWrapper::Dynamic(n) => n.mode.get(),
-            BodyWrapper::Static(_) => PhysicsMode::Disabled,
-        }
-    }
-
-    /// Accesses the underlying reactive position signal.
-    pub fn position_signal(&self) -> &Signal<Vec2> {
-        match self {
-            BodyWrapper::Dynamic(n) => &n.position,
-            BodyWrapper::Static(n) => &n.position,
-        }
-    }
-
-    /// Accesses the underlying reactive rotation signal.
-    pub fn rotation_signal(&self) -> &Signal<f32> {
-        match self {
-            BodyWrapper::Dynamic(n) => &n.rotation,
-            BodyWrapper::Static(n) => &n.rotation,
-        }
-    }
-}
-
-/// A node wrapping any visual element as a dynamic/kinematic rigid body in the Rapier2d simulation.
-///
-/// Dynamic bodies fall under gravity, bounce off obstacles, and react to forces. Their reactive
-/// properties like position, rotation, and physics mode can be controlled and tweened via Signals.
-///
-/// ### Example
-/// ```rust
-/// # use motion_canvas_rs::prelude::*;
-/// # use motion_canvas_rs::elements::shapes::Rect;
-/// let body = RigidBodyNode::new(Box::new(Rect::default()))
-///     .with_position(Vec2::new(100.0, 50.0))
-///     .with_shape(PhysicsShape::Cuboid(Vec2::new(50.0, 50.0)))
-///     .with_bounciness(0.8)
-///     .with_mode(PhysicsMode::Disabled); // Starts disabled for signal-driven tweens first
-/// ```
-pub struct RigidBodyNode {
-    /// The nested visual node that is rendered.
-    pub inner: Box<dyn Node>,
-    /// The reactive position of the body. Can be animated/tweened directly in `Disabled` or `Kinematic` mode.
-    pub position: Signal<Vec2>,
-    /// The reactive rotation of the body in radians. Can be animated/tweened directly in `Disabled` or `Kinematic` mode.
-    pub rotation: Signal<f32>,
-    /// Controls whether the physics engine is tracking or driving this body.
-    pub mode: Signal<PhysicsMode>,
-    /// The geometric bounds for collider queries.
-    pub shape: PhysicsShape,
-    /// Bounciness / restitution coefficient. Defines how much energy is conserved upon impact (normally between 0.0 and 1.0).
-    pub bounciness: f32,
-    /// Friction coefficient. Controls sliding behavior against other surfaces (normally between 0.0 and 1.0).
-    pub friction: f32,
-    /// Initial linear velocity applied at the beginning of the simulation (pixels/second).
-    pub initial_velocity: Vec2,
-    /// Initial angular velocity applied at the beginning of the simulation (radians/second).
-    pub initial_angular_velocity: f32,
-}
-
-impl Clone for RigidBodyNode {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone_node(),
-            position: self.position.clone(),
-            rotation: self.rotation.clone(),
-            mode: self.mode.clone(),
-            shape: self.shape.clone(),
-            bounciness: self.bounciness,
-            friction: self.friction,
-            initial_velocity: self.initial_velocity,
-            initial_angular_velocity: self.initial_angular_velocity,
-        }
-    }
-}
-
-impl RigidBodyNode {
-    /// Creates a new rigid body wrapping a visual node, initializing it with standard default properties.
-    pub fn new(inner: Box<dyn Node>) -> Self {
-        Self {
-            inner,
-            position: Signal::new(Vec2::ZERO),
-            rotation: Signal::new(0.0),
-            mode: Signal::new(PhysicsMode::Dynamic),
-            shape: PhysicsShape::Cuboid(Vec2::new(25.0, 25.0)),
-            bounciness: DEFAULT_BOUNCINESS,
-            friction: DEFAULT_FRICTION,
-            initial_velocity: Vec2::ZERO,
-            initial_angular_velocity: 0.0,
-        }
-    }
-
-    /// Sets the initial reactive position signal of the rigid body.
-    pub fn with_position(mut self, pos: Vec2) -> Self {
-        self.position = Signal::new(pos);
-        self
-    }
-
-    /// Sets the initial reactive rotation signal of the rigid body in radians.
-    pub fn with_rotation(mut self, rotation: f32) -> Self {
-        self.rotation = Signal::new(rotation);
-        self
-    }
-
-    /// Sets the bounding shape of the rigid body's physical collider.
-    pub fn with_shape(mut self, shape: PhysicsShape) -> Self {
-        self.shape = shape;
-        self
-    }
-
-    /// Configures the bounciness (restitution coefficient) of the body.
-    pub fn with_bounciness(mut self, bounciness: f32) -> Self {
-        self.bounciness = bounciness;
-        self
-    }
-
-    /// Configures the friction coefficient of the body.
-    pub fn with_friction(mut self, friction: f32) -> Self {
-        self.friction = friction;
-        self
-    }
-
-    /// Sets the initial linear velocity (pixels/second) applied to the dynamic body.
-    pub fn with_initial_velocity(mut self, vel: Vec2) -> Self {
-        self.initial_velocity = vel;
-        self
-    }
-
-    /// Sets the initial angular velocity (radians/second) applied to the dynamic body.
-    pub fn with_initial_angular_velocity(mut self, ang_vel: f32) -> Self {
-        self.initial_angular_velocity = ang_vel;
-        self
-    }
-
-    /// Configures the initial operational mode of the physics body.
-    pub fn with_mode(mut self, mode: PhysicsMode) -> Self {
-        self.mode = Signal::new(mode);
-        self
-    }
-}
-
-impl Node for RigidBodyNode {
-    #[cfg(feature = "runtime")]
-    fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        self.inner.render(scene, parent_transform, parent_opacity);
-    }
-
-    fn update(&mut self, dt: Duration) {
-        self.inner.update(dt);
-    }
-
-    fn state_hash(&self) -> u64 {
-        self.inner.state_hash()
-    }
-
-    fn clone_node(&self) -> Box<dyn Node> {
-        Box::new(self.clone())
-    }
-
-    fn reset(&mut self) {
-        self.position.reset();
-        self.rotation.reset();
-        self.mode.reset();
-        self.inner.reset();
-    }
-}
-
-/// A node wrapping any visual element as an immovable fixed obstacle in the Rapier2d simulation.
-///
-/// Useful for floors, walls, ramps, and platforms. Although static bodies do not fall or slide
-/// under forces, they collide with dynamic bodies.
-///
-/// ### Example
-/// ```rust
-/// # use motion_canvas_rs::prelude::*;
-/// # use motion_canvas_rs::elements::shapes::Rect;
-/// let wall = StaticBodyNode::new(Box::new(Rect::default()))
-///     .with_position(Vec2::new(100.0, 300.0))
-///     .with_shape(PhysicsShape::Cuboid(Vec2::new(10.0, 100.0)))
-///     .with_friction(0.1);
-/// ```
-pub struct StaticBodyNode {
-    /// The nested visual node that is rendered.
-    pub inner: Box<dyn Node>,
-    /// Immovable position of the static body.
-    pub position: Signal<Vec2>,
-    /// Immovable rotation of the static body in radians.
-    pub rotation: Signal<f32>,
-    /// Bounding shape of the collider.
-    pub shape: PhysicsShape,
-    /// Restitution / bounciness coefficient when dynamic bodies collide with this obstacle.
-    pub bounciness: f32,
-    /// Friction coefficient.
-    pub friction: f32,
-}
-
-impl Clone for StaticBodyNode {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone_node(),
-            position: self.position.clone(),
-            rotation: self.rotation.clone(),
-            shape: self.shape.clone(),
-            bounciness: self.bounciness,
-            friction: self.friction,
-        }
-    }
-}
-
-impl StaticBodyNode {
-    /// Creates a new static body wrapping a visual node.
-    pub fn new(inner: Box<dyn Node>) -> Self {
-        Self {
-            inner,
-            position: Signal::new(Vec2::ZERO),
-            rotation: Signal::new(0.0),
-            shape: PhysicsShape::Cuboid(Vec2::new(25.0, 25.0)),
-            bounciness: 0.0,
-            friction: DEFAULT_FRICTION,
-        }
-    }
-
-    /// Sets the position of the static body obstacle.
-    pub fn with_position(mut self, pos: Vec2) -> Self {
-        self.position = Signal::new(pos);
-        self
-    }
-
-    /// Sets the rotation of the static body obstacle in radians.
-    pub fn with_rotation(mut self, rotation: f32) -> Self {
-        self.rotation = Signal::new(rotation);
-        self
-    }
-
-    /// Sets the bounding shape of the static collider.
-    pub fn with_shape(mut self, shape: PhysicsShape) -> Self {
-        self.shape = shape;
-        self
-    }
-
-    /// Sets the bounciness (restitution coefficient) when dynamic bodies collide with this obstacle.
-    pub fn with_bounciness(mut self, bounciness: f32) -> Self {
-        self.bounciness = bounciness;
-        self
-    }
-
-    /// Sets the friction coefficient of the static body obstacle.
-    pub fn with_friction(mut self, friction: f32) -> Self {
-        self.friction = friction;
-        self
-    }
-}
-
-impl Node for StaticBodyNode {
-    #[cfg(feature = "runtime")]
-    fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        self.inner.render(scene, parent_transform, parent_opacity);
-    }
-
-    fn update(&mut self, dt: Duration) {
-        self.inner.update(dt);
-    }
-
-    fn state_hash(&self) -> u64 {
-        self.inner.state_hash()
-    }
-
-    fn clone_node(&self) -> Box<dyn Node> {
-        Box::new(self.clone())
-    }
-
-    fn reset(&mut self) {
-        self.position.reset();
-        self.rotation.reset();
-        self.inner.reset();
     }
 }
 
@@ -627,16 +315,7 @@ impl Node for PhysicsNode {
             let local =
                 Affine::translate((pos.x as f64, pos.y as f64)) * Affine::rotate(rot as f64);
 
-            match wrapper {
-                BodyWrapper::Dynamic(n) => {
-                    n.inner
-                        .render(scene, parent_transform * local, combined_opacity)
-                }
-                BodyWrapper::Static(n) => {
-                    n.inner
-                        .render(scene, parent_transform * local, combined_opacity)
-                }
-            }
+            wrapper.render(scene, parent_transform * local, combined_opacity);
         }
     }
 
@@ -648,10 +327,7 @@ impl Node for PhysicsNode {
 
         // Core tick pipeline layout modifications pass down to children first
         for (_, wrapper) in &mut self.entries {
-            match wrapper {
-                BodyWrapper::Dynamic(n) => n.update(dt),
-                BodyWrapper::Static(n) => n.update(dt),
-            }
+            wrapper.update(dt);
         }
 
         self.accumulator += dt_secs;
@@ -659,138 +335,8 @@ impl Node for PhysicsNode {
         while self.accumulator >= self.timestep {
             // ─── Step 1: Sync Signals down to Rapier Core ───
             for (handle, wrapper) in &mut self.entries {
-                let visual_pos = wrapper.position_signal().get();
-                let visual_rot = wrapper.rotation_signal().get();
-
                 if let Some(rb) = self.engine.rigid_body_set.get_mut(*handle) {
-                    match wrapper {
-                        BodyWrapper::Static(_) => {
-                            if !rb.is_fixed() {
-                                rb.set_body_type(RigidBodyType::Fixed, true);
-                            }
-                            let current_pos = rb.translation();
-                            let current_rot = rb.rotation().angle();
-                            if (current_pos.x - visual_pos.x).abs() > 1e-5
-                                || (current_pos.y - visual_pos.y).abs() > 1e-5
-                                || (current_rot - visual_rot).abs() > 1e-5
-                            {
-                                rb.set_translation(Vector::new(visual_pos.x, visual_pos.y), true);
-                                rb.set_rotation(rapier2d::math::Rotation::new(visual_rot), true);
-                            }
-                        }
-                        BodyWrapper::Dynamic(db) => {
-                            let current_mode = db.mode.get();
-                            match current_mode {
-                                PhysicsMode::Disabled => {
-                                    if !rb.is_kinematic() {
-                                        rb.set_body_type(
-                                            RigidBodyType::KinematicPositionBased,
-                                            false,
-                                        );
-                                    }
-                                    let current_pos = rb.translation();
-                                    let current_rot = rb.rotation().angle();
-                                    if (current_pos.x - visual_pos.x).abs() > 1e-5
-                                        || (current_pos.y - visual_pos.y).abs() > 1e-5
-                                        || (current_rot - visual_rot).abs() > 1e-5
-                                    {
-                                        rb.set_translation(
-                                            Vector::new(visual_pos.x, visual_pos.y),
-                                            false,
-                                        );
-                                        rb.set_rotation(
-                                            rapier2d::math::Rotation::new(visual_rot),
-                                            false,
-                                        );
-                                        rb.sleep();
-                                    }
-
-                                    // Set colliders as sensors so they don't collide or generate contact forces
-                                    let mut needs_update = false;
-                                    for &col_handle in rb.colliders() {
-                                        if let Some(collider) = self.engine.collider_set.get(col_handle) {
-                                            if !collider.is_sensor() {
-                                                needs_update = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if needs_update {
-                                        for &col_handle in rb.colliders() {
-                                            if let Some(collider) = self.engine.collider_set.get_mut(col_handle) {
-                                                collider.set_sensor(true);
-                                            }
-                                        }
-                                    }
-                                }
-                                PhysicsMode::Kinematic => {
-                                    if !rb.is_kinematic() {
-                                        rb.set_body_type(
-                                            RigidBodyType::KinematicPositionBased,
-                                            true,
-                                        );
-                                    }
-                                    rb.set_next_kinematic_translation(Vector::new(
-                                        visual_pos.x,
-                                        visual_pos.y,
-                                    ));
-                                    rb.set_next_kinematic_rotation(rapier2d::math::Rotation::new(
-                                        visual_rot,
-                                    ));
-
-                                    // Set colliders as solid
-                                    let mut needs_update = false;
-                                    for &col_handle in rb.colliders() {
-                                        if let Some(collider) = self.engine.collider_set.get(col_handle) {
-                                            if collider.is_sensor() {
-                                                needs_update = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if needs_update {
-                                        for &col_handle in rb.colliders() {
-                                            if let Some(collider) = self.engine.collider_set.get_mut(col_handle) {
-                                                collider.set_sensor(false);
-                                            }
-                                        }
-                                    }
-                                }
-                                PhysicsMode::Dynamic => {
-                                    if !rb.is_dynamic() {
-                                        rb.set_body_type(RigidBodyType::Dynamic, true);
-                                        rb.set_translation(
-                                            Vector::new(visual_pos.x, visual_pos.y),
-                                            true,
-                                        );
-                                        rb.set_rotation(
-                                            rapier2d::math::Rotation::new(visual_rot),
-                                            true,
-                                        );
-                                        rb.wake_up(true);
-                                    }
-
-                                    // Set colliders as solid
-                                    let mut needs_update = false;
-                                    for &col_handle in rb.colliders() {
-                                        if let Some(collider) = self.engine.collider_set.get(col_handle) {
-                                            if collider.is_sensor() {
-                                                needs_update = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if needs_update {
-                                        for &col_handle in rb.colliders() {
-                                            if let Some(collider) = self.engine.collider_set.get_mut(col_handle) {
-                                                collider.set_sensor(false);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    wrapper.sync_to_rapier(rb, &mut self.engine.collider_set);
                 }
             }
 
@@ -826,10 +372,7 @@ impl Node for PhysicsNode {
                 h.update_u64(trans.y.to_bits() as u64);
                 h.update_u64(rb.rotation().angle().to_bits() as u64);
             }
-            match wrapper {
-                BodyWrapper::Dynamic(n) => h.update_u64(n.inner.state_hash()),
-                BodyWrapper::Static(n) => h.update_u64(n.inner.state_hash()),
-            }
+            h.update_u64(wrapper.state_hash());
         }
         h.finish()
     }
@@ -841,10 +384,7 @@ impl Node for PhysicsNode {
     fn reset(&mut self) {
         // Reset sub-nodes/children first
         for (_, wrapper) in &mut self.entries {
-            match wrapper {
-                BodyWrapper::Dynamic(n) => n.reset(),
-                BodyWrapper::Static(n) => n.reset(),
-            }
+            wrapper.reset();
         }
 
         // Recreate clean PhysicsEngine with gravity preserved to clear out internal contact manifold & islands caches
