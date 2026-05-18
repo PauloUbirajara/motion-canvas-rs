@@ -134,6 +134,40 @@ impl Tweenable for Affine {
     }
 }
 
+impl<T: Tweenable> Tweenable for Option<T> {
+    fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
+        match (a, b) {
+            (Some(va), Some(vb)) => Some(T::interpolate(va, vb, t)),
+            (Some(va), None) => {
+                if t < 0.5 {
+                    Some(va.clone())
+                } else {
+                    None
+                }
+            }
+            (None, Some(vb)) => {
+                if t >= 0.5 {
+                    Some(vb.clone())
+                } else {
+                    None
+                }
+            }
+            (None, None) => None,
+        }
+    }
+    fn state_hash(&self) -> u64 {
+        match self {
+            Some(v) => {
+                let mut h = crate::assets::hash::Hasher::new();
+                h.update_u64(1);
+                h.update_u64(v.state_hash());
+                h.finish()
+            }
+            None => 0,
+        }
+    }
+}
+
 /// Internal data for a signal.
 pub struct SignalData<T> {
     /// The current value of the signal.

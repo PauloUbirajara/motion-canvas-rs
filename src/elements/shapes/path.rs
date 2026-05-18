@@ -1,4 +1,6 @@
-use crate::core::animation::{Node, Signal};
+#![allow(deprecated)]
+
+use crate::core::animation::{Node, Paint, Signal};
 use glam::Vec2;
 use kurbo::{Affine, BezPath, Stroke};
 use peniko::{Brush, Color};
@@ -95,6 +97,7 @@ impl Default for PathNode {
             scale: Signal::new(Vec2::ONE),
             data: Arc::new(PathData::default()),
             stroke_color: Signal::new(Color::WHITE),
+            stroke_paint: Signal::new(None),
             stroke_width: Signal::new(1.0),
             opacity: Signal::new(1.0),
         }
@@ -129,7 +132,11 @@ pub struct PathNode {
     /// The processed path data.
     pub data: Arc<PathData>,
     /// The color of the path's stroke.
+    /// **Deprecated**: prefer `stroke_paint` which supports both solid colors and gradients.
+    #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
+    /// The paint (color or gradient) used for the path's stroke.
+    pub stroke_paint: Signal<Option<Paint>>,
     /// The width of the path's stroke.
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
@@ -145,6 +152,7 @@ impl PathNode {
             scale: Signal::new(Vec2::ONE),
             data: Arc::new(PathData::new(path)),
             stroke_color: Signal::new(color),
+            stroke_paint: Signal::new(None),
             stroke_width: Signal::new(width),
             opacity: Signal::new(1.0),
         }
@@ -186,9 +194,13 @@ impl PathNode {
         self
     }
 
-    /// Sets the stroke color and width.
-    pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
-        self.stroke_color = Signal::new(color);
+    /// Sets the stroke paint and width.
+    pub fn with_stroke(mut self, paint: impl Into<Paint>, width: f32) -> Self {
+        let p = paint.into();
+        if let Paint::Solid(color) = p {
+            self.stroke_color = Signal::new(color);
+        }
+        self.stroke_paint = Signal::new(Some(p));
         self.stroke_width = Signal::new(width);
         self
     }
@@ -212,10 +224,14 @@ impl Node for PathNode {
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let mut final_color = stroke_color;
-        final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-
-        let brush = Brush::Solid(final_color);
+        let brush = match self.stroke_paint.get() {
+            Some(paint) => paint.to_brush_with_opacity(combined_opacity),
+            None => {
+                let mut final_color = stroke_color;
+                final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+                Brush::Solid(final_color)
+            }
+        };
         scene.stroke(
             &Stroke::new(stroke_width as f64),
             combined_transform,
@@ -232,6 +248,7 @@ impl Node for PathNode {
         h.update_u64(self.rotation.state_hash());
         h.update_u64(self.scale.state_hash());
         h.update_u64(self.stroke_color.state_hash());
+        h.update_u64(self.stroke_paint.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.finish()
@@ -246,6 +263,7 @@ impl Node for PathNode {
         self.rotation.reset();
         self.scale.reset();
         self.stroke_color.reset();
+        self.stroke_paint.reset();
         self.stroke_width.reset();
         self.opacity.reset();
     }

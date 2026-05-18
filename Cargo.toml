@@ -136,6 +136,10 @@ name = "getting_started"
 required-features = ["runtime"]
 
 [[example]]
+name = "gradient_demo"
+required-features = ["runtime", "math"]
+
+[[example]]
 name = "grid"
 required-features = ["runtime"]
 
