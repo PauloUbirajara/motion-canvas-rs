@@ -91,7 +91,6 @@ impl AnimationWindow {
 
         let mut renderer_opt: Option<VelloRenderer> = None;
         let mut last_update = Instant::now();
-        let mut last_hash = 0u64;
         let mut finished = false;
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
         let mut time_accumulator = 0.0f32;
@@ -148,7 +147,6 @@ impl AnimationWindow {
                 elwt,
                 &window,
                 &mut last_update,
-                &mut last_hash,
                 &mut finished,
                 &mut time_accumulator,
                 dt,
@@ -196,7 +194,6 @@ impl AnimationWindow {
                 self.project.seek_to(target);
                 self.project.timeline.time = target.as_secs_f32();
                 self.project.timeline.force_compile_frame = true;
-                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
@@ -208,14 +205,12 @@ impl AnimationWindow {
                 self.project.seek_to(target);
                 self.project.timeline.time = target.as_secs_f32();
                 self.project.timeline.force_compile_frame = true;
-                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
             KeyCode::Period => {
                 *time_accumulator += dt.as_secs_f32();
                 self.project.timeline.force_compile_frame = true;
-                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
@@ -224,7 +219,6 @@ impl AnimationWindow {
                 self.project.seek_to(target);
                 self.project.timeline.time = target.as_secs_f32();
                 self.project.timeline.force_compile_frame = true;
-                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
@@ -239,7 +233,6 @@ impl AnimationWindow {
                 self.project.seek_to(Duration::ZERO);
                 self.project.timeline.time = 0.0;
                 self.project.timeline.force_compile_frame = true;
-                self.project.scene.set_dirty(true);
                 *finished = false;
                 *last_update = Instant::now();
                 window.request_redraw();
@@ -253,7 +246,6 @@ impl AnimationWindow {
         elwt: &winit::event_loop::EventLoopWindowTarget<()>,
         window: &Window,
         last_update: &mut Instant,
-        last_hash: &mut u64,
         finished: &mut bool,
         time_accumulator: &mut f32,
         dt: Duration,
@@ -292,11 +284,11 @@ impl AnimationWindow {
             ran_update = true;
         }
 
+        let force_redraw = self.project.timeline.force_compile_frame;
         // 3. Handle Manual Overrides (Seeks / Frame Steps)
-        if self.project.timeline.force_compile_frame && !ran_update {
+        if force_redraw && !ran_update {
             // Run exactly one evaluation tick to let reactive bindings update spatial properties
             self.project.scene.update(Duration::ZERO);
-            self.project.scene.set_dirty(true);
             self.project.timeline.force_compile_frame = false;
         }
 
@@ -328,10 +320,8 @@ impl AnimationWindow {
                 .progress_chars("=>-"),
         );
 
-        let current_hash = self.project.scene.state_hash();
-        if current_hash != *last_hash || self.project.scene.is_dirty() {
+        if ran_update || force_redraw {
             window.request_redraw();
-            *last_hash = current_hash;
         }
 
         let is_video_finished = self.project.scene.video_timeline.finished();

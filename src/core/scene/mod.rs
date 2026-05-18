@@ -30,10 +30,7 @@ pub struct BaseScene {
     /// The separate timeline for purely audio events.
     #[cfg(feature = "audio")]
     pub audio_timeline: crate::core::Timeline,
-
     // New fields:
-    pub previous_frame_hash: u64,
-    pub is_dirty: bool,
 }
 
 impl BaseScene {
@@ -44,8 +41,6 @@ impl BaseScene {
             video_timeline: crate::core::Timeline::new(),
             #[cfg(feature = "audio")]
             audio_timeline: crate::core::Timeline::new(),
-            previous_frame_hash: 0,
-            is_dirty: true,
         }
     }
 
@@ -93,14 +88,6 @@ impl Scene2D for BaseScene {
         for node in &mut self.nodes {
             node.update(dt);
         }
-
-        let current_hash = self.state_hash();
-        if current_hash != self.previous_frame_hash {
-            self.is_dirty = true;
-            self.previous_frame_hash = current_hash;
-        } else {
-            self.is_dirty = false;
-        }
     }
 
     fn state_hash(&self) -> u64 {
@@ -110,13 +97,5 @@ impl Scene2D for BaseScene {
             .enumerate()
             .map(|(i, node)| crate::assets::hash::combine_hashes(node.state_hash(), i as u64))
             .reduce(|| 0u64, |a, b| a.wrapping_add(b))
-    }
-
-    fn is_dirty(&self) -> bool {
-        self.is_dirty
-    }
-
-    fn set_dirty(&mut self, dirty: bool) {
-        self.is_dirty = dirty;
     }
 }
