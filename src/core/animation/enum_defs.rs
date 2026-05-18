@@ -405,6 +405,101 @@ where
     }
 }
 
+impl From<&Rect> for AnyNode {
+    fn from(n: &Rect) -> Self {
+        Self::Rect(n.clone())
+    }
+}
+impl From<&Circle> for AnyNode {
+    fn from(n: &Circle) -> Self {
+        Self::Circle(n.clone())
+    }
+}
+impl From<&Line> for AnyNode {
+    fn from(n: &Line) -> Self {
+        Self::Line(n.clone())
+    }
+}
+impl From<&Polygon> for AnyNode {
+    fn from(n: &Polygon) -> Self {
+        Self::Polygon(n.clone())
+    }
+}
+impl From<&GridNode> for AnyNode {
+    fn from(n: &GridNode) -> Self {
+        Self::Grid(n.clone())
+    }
+}
+impl From<&TextNode> for AnyNode {
+    fn from(n: &TextNode) -> Self {
+        Self::Text(n.clone())
+    }
+}
+impl From<&PathNode> for AnyNode {
+    fn from(n: &PathNode) -> Self {
+        Self::Path(n.clone())
+    }
+}
+impl From<&GroupNode> for AnyNode {
+    fn from(n: &GroupNode) -> Self {
+        Self::Group(n.clone())
+    }
+}
+impl From<&CameraNode> for AnyNode {
+    fn from(n: &CameraNode) -> Self {
+        Self::Camera(n.clone())
+    }
+}
+
+#[cfg(feature = "code")]
+impl From<&CodeNode> for AnyNode {
+    fn from(n: &CodeNode) -> Self {
+        Self::Code(n.clone())
+    }
+}
+#[cfg(feature = "image")]
+impl From<&ImageNode> for AnyNode {
+    fn from(n: &ImageNode) -> Self {
+        Self::Image(n.clone())
+    }
+}
+#[cfg(feature = "math")]
+impl From<&MathNode> for AnyNode {
+    fn from(n: &MathNode) -> Self {
+        Self::Math(n.clone())
+    }
+}
+#[cfg(feature = "svg")]
+impl From<&SvgNode> for AnyNode {
+    fn from(n: &SvgNode) -> Self {
+        Self::Svg(n.clone())
+    }
+}
+#[cfg(feature = "physics")]
+impl From<&RigidBodyNode> for AnyNode {
+    fn from(n: &RigidBodyNode) -> Self {
+        Self::RigidBody(n.clone())
+    }
+}
+#[cfg(feature = "physics")]
+impl From<&StaticBodyNode> for AnyNode {
+    fn from(n: &StaticBodyNode) -> Self {
+        Self::StaticBody(n.clone())
+    }
+}
+#[cfg(feature = "physics")]
+impl From<&PhysicsNode> for AnyNode {
+    fn from(n: &PhysicsNode) -> Self {
+        Self::Physics(n.clone())
+    }
+}
+
+impl From<&AnyNode> for AnyNode {
+    fn from(n: &AnyNode) -> Self {
+        n.clone()
+    }
+}
+
 /// A static dispatch wrapper for any concrete implementation of `Animation`.
 ///
 /// This enum avoids heap allocations (`Box<dyn Animation>`) for common operations

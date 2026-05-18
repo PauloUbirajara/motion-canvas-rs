@@ -77,19 +77,19 @@ fn main() {
         .with_fill(Color::WHITE)
         .with_position(Vec2::new(900.0, 200.0));
 
-    project.scene.add(rect_tl.clone());
+    project.scene.add(&rect_tl);
     project.scene.add(label_tl);
     project.scene.add(marker_tl);
 
-    project.scene.add(rect_c.clone());
+    project.scene.add(&rect_c);
     project.scene.add(label_c);
     project.scene.add(marker_c);
 
-    project.scene.add(rect_br.clone());
+    project.scene.add(&rect_br);
     project.scene.add(label_br);
     project.scene.add(marker_br);
 
-    project.scene.add(text_anchored.clone());
+    project.scene.add(&text_anchored);
     project.scene.add(text_marker);
 
     // Animate rotation for all rects

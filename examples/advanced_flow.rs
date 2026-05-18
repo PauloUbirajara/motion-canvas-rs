@@ -107,14 +107,14 @@ fn main() {
     ]);
 
     // 4. Build Scene
-    project.scene.add(background_rect.clone());
-    project.scene.add(divider_line.clone());
-    project.scene.add(path_node.clone());
-    project.scene.add(follower.clone());
-    project.scene.add(title_text.clone());
-    project.scene.add(code_block.clone());
-    project.scene.add(math_eq.clone());
-    project.scene.add(logo.clone());
+    project.scene.add(&background_rect);
+    project.scene.add(&divider_line);
+    project.scene.add(&path_node);
+    project.scene.add(&follower);
+    project.scene.add(&title_text);
+    project.scene.add(&code_block);
+    project.scene.add(&math_eq);
+    project.scene.add(&logo);
 
     // 5. Run (Choose show() for interactive or export() for PNGs)
     project.show().expect("Failed to render");

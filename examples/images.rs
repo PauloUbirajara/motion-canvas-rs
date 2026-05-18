@@ -18,8 +18,8 @@ fn main() {
         .with_path("./examples/images/motion-canvas-rs.svg")
         .with_size(Vec2::new(200.0, 200.0));
 
-    project.scene.add(png.clone());
-    project.scene.add(svg.clone());
+    project.scene.add(&png);
+    project.scene.add(&svg);
 
     const MOVE_DUR: Duration = Duration::from_secs(2);
 

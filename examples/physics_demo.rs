@@ -659,55 +659,55 @@ fn main() {
     let (p9, t9, s9) = build_scene9();
 
     // ── Add all to scene (all invisible) ──
-    project.scene.add(p1.clone());
-    project.scene.add(t1.clone());
-    project.scene.add(s1.clone());
+    project.scene.add(&p1);
+    project.scene.add(&t1);
+    project.scene.add(&s1);
 
-    project.scene.add(p2.clone());
-    project.scene.add(t2.clone());
-    project.scene.add(s2.clone());
+    project.scene.add(&p2);
+    project.scene.add(&t2);
+    project.scene.add(&s2);
     let labels2_c: Vec<_> = labels2
         .iter()
         .map(|l| {
-            project.scene.add(l.clone());
+            project.scene.add(l);
             l.clone()
         })
         .collect();
 
-    project.scene.add(p3.clone());
-    project.scene.add(t3.clone());
-    project.scene.add(s3.clone());
+    project.scene.add(&p3);
+    project.scene.add(&t3);
+    project.scene.add(&s3);
     let labels3_c: Vec<_> = labels3
         .iter()
         .map(|l| {
-            project.scene.add(l.clone());
+            project.scene.add(l);
             l.clone()
         })
         .collect();
 
-    project.scene.add(p4.clone());
-    project.scene.add(t4.clone());
-    project.scene.add(s4.clone());
+    project.scene.add(&p4);
+    project.scene.add(&t4);
+    project.scene.add(&s4);
 
-    project.scene.add(p5.clone());
-    project.scene.add(t5.clone());
-    project.scene.add(s5.clone());
+    project.scene.add(&p5);
+    project.scene.add(&t5);
+    project.scene.add(&s5);
 
     for link in links5 {
         project.scene.add(link);
     }
 
-    project.scene.add(p6.clone());
-    project.scene.add(t6.clone());
-    project.scene.add(s6.clone());
+    project.scene.add(&p6);
+    project.scene.add(&t6);
+    project.scene.add(&s6);
 
-    project.scene.add(p7.clone());
-    project.scene.add(t7.clone());
-    project.scene.add(s7.clone());
+    project.scene.add(&p7);
+    project.scene.add(&t7);
+    project.scene.add(&s7);
     let labels7_c: Vec<_> = labels7
         .iter()
         .map(|l| {
-            project.scene.add(l.clone());
+            project.scene.add(l);
             l.clone()
         })
         .collect();
@@ -715,14 +715,14 @@ fn main() {
         project.scene.add(binding);
     }
 
-    project.scene.add(p8.clone());
-    project.scene.add(t8.clone());
-    project.scene.add(s8.clone());
-    project.scene.add(status8.clone());
+    project.scene.add(&p8);
+    project.scene.add(&t8);
+    project.scene.add(&s8);
+    project.scene.add(&status8);
 
-    project.scene.add(p9.clone());
-    project.scene.add(t9.clone());
-    project.scene.add(s9.clone());
+    project.scene.add(&p9);
+    project.scene.add(&t9);
+    project.scene.add(&s9);
 
     // ── Timeline: one scene at a time ──
     project.scene.video_timeline.add(chain![

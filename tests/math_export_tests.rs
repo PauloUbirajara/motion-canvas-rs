@@ -17,7 +17,7 @@ fn test_math_animation_export() {
         48.0,
         Color::rgb8(0xff, 0xff, 0xff),
     );
-    project.scene.add(tex.clone());
+    project.scene.add(&tex);
 
     project.scene.video_timeline.add(chain![
         wait(Duration::from_millis(100)),

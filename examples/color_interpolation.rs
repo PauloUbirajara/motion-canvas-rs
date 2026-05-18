@@ -14,7 +14,7 @@ fn main() {
         .with_radius(50.0)
         .with_fill(Color::RED); // Red
 
-    project.scene.add(circle.clone());
+    project.scene.add(&circle);
 
     let duration = Duration::from_secs(1);
 

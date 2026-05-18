@@ -21,8 +21,8 @@ fn main() {
         .with_fill(Color::rgb8(0x68, 0xab, 0xdf)) // Blue
         .with_stroke(Color::WHITE, 4.0);
 
-    project.scene.add(pentagon.clone());
-    project.scene.add(triangle.clone());
+    project.scene.add(&pentagon);
+    project.scene.add(&triangle);
 
     // Animate rotation and opacity
     project.scene.video_timeline.add(all![

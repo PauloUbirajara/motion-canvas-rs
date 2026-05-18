@@ -32,7 +32,7 @@ fn main() {
         .with_position(Vec2::new(0.0, 0.0))
         .with_zoom(1.0);
 
-    project.scene.add(camera.clone());
+    project.scene.add(&camera);
 
     // Add HUD text (NOT in camera, so it stays fixed)
     project.scene.add(

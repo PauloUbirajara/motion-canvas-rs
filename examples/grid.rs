@@ -32,7 +32,7 @@ fn main() {
     });
 
     // Add to scene
-    project.scene.add(grid.clone());
+    project.scene.add(&grid);
     project.scene.add(text_node);
     project.scene.add(text_link);
 

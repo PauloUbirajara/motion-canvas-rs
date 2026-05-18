@@ -15,6 +15,21 @@ fn test_any_node_conversions() {
 }
 
 #[test]
+fn test_any_node_reference_conversions() {
+    let circle = Circle::default()
+        .with_position(Vec2::new(10.0, 20.0))
+        .with_radius(42.0);
+
+    // Test conversion from &Circle reference to AnyNode
+    let any_node_ref: AnyNode = (&circle).into();
+    assert_eq!(any_node_ref.state_hash(), circle.state_hash());
+
+    // Test conversion from &AnyNode reference to AnyNode
+    let any_node_ref2: AnyNode = (&any_node_ref).into();
+    assert_eq!(any_node_ref2.state_hash(), circle.state_hash());
+}
+
+#[test]
 fn test_any_node_custom_wrapping() {
     #[derive(Clone, Default)]
     struct CustomWidget {

@@ -532,7 +532,7 @@ fn main() {
     }
 
     let camera = camera.with_nodes(camera_children);
-    project.scene.add(camera.clone());
+    project.scene.add(&camera);
 
     // ═══════════════════════════════════════════════════
     //  ANIMATION TIMELINE
