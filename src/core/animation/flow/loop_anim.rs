@@ -70,9 +70,11 @@ impl Animation for LoopAnim {
         }
     }
 
-    /// Collects audio events only from the currently active child animation.
+    /// Collects audio events only from the currently active child animation with loop offset.
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<AudioEvent>) {
-        self.current.collect_audio_events(current_time, events);
+        let loop_offset = self.current.duration() * self.finished_count as u32;
+        self.current
+            .collect_audio_events(current_time + loop_offset, events);
     }
 
     /// Resets the loop counter and recreates the initial animation.

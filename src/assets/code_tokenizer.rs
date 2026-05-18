@@ -2,11 +2,11 @@
 use crate::assets::font_manager::FontManager;
 use crate::core::animation::Tweenable;
 use glam::Vec2;
-use once_cell::sync::Lazy;
 use similar::TextDiff;
 use skrifa::instance::{LocationRef, Size};
 use skrifa::MetadataProvider;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::sync::{Arc, Mutex};
 use syntect::easy::HighlightLines;
 use syntect::highlighting::ThemeSet;
@@ -16,17 +16,17 @@ use vello::peniko::{Brush, Color};
 use vello::Scene;
 
 /// The global set of syntax definitions for highlighting.
-pub static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
+pub static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 /// The global set of highlighting themes.
-pub static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
+pub static THEME_SET: LazyLock<ThemeSet> = LazyLock::new(ThemeSet::load_defaults);
 /// Internal cache to avoid re-tokenizing identical code blocks.
-pub static GLOBAL_CODE_CACHE: Lazy<Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+pub static GLOBAL_CODE_CACHE: LazyLock<Mutex<HashMap<CodeCacheKey, Arc<Vec<Token>>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// The default syntax highlighting theme name.
 pub const DEFAULT_THEME: &str = "base16-ocean.dark";
 /// List of fonts to try if the primary code font is missing.
-pub const FONT_FALLBACKS: &[&str] = &["Fira Code", "Courier New", "monospace"];
+pub const FONT_FALLBACKS: &[&str] = &["JetBrains Mono", "Fira Code", "Courier New", "monospace"];
 /// Multiplier for character advance if font metrics are unavailable.
 pub const ADVANCE_FALLBACK_FACTOR: f32 = 0.6;
 /// Default line height as a multiple of font size.
@@ -34,7 +34,7 @@ pub const LINE_HEIGHT_MULTIPLIER: f32 = 1.5;
 /// Default font size for code snippets.
 pub const DEFAULT_FONT_SIZE: f32 = 24.0;
 /// Default font family for code snippets.
-pub const DEFAULT_FONT_FAMILY: &str = "Fira Code";
+pub const DEFAULT_FONT_FAMILY: &str = "JetBrains Mono";
 /// Default programming language for highlighting.
 pub const DEFAULT_LANGUAGE: &str = "rust";
 /// Default opacity for normal code.
@@ -350,9 +350,17 @@ pub fn tokenize_code(
         let outlines = font_ref.outline_glyphs();
 
         for (line_idx, line) in code.lines().enumerate() {
-            let ranges = h.highlight_line(line, &SYNTAX_SET).unwrap();
+            let line_with_nl = format!("{}\n", line);
+            let ranges = h.highlight_line(&line_with_nl, &SYNTAX_SET).unwrap();
             let mut x_offset = 0.0;
-            for (style, text) in ranges {
+            for (style, raw_text) in ranges {
+                let mut text = raw_text;
+                if text.ends_with('\n') {
+                    text = &text[..text.len() - 1];
+                }
+                if text.is_empty() {
+                    continue;
+                }
                 let fg = style.foreground;
                 let color = Color::rgba8(fg.r, fg.g, fg.b, fg.a);
 

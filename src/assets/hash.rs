@@ -1,9 +1,24 @@
+//! Hash utility algorithms for state caching and dirty frame checks.
+//!
+//! Motion Canvas relies on deterministic state hashes to detect whether visual nodes have changed
+//! since the last frame update, allowing unchanged visual sub-graphs to skip rendering.
+
 /// A utility for deterministic, consistent hashing across the engine.
 ///
 /// `Hasher` is used primarily for calculating state hashes in the caching system,
 /// ensuring that frames are only re-rendered when their underlying data changes.
 /// Currently powered by `seahash` for high-performance, deterministic 64-bit hashing.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::assets::hash::Hasher;
+/// let mut hasher = Hasher::new();
+/// hasher.update_u64(42);
+/// hasher.update_bytes(b"hello");
+/// let h = hasher.finish();
+/// ```
 pub struct Hasher {
+    /// The internal 64-bit combined hash state.
     state: u64,
 }
 
@@ -38,7 +53,20 @@ impl Hasher {
     }
 }
 
+impl Default for Hasher {
+    /// Creates a new Hasher with standard default zero state.
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// A standard way to combine two hashes without creating a full Hasher if not needed.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::assets::hash::combine_hashes;
+/// let h = combine_hashes(12345, 67890);
+/// ```
 pub fn combine_hashes(a: u64, b: u64) -> u64 {
     let mut h = Hasher { state: a };
     h.update_u64(b);

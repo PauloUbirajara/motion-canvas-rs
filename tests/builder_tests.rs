@@ -1,6 +1,6 @@
 use glam::Vec2;
 use motion_canvas_rs::prelude::*;
-use vello::peniko::Color;
+use peniko::Color;
 
 #[test]
 fn test_project_builder() {
@@ -95,11 +95,42 @@ fn test_math_builder() {
 #[cfg(feature = "code")]
 fn test_code_builder() {
     let code = CodeNode::default()
-        .with_language("javascript")
-        .with_code("console.log('hi')");
+        .with_language("rust")
+        .with_code("let mut engine = MotionCanvas::new();\nengine.render();");
 
-    assert_eq!(code.language, "javascript");
-    assert_eq!(code.code.get().text, "console.log('hi')");
+    assert_eq!(code.language, "rust");
+
+    use motion_canvas_rs::assets::code_tokenizer::tokenize_code;
+
+    println!("--- TOKEN POSITIONS & WIDTHS ---");
+    let tokens = tokenize_code(
+        "let mut engine = MotionCanvas::new();\nengine.render();",
+        24.0,
+        "rust",
+        "base16-ocean.dark",
+        "Fira Code",
+        &["Courier New", "monospace"],
+    );
+    for t in &tokens {
+        println!(
+            "Token {:?}: pos={:?}, width={}, glyphs={}",
+            t.text,
+            t.pos,
+            t.width,
+            t.glyphs.len()
+        );
+        if t.text.contains('.') || t.text.contains(':') {
+            for (idx, (transform, pb)) in t.glyphs.iter().enumerate() {
+                println!(
+                    "  Glyph #{}: transform={:?}, elements={:?}",
+                    idx,
+                    transform,
+                    pb.elements()
+                );
+            }
+        }
+    }
+    println!("---------------------------------");
 }
 
 #[test]
@@ -135,4 +166,77 @@ fn test_project_frame_naming() {
         .close_on_finish();
     let name_default = project_default.get_frame_name(0);
     assert_eq!(name_default, "new_project_0000.png");
+}
+
+#[test]
+#[cfg(feature = "physics")]
+fn test_physics_body_builders() {
+    use motion_canvas_rs::prelude::{PhysicsShape, RigidBodyNode, StaticBodyNode};
+
+    let circle = Circle::default();
+    let rigid = RigidBodyNode::new(Box::new(circle))
+        .with_position(Vec2::new(100.0, 100.0))
+        .with_rotation(0.5)
+        .with_shape(PhysicsShape::Ball(25.0))
+        .with_bounciness(0.7)
+        .with_friction(0.3)
+        .with_initial_velocity(Vec2::new(10.0, 20.0))
+        .with_initial_angular_velocity(2.0);
+
+    assert_eq!(rigid.position.get(), Vec2::new(100.0, 100.0));
+    assert_eq!(rigid.rotation.get(), 0.5);
+    assert_eq!(rigid.bounciness, 0.7);
+    assert_eq!(rigid.friction, 0.3);
+    assert_eq!(rigid.initial_velocity, Vec2::new(10.0, 20.0));
+    assert_eq!(rigid.initial_angular_velocity, 2.0);
+
+    let rect = Rect::default();
+    let static_body = StaticBodyNode::new(Box::new(rect))
+        .with_position(Vec2::new(200.0, 200.0))
+        .with_rotation(0.1)
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(50.0, 50.0)))
+        .with_bounciness(0.4)
+        .with_friction(0.8);
+
+    assert_eq!(static_body.position.get(), Vec2::new(200.0, 200.0));
+    assert_eq!(static_body.rotation.get(), 0.1);
+    assert_eq!(static_body.bounciness, 0.4);
+    assert_eq!(static_body.friction, 0.8);
+}
+
+#[test]
+#[cfg(feature = "audio")]
+fn test_audio_event_offsets() {
+    use motion_canvas_rs::core::scene::BaseScene;
+    use motion_canvas_rs::prelude::*;
+    use std::time::Duration;
+
+    let mut scene = BaseScene::new();
+
+    // Create a chain of audio animations
+    let play1 = play!(AudioNode::new("a.mp3").with_volume(0.5)); // duration 1s
+    let wait1 = audio_wait!(2.0); // duration 2s
+    let play2 = play!(AudioNode::new("b.mp3").with_volume(1.0)); // duration 1s
+
+    scene.audio_timeline.add(chain!(play1, wait1, play2));
+
+    // Simulate the frame-by-frame export loop
+    let mut events = Vec::new();
+    let dt = Duration::from_millis(100);
+    for _ in 0..40 {
+        scene
+            .audio_timeline
+            .collect_audio_events(Duration::ZERO, &mut events);
+        scene.audio_timeline.update(dt);
+    }
+    scene.collect_audio_events(Duration::ZERO, &mut events);
+
+    // Filter events to find the ones we pushed
+    let a_event = events.iter().find(|e| e.path == "a.mp3").unwrap();
+    let b_event = events.iter().find(|e| e.path == "b.mp3").unwrap();
+
+    // play1 starts at 0.0s
+    assert_eq!(a_event.start_time, Duration::from_secs(0));
+    // play2 starts at play1 duration (1s) + wait1 duration (2s) = 3s
+    assert_eq!(b_event.start_time, Duration::from_secs(3));
 }

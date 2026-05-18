@@ -64,6 +64,11 @@ pub mod prelude {
     pub use crate::elements::media::*;
     pub use crate::elements::shapes::*;
 
+    #[cfg(feature = "physics")]
+    pub use crate::elements::physics::{
+        PhysicsMode, PhysicsNode, PhysicsShape, RigidBodyNode, StaticBodyNode,
+    };
+
     pub use crate::{all, any, chain, delay, loop_anim, sequence, wait, with_easing};
     #[cfg(feature = "audio")]
     pub use crate::{audio_wait, play};

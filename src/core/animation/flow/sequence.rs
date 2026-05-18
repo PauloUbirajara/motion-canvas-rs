@@ -99,7 +99,7 @@ impl Animation for Sequence {
     fn collect_audio_events(&mut self, current_time: Duration, events: &mut Vec<AudioEvent>) {
         for (start, anim) in &mut self.items {
             if self.elapsed >= *start {
-                anim.collect_audio_events(current_time, events);
+                anim.collect_audio_events(current_time + *start, events);
             }
         }
     }

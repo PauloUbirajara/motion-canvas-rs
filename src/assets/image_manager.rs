@@ -1,11 +1,11 @@
 #![cfg(feature = "image")]
-use once_cell::sync::Lazy;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::sync::{Arc, Mutex};
 use vello::peniko::{Blob, Extend, Format, Image as PenikoImage};
 
-static IMAGE_CACHE: Lazy<Mutex<HashMap<String, Arc<PenikoImage>>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+static IMAGE_CACHE: LazyLock<Mutex<HashMap<String, Arc<PenikoImage>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Global manager for loading and caching image assets.
 ///
@@ -32,6 +32,7 @@ impl ImageManager {
                 let data = Arc::new(rgba.into_raw());
                 let peniko_img = Arc::new(PenikoImage {
                     data: Blob::new(data),
+                    alpha: 255,
                     format: Format::Rgba8,
                     width,
                     height,

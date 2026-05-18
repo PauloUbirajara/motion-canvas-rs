@@ -1,6 +1,12 @@
 use crate::core::animation::base::{Animation, AudioEvent};
 use std::time::Duration;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PlaybackState {
+    Playing,
+    Paused,
+}
+
 /// A linear container for sequential animations.
 ///
 /// `Timeline` manages a sequence of boxed [`Animation`] traits, updating them
@@ -11,6 +17,13 @@ pub struct Timeline {
     pub animations: Vec<Box<dyn Animation>>,
     /// The current playback time within this timeline.
     pub current_time: Duration,
+
+    // Playback state fields
+    pub time: f32,
+    pub state: PlaybackState,
+    /// Force-flag the engine to run exactly one update/render pass
+    /// even if virtual time didn't advance (crucial for seeks and steps).
+    pub force_compile_frame: bool,
 }
 
 impl Timeline {
@@ -19,6 +32,9 @@ impl Timeline {
         Self {
             animations: Vec::new(),
             current_time: Duration::ZERO,
+            time: 0.0,
+            state: PlaybackState::Playing,
+            force_compile_frame: false,
         }
     }
 

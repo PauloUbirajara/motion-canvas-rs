@@ -1,16 +1,22 @@
-use font_kit::family_name::FamilyName;
-use font_kit::properties::Properties;
-use font_kit::source::SystemSource;
+//! Global system font loader, layout manager, and glyph resolution cache.
+//!
+//! This module coordinates font lookups using `fontdb` and parses them using `skrifa`.
+//! It manages standard fallbacks, Math glyph faces for LaTeX nodes, and user-registered fonts.
+
+use fontdb::{Database, Family, Query};
 use skrifa::FontRef;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::path::Path;
+use std::sync::{Arc, LazyLock, Mutex, OnceLock};
 
-/// Container for raw font byte data and its identifier.
+/// Represents loaded font raw data and its collection metadata.
 pub struct FontData {
-    /// The name of the font family or file.
+    /// The user-friendly identifier or family name of the font face.
     pub name: String,
-    /// The raw TrueType/OpenType byte data.
+    /// The raw byte array containing the TTF/OTF font file content.
     pub data: Vec<u8>,
+    /// The face index inside a font collection (TTC/OTC). Normally 0 for standard single-face fonts.
+    pub index: u32,
 }
 
 const KNOWN_MATH_FONTS: &[&str] = &[
@@ -20,30 +26,43 @@ const KNOWN_MATH_FONTS: &[&str] = &[
     "STIX Two Math",
 ];
 
-const GENERIC_FALLBACKS: &[(FamilyName, &str)] = &[
-    (FamilyName::SansSerif, "Sans-Serif"),
-    (FamilyName::Monospace, "Monospace"),
-    (FamilyName::Serif, "Serif"),
+const GENERIC_FALLBACKS: &[(Family<'static>, &str)] = &[
+    (Family::SansSerif, "Sans-Serif"),
+    (Family::Monospace, "Monospace"),
+    (Family::Serif, "Serif"),
 ];
 
-use once_cell::sync::Lazy;
+static FONT_DB: LazyLock<Mutex<Database>> = LazyLock::new(|| {
+    let mut db = Database::new();
+    db.load_system_fonts();
+    Mutex::new(db)
+});
 
-static FONT_CACHE: Lazy<Mutex<HashMap<String, Arc<FontData>>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
-static FONT_WARNINGS: Lazy<Mutex<HashMap<String, bool>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+static FONT_CACHE: LazyLock<Mutex<HashMap<String, Arc<FontData>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
-/// Global manager for font discovery, loading, and caching.
+static FONT_WARNINGS: LazyLock<Mutex<HashMap<String, bool>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Thread-safe global font coordinator.
 ///
-/// `FontManager` provides a unified interface to load fonts from the system,
-/// from local files, or from registered memory buffers. It includes robust
-/// fallback logic and specialized support for finding Math fonts required by Typst.
+/// It handles lazy-loading system fonts, registering custom local paths, and caching
+/// parsed binary assets to prevent redundant filesystem overhead.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::assets::font_manager::FontManager;
+/// // Get standard sans-serif font
+/// let font = FontManager::get_font("sans-serif");
+/// assert!(font.is_some());
+/// ```
 pub struct FontManager;
 
 impl FontManager {
-    /// Retrieves a font by its family name or file path.
+    /// Retrieves a font by its path or registered family name.
     ///
-    /// This method first checks an internal cache, then tries to load it as a
-    /// local file, and finally searches the system's font directories.
+    /// It first checks the static query cache, then checks if `family` points to an active
+    /// local filepath, and finally queries the OS/system font database via `fontdb`.
     pub fn get_font(family: &str) -> Option<Arc<FontData>> {
         let mut cache = FONT_CACHE.lock().unwrap();
 
@@ -51,8 +70,8 @@ impl FontManager {
             return Some(font.clone());
         }
 
-        // Check if it's a local file path
-        let path = std::path::Path::new(family);
+        // 1. Local file path check
+        let path = Path::new(family);
         if path.exists() && path.is_file() {
             if let Ok(data) = std::fs::read(path) {
                 let font_data = Arc::new(FontData {
@@ -62,26 +81,30 @@ impl FontManager {
                         .unwrap_or(family)
                         .to_string(),
                     data,
+                    index: 0,
                 });
                 cache.insert(family.to_string(), font_data.clone());
                 return Some(font_data);
             }
         }
 
-        // Search system fonts
-        let source = SystemSource::new();
-        let family_names = [FamilyName::Title(family.to_string())];
-        let handle = match source.select_best_match(&family_names, &Properties::new()) {
-            Ok(h) => h,
-            Err(_) => return None,
+        // 2. Database search
+        let db = FONT_DB.lock().unwrap();
+        let family_enum = match family.to_lowercase().as_str() {
+            "monospace" => Family::Monospace,
+            "sans-serif" | "sans" => Family::SansSerif,
+            "serif" => Family::Serif,
+            "cursive" => Family::Cursive,
+            "fantasy" => Family::Fantasy,
+            _ => Family::Name(family),
+        };
+        let query = Query {
+            families: &[family_enum],
+            ..Query::default()
         };
 
-        if let Ok(font) = handle.load() {
-            if let Some(data) = font.copy_font_data() {
-                let font_data = Arc::new(FontData {
-                    name: family.to_string(),
-                    data: (*data).clone(),
-                });
+        if let Some(id) = db.query(&query) {
+            if let Some(font_data) = Self::load_from_db(&db, id, family) {
                 cache.insert(family.to_string(), font_data.clone());
                 return Some(font_data);
             }
@@ -90,138 +113,126 @@ impl FontManager {
         None
     }
 
-    /// Explicitly registers a font from a file path under a custom name.
+    /// Internal helper method to load a matching database face into raw `FontData`.
+    fn load_from_db(db: &Database, id: fontdb::ID, name: &str) -> Option<Arc<FontData>> {
+        let actual_name = db
+            .face(id)
+            .and_then(|face| face.families.first().map(|(fam, _)| fam.clone()))
+            .unwrap_or_else(|| name.to_string());
+        db.with_face_data(id, |data, index| {
+            Arc::new(FontData {
+                name: actual_name.clone(),
+                data: data.to_vec(),
+                index,
+            })
+        })
+    }
+
+    /// Reads a font file from a local path and registers it dynamically with a custom face name.
+    ///
+    /// Once registered, any standard Text nodes querying this name will instantly resolve to it.
     pub fn register_font(
         name: &str,
-        path: impl AsRef<std::path::Path>,
+        path: impl AsRef<Path>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let data = std::fs::read(path)?;
+        let data = std::fs::read(path.as_ref())?;
+
+        let mut db = FONT_DB.lock().unwrap();
+        db.load_font_data(data.clone());
+
         let font_data = Arc::new(FontData {
             name: name.to_string(),
             data,
+            index: 0,
         });
-        let mut cache = FONT_CACHE.lock().unwrap();
-        cache.insert(name.to_string(), font_data);
+
+        FONT_CACHE
+            .lock()
+            .unwrap()
+            .insert(name.to_string(), font_data);
         Ok(())
     }
 
-    /// Attempts to load the first available font from a list of families.
+    /// Tries to load the first available font from a prioritised list of families.
     ///
-    /// If the primary font is not found, it prints a warning and tries subsequent
-    /// fallbacks, eventually resorting to generic system fonts (Sans-Serif, etc.).
+    /// If none of the requested families are found, it queries standard generic fallbacks
+    /// (e.g. Sans-Serif, Serif, Monospace).
     pub fn get_font_with_fallback(families: &[&str]) -> Option<Arc<FontData>> {
-        let primary = families
-            .first()
-            .map(|f| f.to_string())
-            .unwrap_or_else(|| "Unknown".to_string());
+        let primary = families.first()?.to_string();
 
         for &family in families {
             if let Some(font) = Self::get_font(family) {
                 if family != primary {
-                    let mut warnings = FONT_WARNINGS.lock().unwrap();
-                    if !warnings.contains_key(&primary) {
-                        eprintln!(
-                            "Warning: Font '{}' not found. Falling back to '{}'.",
-                            primary, family
-                        );
-                        warnings.insert(primary.clone(), true);
-                    }
+                    Self::warn_fallback(&primary, family);
                 }
                 return Some(font);
             }
         }
 
-        // Final attempt at generic sans-serif
-        let source = SystemSource::new();
-
-        for (generic, name) in GENERIC_FALLBACKS {
-            let handle = match source.select_best_match(&[generic.clone()], &Properties::new()) {
-                Ok(h) => h,
-                Err(_) => continue,
+        let db = FONT_DB.lock().unwrap();
+        for (generic_fam, name) in GENERIC_FALLBACKS {
+            let query = Query {
+                families: &[generic_fam.clone()],
+                ..Query::default()
             };
 
-            let font = match handle.load() {
-                Ok(f) => f,
-                Err(_) => continue,
-            };
-
-            if let Some(data) = font.copy_font_data() {
-                let mut warnings = FONT_WARNINGS.lock().unwrap();
-                if !warnings.contains_key(&primary) {
-                    eprintln!(
-                        "Warning: Font '{}' not found. Falling back to system '{}'.",
-                        primary, name
-                    );
-                    warnings.insert(primary.clone(), true);
+            if let Some(id) = db.query(&query) {
+                if let Some(font) = Self::load_from_db(&db, id, name) {
+                    Self::warn_fallback(&primary, name);
+                    return Some(font);
                 }
-                return Some(Arc::new(FontData {
-                    name: name.to_string(),
-                    data: (*data).clone(),
-                }));
             }
         }
-
         None
     }
 
-    /// Discovers a suitable Math font on the system for Typst rendering.
-    ///
-    /// This method prioritizes well-known math fonts (like DejaVu Math) and then
-    /// falls back to any system font that contains "Math" in its metadata.
-    pub fn get_math_font() -> (String, Option<Arc<FontData>>) {
-        static MATH_CACHE: OnceLock<(String, Option<Arc<FontData>>)> = OnceLock::new();
-        MATH_CACHE
-            .get_or_init(|| {
-                // First try specific known math fonts
-                for &family in KNOWN_MATH_FONTS {
-                    if let Some(font) = Self::get_font(family) {
-                        return (family.to_string(), Some(font));
-                    }
-                }
-
-                // Search all system fonts for anything with "Math" in the name
-                let source = SystemSource::new();
-                let fonts = match source.all_fonts() {
-                    Ok(f) => f,
-                    Err(_) => {
-                        return (
-                            "serif".to_string(),
-                            Self::get_font_with_fallback(&["serif"]),
-                        )
-                    }
-                };
-
-                for handle in fonts {
-                    let font = match handle.load() {
-                        Ok(f) => f,
-                        Err(_) => continue,
-                    };
-                    let name = font.full_name();
-                    if !name.contains("Math") {
-                        continue;
-                    }
-                    if let Some(data) = font.copy_font_data() {
-                        return (
-                            name.clone(),
-                            Some(Arc::new(FontData {
-                                name,
-                                data: (*data).clone(),
-                            })),
-                        );
-                    }
-                }
-
-                // Fallback to serif if no math font found (better than nothing for Typst)
-                (
-                    "serif".to_string(),
-                    Self::get_font_with_fallback(&["serif"]),
-                )
-            })
-            .clone()
+    /// Logs a single thread-safe console warning when a fallback font is selected.
+    fn warn_fallback(primary: &str, fallback: &str) {
+        let mut warnings = FONT_WARNINGS.lock().unwrap();
+        if !warnings.contains_key(primary) {
+            eprintln!(
+                "Warning: Font '{}' not found. Falling back to '{}'.",
+                primary, fallback
+            );
+            warnings.insert(primary.to_string(), true);
+        }
     }
 
-    /// Converts a [`FontData`] into a [`FontRef`] for use with the `skrifa` crate.
+    /// Automatically scans the system and internal list for standard Math TeX Gyre or compatible math fonts.
+    ///
+    /// Used by LaTeX math rendering nodes to fetch math-compatible layouts.
+    pub fn get_math_font() -> (String, Option<Arc<FontData>>) {
+        static MATH_CACHE: OnceLock<(String, Option<Arc<FontData>>)> = OnceLock::new();
+
+        let cached = MATH_CACHE.get_or_init(|| {
+            for &family in KNOWN_MATH_FONTS {
+                if let Some(font) = Self::get_font(family) {
+                    return (family.to_string(), Some(font));
+                }
+            }
+
+            let db = FONT_DB.lock().unwrap();
+            for face in db.faces() {
+                for (fam_name, _) in &face.families {
+                    if fam_name.contains("Math") {
+                        if let Some(font) = Self::load_from_db(&db, face.id, fam_name) {
+                            return (fam_name.clone(), Some(font));
+                        }
+                    }
+                }
+            }
+
+            (
+                "serif".to_string(),
+                Self::get_font_with_fallback(&["serif"]),
+            )
+        });
+
+        cached.clone()
+    }
+
+    /// Parses `FontData` using Skrifa to extract a lightweight `FontRef` pointer for text rendering.
     pub fn get_font_ref(data: &Arc<FontData>) -> FontRef<'_> {
-        FontRef::new(&data.data).unwrap()
+        FontRef::from_index(&data.data, data.index).unwrap()
     }
 }

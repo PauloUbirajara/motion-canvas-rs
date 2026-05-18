@@ -1,5 +1,8 @@
 use indicatif::{ProgressBar, ProgressStyle};
-use std::time::{Duration, Instant};
+use std::{
+    sync::LazyLock,
+    time::{Duration, Instant},
+};
 use winit::{
     event::{Event, KeyEvent, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -11,8 +14,11 @@ use crate::core::scene::Scene2D;
 use crate::runtime::renderer::VelloRenderer;
 use crate::Project;
 
+const SEEK_DURATION_SECS: u64 = 5;
 const TUI_HEADER: &str = "--- motion-canvas-rs playback ---";
-const TUI_CONTROLS: &str = r#"
+const TUI_CONTROLS: LazyLock<String> = LazyLock::new(|| {
+    format!(
+        r#"
 Controls:
   R         : [R]estart
   Esc   / Q : [Q]uit
@@ -20,11 +26,13 @@ Controls:
 
   . (Dot)       : Step +1 frame
   , (Comma)     : Step -1 frame
-  > (Right) / L : Seek +10s
-  < (Left)  / H : Seek -10s
+  > (Right) / L : Seek +{SEEK_DURATION_SECS}s
+  < (Left)  / H : Seek -{SEEK_DURATION_SECS}s
   ^ (Up)    / K : Increase speed
   v (Down)  / J : Decrease speed (min 0.1x)
-"#;
+"#
+    )
+});
 
 /// An interactive preview window for viewing animations.
 ///
@@ -53,7 +61,7 @@ impl AnimationWindow {
         let total_duration = video_duration.max(audio_duration);
 
         println!("{}", TUI_HEADER);
-        println!("{}", TUI_CONTROLS);
+        println!("{}", *TUI_CONTROLS);
 
         let pb = ProgressBar::new((total_duration.as_secs_f32() * 1000.0) as u64);
         pb.set_style(
@@ -86,6 +94,14 @@ impl AnimationWindow {
         let mut last_hash = 0u64;
         let mut finished = false;
         let dt = Duration::from_secs_f32(1.0 / self.project.fps as f32);
+        let mut time_accumulator = 0.0f32;
+
+        self.project.timeline.state = if self.project.paused {
+            crate::core::timeline::PlaybackState::Paused
+        } else {
+            crate::core::timeline::PlaybackState::Playing
+        };
+        self.project.timeline.time = self.project.current_time.as_secs_f32();
 
         event_loop.run(move |event, elwt| match event {
             Event::WindowEvent {
@@ -98,7 +114,11 @@ impl AnimationWindow {
                 ..
             } => {
                 if let Some(ref mut renderer) = renderer_opt {
-                    renderer.render(&self.project.scene, self.project.width, self.project.height);
+                    renderer.render(
+                        &mut self.project.scene,
+                        self.project.width,
+                        self.project.height,
+                    );
                 }
             }
 
@@ -114,9 +134,15 @@ impl AnimationWindow {
                         ..
                     },
                 ..
-            } => {
-                self.handle_keyboard_input(code, elwt, &window, &mut finished, &mut last_update, dt)
-            }
+            } => self.handle_keyboard_input(
+                code,
+                elwt,
+                &window,
+                &mut finished,
+                &mut last_update,
+                &mut time_accumulator,
+                dt,
+            ),
 
             Event::AboutToWait => self.handle_playback_update(
                 elwt,
@@ -124,6 +150,7 @@ impl AnimationWindow {
                 &mut last_update,
                 &mut last_hash,
                 &mut finished,
+                &mut time_accumulator,
                 dt,
             ),
 
@@ -147,6 +174,7 @@ impl AnimationWindow {
         window: &Window,
         finished: &mut bool,
         last_update: &mut Instant,
+        time_accumulator: &mut f32,
         dt: Duration,
     ) {
         match code {
@@ -156,11 +184,19 @@ impl AnimationWindow {
             }
             KeyCode::Space | KeyCode::KeyP => {
                 self.project.paused = !self.project.paused;
+                self.project.timeline.state = if self.project.paused {
+                    crate::core::timeline::PlaybackState::Paused
+                } else {
+                    crate::core::timeline::PlaybackState::Playing
+                };
                 self.project.speed = 1.0;
             }
             KeyCode::ArrowRight | KeyCode::KeyL => {
-                let target = self.project.current_time + Duration::from_secs(10);
+                let target = self.project.current_time + Duration::from_secs(SEEK_DURATION_SECS);
                 self.project.seek_to(target);
+                self.project.timeline.time = target.as_secs_f32();
+                self.project.timeline.force_compile_frame = true;
+                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
@@ -168,20 +204,27 @@ impl AnimationWindow {
                 let target = self
                     .project
                     .current_time
-                    .saturating_sub(Duration::from_secs(10));
+                    .saturating_sub(Duration::from_secs(SEEK_DURATION_SECS));
                 self.project.seek_to(target);
+                self.project.timeline.time = target.as_secs_f32();
+                self.project.timeline.force_compile_frame = true;
+                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
             KeyCode::Period => {
-                let target = self.project.current_time + dt;
-                self.project.seek_to(target);
+                *time_accumulator += dt.as_secs_f32();
+                self.project.timeline.force_compile_frame = true;
+                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
             KeyCode::Comma => {
                 let target = self.project.current_time.saturating_sub(dt);
                 self.project.seek_to(target);
+                self.project.timeline.time = target.as_secs_f32();
+                self.project.timeline.force_compile_frame = true;
+                self.project.scene.set_dirty(true);
                 *last_update = Instant::now();
                 window.request_redraw();
             }
@@ -194,6 +237,9 @@ impl AnimationWindow {
             KeyCode::KeyR => {
                 self.project.speed = 1.0;
                 self.project.seek_to(Duration::ZERO);
+                self.project.timeline.time = 0.0;
+                self.project.timeline.force_compile_frame = true;
+                self.project.scene.set_dirty(true);
                 *finished = false;
                 *last_update = Instant::now();
                 window.request_redraw();
@@ -209,6 +255,7 @@ impl AnimationWindow {
         last_update: &mut Instant,
         last_hash: &mut u64,
         finished: &mut bool,
+        time_accumulator: &mut f32,
         dt: Duration,
     ) {
         if *finished {
@@ -216,23 +263,41 @@ impl AnimationWindow {
             return;
         }
 
-        let mut elapsed = last_update.elapsed();
-        if elapsed < dt {
+        let elapsed = last_update.elapsed();
+        if elapsed < dt
+            && !self.project.timeline.force_compile_frame
+            && *time_accumulator < dt.as_secs_f32()
+        {
             elwt.set_control_flow(ControlFlow::WaitUntil(*last_update + dt));
             return;
         }
 
-        // Process all pending updates (catch-up)
-        if !self.project.paused {
-            let effective_dt = dt.mul_f32(self.project.speed);
-            while elapsed >= dt {
-                self.project.scene.update(effective_dt);
-                self.project.current_time += effective_dt;
-                elapsed -= dt;
-                *last_update += dt;
-            }
-        } else {
-            *last_update = Instant::now();
+        let real_dt = elapsed.as_secs_f32() * self.project.speed;
+        *last_update = Instant::now();
+
+        // 1. Only feed the accumulator if the timeline is actually playing
+        if let crate::core::timeline::PlaybackState::Playing = self.project.timeline.state {
+            *time_accumulator += real_dt;
+        }
+
+        let target_dt = dt.as_secs_f32();
+        let mut ran_update = false;
+
+        // 2. Consume accumulated time slices deterministically
+        while *time_accumulator >= target_dt {
+            self.project.scene.update(dt);
+            self.project.timeline.time += target_dt;
+            self.project.current_time += dt;
+            *time_accumulator -= target_dt;
+            ran_update = true;
+        }
+
+        // 3. Handle Manual Overrides (Seeks / Frame Steps)
+        if self.project.timeline.force_compile_frame && !ran_update {
+            // Run exactly one evaluation tick to let reactive bindings update spatial properties
+            self.project.scene.update(Duration::ZERO);
+            self.project.scene.set_dirty(true);
+            self.project.timeline.force_compile_frame = false;
         }
 
         // Update indicatif progress bar
@@ -264,7 +329,7 @@ impl AnimationWindow {
         );
 
         let current_hash = self.project.scene.state_hash();
-        if current_hash != *last_hash {
+        if current_hash != *last_hash || self.project.scene.is_dirty() {
             window.request_redraw();
             *last_hash = current_hash;
         }

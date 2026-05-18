@@ -85,7 +85,11 @@ impl VelloRenderer {
     ///
     /// This method resets the internal Vello scene, records all drawing commands from
     /// the `scene_2d`, and submits them to the GPU for presentation.
-    pub fn render(&mut self, scene_2d: &dyn Scene2D, width: u32, height: u32) {
+    pub fn render(&mut self, scene_2d: &mut dyn Scene2D, width: u32, height: u32) {
+        if !scene_2d.is_dirty() {
+            return;
+        }
+
         if let (Some(surface), Some(renderer)) = (&self.surface, &mut self.renderer) {
             self.scene.reset();
             scene_2d.render(&mut self.scene);
@@ -112,6 +116,7 @@ impl VelloRenderer {
                 .unwrap();
 
             surface_texture.present();
+            scene_2d.set_dirty(false);
         }
     }
 }

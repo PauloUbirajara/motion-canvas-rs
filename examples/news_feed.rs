@@ -12,39 +12,12 @@ const YELLOW: Color = Color::rgb8(0xe6, 0xa7, 0x00);
 const GREEN: Color = Color::rgb8(0x25, 0xc2, 0x81);
 const RED: Color = Color::rgb8(0xe1, 0x32, 0x38);
 
-trait HasOpacity {
-    fn opacity_signal(&self) -> Signal<f32>;
-}
-impl HasOpacity for TextNode {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for Circle {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for Rect {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
-}
-impl HasOpacity for Line {
-    fn opacity_signal(&self) -> Signal<f32> {
-        self.opacity.clone()
-    }
+fn show(opacity: &Signal<f32>, d: Duration) -> Box<dyn Animation> {
+    opacity.to(1.0, d).ease(easings::cubic_out).into()
 }
 
-fn show(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
-    n.opacity_signal()
-        .to(1.0, d)
-        .ease(easings::cubic_out)
-        .into()
-}
-
-fn hide(n: &impl HasOpacity, d: Duration) -> Box<dyn Animation> {
-    n.opacity_signal().to(0.0, d).ease(easings::cubic_in).into()
+fn hide(opacity: &Signal<f32>, d: Duration) -> Box<dyn Animation> {
+    opacity.to(0.0, d).ease(easings::cubic_in).into()
 }
 
 // Helper for boxes to ensure they start completely hidden and slightly scaled down
@@ -282,7 +255,7 @@ fn main() {
     project.scene.video_timeline.add(chain![
         wait(Duration::from_millis(500)),
         all![
-            show(&title, appear_dur),
+            show(&title.opacity, appear_dur),
             title
                 .scale
                 .to(Vec2::new(1.0, 1.0), appear_dur)
@@ -292,40 +265,40 @@ fn main() {
         sequence![
             Duration::from_millis(60),
             all![
-                show(&user_box, appear_dur),
+                show(&user_box.opacity, appear_dur),
                 user_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&user_label, appear_dur),
+                show(&user_label.opacity, appear_dur),
                 user_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_lb, appear_dur),
+                show(&line_lb.opacity, appear_dur),
                 line_lb.end.to(lb_end, appear_dur).ease(smooth),
-                show(&lb_box, appear_dur),
+                show(&lb_box.opacity, appear_dur),
                 lb_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&lb_label, appear_dur),
+                show(&lb_label.opacity, appear_dur),
                 lb_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_ws, appear_dur),
+                show(&line_ws.opacity, appear_dur),
                 line_ws.end.to(ws_end, appear_dur).ease(smooth),
-                show(&ws_box, appear_dur),
+                show(&ws_box.opacity, appear_dur),
                 ws_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&ws_label, appear_dur),
+                show(&ws_label.opacity, appear_dur),
                 ws_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
@@ -335,42 +308,42 @@ fn main() {
         sequence![
             Duration::from_millis(60),
             all![
-                show(&line_post, appear_dur),
+                show(&line_post.opacity, appear_dur),
                 line_post.end.to(post_end, appear_dur).ease(smooth),
-                show(&post_box, appear_dur),
+                show(&post_box.opacity, appear_dur),
                 post_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&post_label, appear_dur),
+                show(&post_label.opacity, appear_dur),
                 post_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_fanout, appear_dur),
+                show(&line_fanout.opacity, appear_dur),
                 line_fanout.end.to(fanout_end, appear_dur).ease(smooth),
-                show(&fanout_box, appear_dur),
+                show(&fanout_box.opacity, appear_dur),
                 fanout_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&fanout_label, appear_dur),
+                show(&fanout_label.opacity, appear_dur),
                 fanout_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_notif, appear_dur),
+                show(&line_notif.opacity, appear_dur),
                 line_notif.end.to(notif_end, appear_dur).ease(smooth),
-                show(&notif_box, appear_dur),
+                show(&notif_box.opacity, appear_dur),
                 notif_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&notif_label, appear_dur),
+                show(&notif_label.opacity, appear_dur),
                 notif_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
@@ -380,90 +353,90 @@ fn main() {
         sequence![
             Duration::from_millis(60),
             all![
-                show(&line_post_cache, appear_dur),
+                show(&line_post_cache.opacity, appear_dur),
                 line_post_cache
                     .end
                     .to(post_cache_end, appear_dur)
                     .ease(smooth),
-                show(&post_cache_box, appear_dur),
+                show(&post_cache_box.opacity, appear_dur),
                 post_cache_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&post_cache_label, appear_dur),
+                show(&post_cache_label.opacity, appear_dur),
                 post_cache_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_post_db, appear_dur),
+                show(&line_post_db.opacity, appear_dur),
                 line_post_db.end.to(post_db_end, appear_dur).ease(smooth),
-                show(&post_db_box, appear_dur),
+                show(&post_db_box.opacity, appear_dur),
                 post_db_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&post_db_label, appear_dur),
+                show(&post_db_label.opacity, appear_dur),
                 post_db_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_nf_cache, appear_dur),
+                show(&line_nf_cache.opacity, appear_dur),
                 line_nf_cache.end.to(nf_cache_end, appear_dur).ease(smooth),
-                show(&nf_cache_box, appear_dur),
+                show(&nf_cache_box.opacity, appear_dur),
                 nf_cache_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&nf_cache_label, appear_dur),
+                show(&nf_cache_label.opacity, appear_dur),
                 nf_cache_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_graph_db, appear_dur),
+                show(&line_graph_db.opacity, appear_dur),
                 line_graph_db.end.to(graph_db_end, appear_dur).ease(smooth),
-                show(&graph_db_box, appear_dur),
+                show(&graph_db_box.opacity, appear_dur),
                 graph_db_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&graph_db_label, appear_dur),
+                show(&graph_db_label.opacity, appear_dur),
                 graph_db_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_user_cache, appear_dur),
+                show(&line_user_cache.opacity, appear_dur),
                 line_user_cache
                     .end
                     .to(user_cache_end, appear_dur)
                     .ease(smooth),
-                show(&user_cache_box, appear_dur),
+                show(&user_cache_box.opacity, appear_dur),
                 user_cache_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&user_cache_label, appear_dur),
+                show(&user_cache_label.opacity, appear_dur),
                 user_cache_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
             ],
             all![
-                show(&line_user_db, appear_dur),
+                show(&line_user_db.opacity, appear_dur),
                 line_user_db.end.to(user_db_end, appear_dur).ease(smooth),
-                show(&user_db_box, appear_dur),
+                show(&user_db_box.opacity, appear_dur),
                 user_db_box
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
                     .ease(fast_in),
-                show(&user_db_label, appear_dur),
+                show(&user_db_label.opacity, appear_dur),
                 user_db_label
                     .scale
                     .to(Vec2::new(1.0, 1.0), appear_dur)
@@ -475,8 +448,8 @@ fn main() {
         //  SCENARIO 1: CACHE MISS
         // ==========================================
         all![
-            show(&case1, appear_dur),
-            show(&packet, Duration::from_millis(200)),
+            show(&case1.opacity, appear_dur),
+            show(&packet.opacity, Duration::from_millis(200)),
             packet.fill_color.to(GREEN, Duration::from_millis(0)), // Start healthy
             packet
                 .scale
@@ -505,7 +478,7 @@ fn main() {
                 .position
                 .to(Vec2::new(1280.0, 620.0), move_dur)
                 .ease(smooth),
-            delay![move_dur / 2, show(&step1, appear_dur)]
+            delay![move_dur / 2, show(&step1.opacity, appear_dur)]
         ],
         packet
             .position
@@ -517,7 +490,7 @@ fn main() {
                 .position
                 .to(Vec2::new(1200.0, 720.0), move_dur)
                 .ease(smooth),
-            delay![move_dur / 2, show(&step2, appear_dur)]
+            delay![move_dur / 2, show(&step2.opacity, appear_dur)]
         ],
         // Alert Miss: Flash Yellow and head to DB
         all![
@@ -555,7 +528,7 @@ fn main() {
                 .position
                 .to(Vec2::new(960.0, 720.0), move_dur)
                 .ease(smooth),
-            delay![move_dur / 2, show(&step3, appear_dur)]
+            delay![move_dur / 2, show(&step3.opacity, appear_dur)]
         ],
         packet
             .position
@@ -577,19 +550,19 @@ fn main() {
             .ease(smooth),
         // Hide packet & Case states
         all![
-            hide(&packet, Duration::from_millis(200)),
-            hide(&case1, appear_dur),
-            hide(&step1, appear_dur),
-            hide(&step2, appear_dur),
-            hide(&step3, appear_dur),
+            hide(&packet.opacity, Duration::from_millis(200)),
+            hide(&case1.opacity, appear_dur),
+            hide(&step1.opacity, appear_dur),
+            hide(&step2.opacity, appear_dur),
+            hide(&step3.opacity, appear_dur),
         ],
         wait(Duration::from_secs(1)),
         // ==========================================
         //  SCENARIO 2: CACHE HIT
         // ==========================================
         all![
-            show(&case2, appear_dur),
-            show(&packet, Duration::from_millis(200)),
+            show(&case2.opacity, appear_dur),
+            show(&packet.opacity, Duration::from_millis(200)),
             packet
                 .position
                 .to(Vec2::new(960.0, 130.0), Duration::from_millis(0)),
@@ -616,7 +589,7 @@ fn main() {
                 .position
                 .to(Vec2::new(1280.0, 620.0), move_dur)
                 .ease(smooth),
-            delay![move_dur / 2, show(&step1, appear_dur)]
+            delay![move_dur / 2, show(&step1.opacity, appear_dur)]
         ],
         packet
             .position
@@ -628,7 +601,7 @@ fn main() {
                 .position
                 .to(Vec2::new(1200.0, 720.0), move_dur)
                 .ease(smooth),
-            delay![move_dur / 2, show(&step2, appear_dur)]
+            delay![move_dur / 2, show(&step2.opacity, appear_dur)]
         ],
         packet
             .position
@@ -640,7 +613,7 @@ fn main() {
                 .position
                 .to(Vec2::new(960.0, 720.0), move_dur)
                 .ease(smooth),
-            delay![move_dur / 2, show(&step3, appear_dur)]
+            delay![move_dur / 2, show(&step3.opacity, appear_dur)]
         ],
         packet
             .position
@@ -660,19 +633,19 @@ fn main() {
             .to(Vec2::new(960.0, 130.0), move_dur)
             .ease(smooth),
         all![
-            hide(&packet, Duration::from_millis(200)),
-            hide(&case2, appear_dur),
-            hide(&step1, appear_dur),
-            hide(&step2, appear_dur),
-            hide(&step3, appear_dur),
+            hide(&packet.opacity, Duration::from_millis(200)),
+            hide(&case2.opacity, appear_dur),
+            hide(&step1.opacity, appear_dur),
+            hide(&step2.opacity, appear_dur),
+            hide(&step3.opacity, appear_dur),
         ],
         wait(Duration::from_secs(1)),
         // ==========================================
         //  SCENARIO 3: DROPPED PACKET
         // ==========================================
         all![
-            show(&case3, appear_dur),
-            show(&packet, Duration::from_millis(200)),
+            show(&case3.opacity, appear_dur),
+            show(&packet.opacity, Duration::from_millis(200)),
             packet.fill_color.to(GREEN, Duration::from_millis(0)),
             packet
                 .position
@@ -704,7 +677,7 @@ fn main() {
                         .ease(easings::elastic_out),
                 ],
                 all![
-                    hide(&packet, Duration::from_millis(200)),
+                    hide(&packet.opacity, Duration::from_millis(200)),
                     packet
                         .scale
                         .to(Vec2::new(0.0, 0.0), Duration::from_millis(200))
@@ -712,16 +685,16 @@ fn main() {
                 ]
             ]
         ],
-        hide(&case3, appear_dur),
+        hide(&case3.opacity, appear_dur),
         wait(Duration::from_secs(1)),
         // ==========================================
         //  SCENARIO 4: PARALLEL PUBLISH
         // ==========================================
         all![
-            show(&case4, appear_dur),
-            show(&packet, Duration::from_millis(200)),
-            show(&packet_post, Duration::from_millis(200)),
-            show(&packet_notif, Duration::from_millis(200)),
+            show(&case4.opacity, appear_dur),
+            show(&packet.opacity, Duration::from_millis(200)),
+            show(&packet_post.opacity, Duration::from_millis(200)),
+            show(&packet_notif.opacity, Duration::from_millis(200)),
             packet.fill_color.to(GREEN, Duration::from_millis(0)),
             packet
                 .position
@@ -810,7 +783,7 @@ fn main() {
                 .position
                 .to(Vec2::new(1500.0, 520.0), move_dur)
                 .ease(smooth),
-            hide(&packet_notif, move_dur),
+            hide(&packet_notif.opacity, move_dur),
         ],
         wait(Duration::from_millis(200)),
         // Return
@@ -856,9 +829,9 @@ fn main() {
         ],
         // Hide
         all![
-            hide(&packet, Duration::from_millis(200)),
-            hide(&packet_post, Duration::from_millis(200)),
-            hide(&case4, appear_dur),
+            hide(&packet.opacity, Duration::from_millis(200)),
+            hide(&packet_post.opacity, Duration::from_millis(200)),
+            hide(&case4.opacity, appear_dur),
         ],
         wait(Duration::from_secs(2)),
     ]);

@@ -1,14 +1,14 @@
 #![cfg(feature = "svg")]
-use once_cell::sync::Lazy;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use std::sync::{Arc, Mutex};
 use usvg::Tree;
 
 #[cfg(feature = "runtime")]
 use vello::Scene;
 
-static SVG_CACHE: Lazy<Mutex<HashMap<String, (Arc<Tree>, Arc<Scene>)>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+static SVG_CACHE: LazyLock<Mutex<HashMap<String, (Arc<Tree>, Arc<Scene>)>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Global manager for loading and caching SVG assets.
 pub struct SvgManager;
