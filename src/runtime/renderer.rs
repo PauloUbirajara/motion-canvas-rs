@@ -66,7 +66,7 @@ impl VelloRenderer {
                         surface_format: Some(surface.format),
                         use_cpu: !self.use_gpu,
                         antialiasing_support: vello::AaSupport::all(),
-                        num_init_threads: std::num::NonZeroUsize::new(1),
+                        num_init_threads: None,
                     },
                 )
             })
