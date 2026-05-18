@@ -364,6 +364,13 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
         pb.set_position(current_saved as u64);
         pb.set_message(format!("(Skipped {})", skipped_count));
 
+        // Periodically save the cache to disk to prevent losing progress if interrupted
+        if project.use_cache && frame_count > 0 && frame_count % project.cache_write_interval == 0 {
+            if let Ok(json) = serde_json::to_string_pretty(&manifest) {
+                let _ = fs::write(&cache_file, json);
+            }
+        }
+
         let current_time = Duration::from_secs_f32(frame_count as f32 / project.fps as f32);
         audio_handler.collect_events(&mut project.scene, current_time);
 
