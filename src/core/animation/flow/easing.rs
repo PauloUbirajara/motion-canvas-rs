@@ -1,5 +1,6 @@
 use super::all::All;
 use crate::core::animation::base::Animation;
+use crate::core::animation::AnyAnimation;
 
 /// Runs multiple animations in parallel with a shared easing override.
 ///
@@ -26,11 +27,8 @@ use crate::core::animation::base::Animation;
 ///     ]
 /// );
 /// ```
-pub fn with_easing(
-    easing: fn(f32) -> f32,
-    animations: Vec<Box<dyn Animation>>,
-) -> Box<dyn Animation> {
+pub fn with_easing(easing: fn(f32) -> f32, animations: Vec<AnyAnimation>) -> AnyAnimation {
     let mut all = All::new(animations);
     all.set_easing(easing);
-    Box::new(all)
+    AnyAnimation::All(all)
 }

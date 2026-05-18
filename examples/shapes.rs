@@ -64,14 +64,14 @@ fn main() {
         .with_fill(Color::rgb8(0xe6, 0xa7, 0x00));
 
     // Add all nodes to the scene
-    project.scene.add(Box::new(circle));
-    project.scene.add(Box::new(circle_text));
-    project.scene.add(Box::new(rect));
-    project.scene.add(Box::new(rect_text));
-    project.scene.add(Box::new(line));
-    project.scene.add(Box::new(line_text));
-    project.scene.add(Box::new(poly));
-    project.scene.add(Box::new(poly_text));
+    project.scene.add(circle);
+    project.scene.add(circle_text);
+    project.scene.add(rect);
+    project.scene.add(rect_text);
+    project.scene.add(line);
+    project.scene.add(line_text);
+    project.scene.add(poly);
+    project.scene.add(poly_text);
 
     project.show().expect("Failed to render");
 }

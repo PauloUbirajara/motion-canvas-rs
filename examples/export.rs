@@ -22,8 +22,8 @@ fn main() {
         .with_font_size(40.0)
         .with_fill(Color::rgb8(0xf2, 0xf2, 0xf2)); // White
 
-    project.scene.add(Box::new(circle.clone()));
-    project.scene.add(Box::new(text.clone()));
+    project.scene.add(circle.clone());
+    project.scene.add(text.clone());
 
     // 3. Define Animations (Color and Font Size)
     project.scene.video_timeline.add(all![

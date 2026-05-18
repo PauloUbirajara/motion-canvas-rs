@@ -24,7 +24,7 @@ pub trait Scene2D {
 /// and timelines for video and audio animations.
 pub struct BaseScene {
     /// The collection of visual nodes in the scene.
-    pub nodes: Vec<Box<dyn Node>>,
+    pub nodes: Vec<crate::core::animation::AnyNode>,
     /// The primary timeline for video animations.
     pub video_timeline: crate::core::Timeline,
     /// The separate timeline for purely audio events.
@@ -45,8 +45,8 @@ impl BaseScene {
     }
 
     /// Adds a node to the scene.
-    pub fn add(&mut self, node: Box<dyn Node>) {
-        self.nodes.push(node);
+    pub fn add(&mut self, node: impl Into<crate::core::animation::AnyNode>) {
+        self.nodes.push(node.into());
     }
 
     /// Resets all timelines and nodes within the scene to their initial state.

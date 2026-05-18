@@ -139,10 +139,10 @@ fn main() {
         .with_opacity(0.0);
 
     for n in [&s1_title, &s1_sub, &s1_built, &s1_desc, &s1_desc2] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s1_line.clone()));
-    project.scene.add(Box::new(s1_logo.clone()));
+    project.scene.add(s1_line.clone());
+    project.scene.add(s1_logo.clone());
 
     // =====================================================================
     //  S2: THE 5 STEPS
@@ -161,9 +161,9 @@ fn main() {
         .map(|(i, s)| body(s, 120.0 + i as f32 * 35.0))
         .collect();
 
-    project.scene.add(Box::new(s2_h.clone()));
+    project.scene.add(s2_h.clone());
     for t in &s2_texts {
-        project.scene.add(Box::new(t.clone()));
+        project.scene.add(t.clone());
     }
 
     // =====================================================================
@@ -213,9 +213,9 @@ fn main() {
         &s3_note2,
         &s3_note3,
     ] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s3_code.clone()));
+    project.scene.add(s3_code.clone());
 
     // =====================================================================
     //  S4: WHAT IS impl?  +  Builder pattern
@@ -257,10 +257,10 @@ fn main() {
     );
 
     for n in [&s4_h, &s4_explain, &s4_analogy, &s4_usage, &s4_note] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s4_code.clone()));
-    project.scene.add(Box::new(s4_usage_code.clone()));
+    project.scene.add(s4_code.clone());
+    project.scene.add(s4_usage_code.clone());
 
     // =====================================================================
     //  S5: WHAT IS A TRAIT?  +  The Node trait
@@ -315,9 +315,9 @@ fn main() {
         &s5_c,
         &s5_every,
     ] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s5_code.clone()));
+    project.scene.add(s5_code.clone());
 
     // =====================================================================
     //  S6: NODE GALLERY  (visual demo)
@@ -370,19 +370,19 @@ fn main() {
 }
 // 'Box' = heap-allocated,  'dyn Node' = any type implementing Node
 // Like List<INode> in Java or Array<Node> in TypeScript
-project.scene.add(Box::new(circle));  // wrap + add",
+project.scene.add(circle);  // wrap + add",
         405.0,
     );
 
     for n in [&s6_h, &s6_sub, &lc, &lr, &ll, &lp, &lt, &s6_box_h, &s6_box1] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(demo_c.clone()));
-    project.scene.add(Box::new(demo_r.clone()));
-    project.scene.add(Box::new(demo_l.clone()));
-    project.scene.add(Box::new(demo_p.clone()));
-    project.scene.add(Box::new(demo_t.clone()));
-    project.scene.add(Box::new(s6_box_code.clone()));
+    project.scene.add(demo_c.clone());
+    project.scene.add(demo_r.clone());
+    project.scene.add(demo_l.clone());
+    project.scene.add(demo_p.clone());
+    project.scene.add(demo_t.clone());
+    project.scene.add(s6_box_code.clone());
 
     // =====================================================================
     //  S7: SIGNALS — The Reactive Core
@@ -433,11 +433,11 @@ circle.radius.to(100.0, Duration::from_secs(1));
     let sig_lbl = dim("Live Signal demo", 900.0, 150.0);
 
     for n in [&s7_h, &s7_sub, &s7_arc, &s7_mutex, &s7_why, &sig_lbl] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s7_code.clone()));
-    project.scene.add(Box::new(s7_diagram_code.clone()));
-    project.scene.add(Box::new(sig_demo.clone()));
+    project.scene.add(s7_code.clone());
+    project.scene.add(s7_diagram_code.clone());
+    project.scene.add(sig_demo.clone());
 
     // =====================================================================
     //  S8: SIGNAL TWEEN — How animations work per-frame
@@ -510,15 +510,15 @@ circle.radius.to(100.0, Duration::from_secs(1));
     for n in [
         &s8_h, &s8_sub, &s8_how, &s8_lazy, &s8_lazy2, &plbl0, &plbl1, &tween_lbl,
     ] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s8_code.clone()));
+    project.scene.add(s8_code.clone());
     for t in &s8_step_texts {
-        project.scene.add(Box::new(t.clone()));
+        project.scene.add(t.clone());
     }
-    project.scene.add(Box::new(prog_bg.clone()));
-    project.scene.add(Box::new(prog_fill.clone()));
-    project.scene.add(Box::new(tween_ball.clone()));
+    project.scene.add(prog_bg.clone());
+    project.scene.add(prog_fill.clone());
+    project.scene.add(tween_ball.clone());
 
     // =====================================================================
     //  S9: TWEENABLE + EASINGS
@@ -558,15 +558,15 @@ circle.radius.to(100.0, Duration::from_secs(1));
             .with_fill(ecolors[i])
             .with_opacity(0.0);
         let l = dim(name, LEFT, y - 5.0);
-        project.scene.add(Box::new(b.clone()));
-        project.scene.add(Box::new(l.clone()));
+        project.scene.add(b.clone());
+        project.scene.add(l.clone());
         eballs.push(b);
         elabels.push(l);
     }
-    project.scene.add(Box::new(s9_h.clone()));
-    project.scene.add(Box::new(s9_code.clone()));
-    project.scene.add(Box::new(s9_easing_h.clone()));
-    project.scene.add(Box::new(s9_easing_desc.clone()));
+    project.scene.add(s9_h.clone());
+    project.scene.add(s9_code.clone());
+    project.scene.add(s9_easing_h.clone());
+    project.scene.add(s9_easing_desc.clone());
 
     // =====================================================================
     //  S10: FLOW CONTROLS
@@ -624,20 +624,20 @@ loop_anim![ a, 3 ]          // repeat 3 times",
         510.0,
     );
 
-    project.scene.add(Box::new(s10_h.clone()));
-    project.scene.add(Box::new(s10_sub.clone()));
-    project.scene.add(Box::new(s10_chain_h.clone()));
-    project.scene.add(Box::new(s10_all_h.clone()));
-    project.scene.add(Box::new(s10_seq_h.clone()));
-    project.scene.add(Box::new(s10_code.clone()));
+    project.scene.add(s10_h.clone());
+    project.scene.add(s10_sub.clone());
+    project.scene.add(s10_chain_h.clone());
+    project.scene.add(s10_all_h.clone());
+    project.scene.add(s10_seq_h.clone());
+    project.scene.add(s10_code.clone());
     for d in &chain_d {
-        project.scene.add(Box::new(d.clone()));
+        project.scene.add(d.clone());
     }
     for d in &all_d {
-        project.scene.add(Box::new(d.clone()));
+        project.scene.add(d.clone());
     }
     for d in &seq_d {
-        project.scene.add(Box::new(d.clone()));
+        project.scene.add(d.clone());
     }
 
     // =====================================================================
@@ -684,13 +684,13 @@ impl Timeline {
         .map(|(i, s)| body(s, 505.0 + i as f32 * 28.0))
         .collect();
 
-    project.scene.add(Box::new(s11_h.clone()));
-    project.scene.add(Box::new(s11_code.clone()));
+    project.scene.add(s11_h.clone());
+    project.scene.add(s11_code.clone());
     for n in [&s11_leftover, &s11_leftover2, &s11_render_h] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
     for t in &s11_render_texts {
-        project.scene.add(Box::new(t.clone()));
+        project.scene.add(t.clone());
     }
 
     // =====================================================================
@@ -735,9 +735,9 @@ impl Timeline {
     );
 
     for n in [&s12_h, &s12_sub, &s12_why, &s12_why2, &s12_hash] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s12_code.clone()));
+    project.scene.add(s12_code.clone());
 
     // =====================================================================
     //  S13: HEADLESS EXPORT — GPU without a window
@@ -776,9 +776,9 @@ fn export_frame(&mut self, scene) -> Vec<u8> {
     );
 
     for n in [&s13_h, &s13_sub, &s13_cache, &s13_ffmpeg, &s13_parallel] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s13_code.clone()));
+    project.scene.add(s13_code.clone());
 
     // =====================================================================
     //  S14: ENGINE UTILITIES
@@ -822,9 +822,9 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
     );
 
     for n in [&s14_h, &s14_sub, &s14_lazy, &s14_arc, &s14_hash] {
-        project.scene.add(Box::new(n.clone()));
+        project.scene.add(n.clone());
     }
-    project.scene.add(Box::new(s14_code.clone()));
+    project.scene.add(s14_code.clone());
 
     // =====================================================================
     //  S15: FINALE
@@ -856,11 +856,11 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         .collect();
     let fin_hint = dim("cargo run --example getting_started", LEFT, 570.0);
 
-    project.scene.add(Box::new(fin.clone()));
+    project.scene.add(fin.clone());
     for t in &fin_texts {
-        project.scene.add(Box::new(t.clone()));
+        project.scene.add(t.clone());
     }
-    project.scene.add(Box::new(fin_hint.clone()));
+    project.scene.add(fin_hint.clone());
 
     // =====================================================================
     //  ANIMATION TIMELINE

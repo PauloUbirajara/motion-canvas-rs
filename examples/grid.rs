@@ -32,9 +32,9 @@ fn main() {
     });
 
     // Add to scene
-    project.scene.add(Box::new(grid.clone()));
-    project.scene.add(Box::new(text_node));
-    project.scene.add(Box::new(text_link));
+    project.scene.add(grid.clone());
+    project.scene.add(text_node);
+    project.scene.add(text_link);
 
     project.scene.video_timeline.add(chain![
         grid.opacity

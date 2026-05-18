@@ -1,4 +1,5 @@
 use crate::core::animation::base::{Animation, AudioEvent};
+use crate::core::animation::AnyAnimation;
 use std::time::Duration;
 
 /// An animation that runs multiple animations in parallel, but with a staggered start time.
@@ -7,14 +8,14 @@ use std::time::Duration;
 /// time offset between the start of each child animation. This is a common
 /// technique for animating lists or groups of items.
 pub struct Sequence {
-    pub(crate) items: Vec<(Duration, Box<dyn Animation>)>,
+    pub(crate) items: Vec<(Duration, AnyAnimation)>,
     pub(crate) finished: Vec<bool>,
     pub(crate) elapsed: Duration,
 }
 
 impl Sequence {
     /// Creates a new `Sequence` with the provided stagger delay and child animations.
-    pub fn new(stagger: Duration, animations: Vec<Box<dyn Animation>>) -> Self {
+    pub fn new(stagger: Duration, animations: Vec<AnyAnimation>) -> Self {
         let len = animations.len();
         let items = animations
             .into_iter()
@@ -142,6 +143,6 @@ impl Animation for Sequence {
 ///     node3.position.to(target, dur)
 /// );
 /// ```
-pub fn sequence(stagger: Duration, animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
-    Box::new(Sequence::new(stagger, animations))
+pub fn sequence(stagger: Duration, animations: Vec<AnyAnimation>) -> AnyAnimation {
+    AnyAnimation::Sequence(Sequence::new(stagger, animations))
 }

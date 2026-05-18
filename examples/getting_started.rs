@@ -22,8 +22,8 @@ fn main() {
         .with_fill(Color::rgb8(0xf2, 0xf2, 0xf2)); // White-ish
 
     // 3. Add Nodes to the Scene
-    project.scene.add(Box::new(circle.clone()));
-    project.scene.add(Box::new(text.clone()));
+    project.scene.add(circle.clone());
+    project.scene.add(text.clone());
 
     // 4. Add Animations to the Timeline
     project.scene.video_timeline.add(all![

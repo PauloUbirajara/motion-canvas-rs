@@ -1,4 +1,5 @@
 use crate::core::animation::base::{Animation, AudioEvent};
+use crate::core::animation::AnyAnimation;
 use std::time::Duration;
 
 /// An animation that runs multiple animations sequentially.
@@ -6,13 +7,13 @@ use std::time::Duration;
 /// `Chain` executes its child animations one by one. Only when the current
 /// animation finishes does it move to the next one in the list.
 pub struct Chain {
-    pub(crate) animations: Vec<Box<dyn Animation>>,
+    pub(crate) animations: Vec<AnyAnimation>,
     pub(crate) index: usize,
 }
 
 impl Chain {
     /// Creates a new `Chain` container with the provided animations.
-    pub fn new(animations: Vec<Box<dyn Animation>>) -> Self {
+    pub fn new(animations: Vec<AnyAnimation>) -> Self {
         Self {
             animations,
             index: 0,
@@ -94,6 +95,6 @@ impl Animation for Chain {
 ///     node.position.to(target2, dur),
 /// ];
 /// ```
-pub fn chain(animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
-    Box::new(Chain::new(animations))
+pub fn chain(animations: Vec<AnyAnimation>) -> AnyAnimation {
+    AnyAnimation::Chain(Chain::new(animations))
 }

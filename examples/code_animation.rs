@@ -14,7 +14,7 @@ fn main() {
         .with_theme("Solarized (dark)")
         .with_font("JetBrains Mono");
 
-    project.scene.add(Box::new(code.clone()));
+    project.scene.add(code.clone());
 
     let interval = Duration::from_secs(4);
     let code_duration = Duration::from_secs(1);
@@ -67,8 +67,8 @@ fn main() {
     // 1. Initialize the Project
     // 2. Define Nodes
     // 3. Add Nodes to the Scene
-    project.scene.add(Box::new(circle.clone()));
-    project.scene.add(Box::new(text.clone()));
+    project.scene.add(circle.clone());
+    project.scene.add(text.clone());
 }"#,
             code_duration,
         ),

@@ -1,4 +1,5 @@
 use crate::core::animation::base::{Animation, AudioEvent};
+use crate::core::animation::AnyAnimation;
 use std::time::Duration;
 
 const INFINITE_DURATION_CAP: Duration = Duration::from_secs(3600); // 1 hour cap for infinite loops
@@ -9,8 +10,8 @@ const INFINITE_DURATION_CAP: Duration = Duration::from_secs(3600); // 1 hour cap
 /// Every time the current animation finishes, the factory is called to
 /// create a fresh instance for the next iteration.
 pub struct LoopAnim {
-    pub(crate) factory: Box<dyn Fn() -> Box<dyn Animation> + Send + Sync>,
-    pub(crate) current: Box<dyn Animation>,
+    pub(crate) factory: Box<dyn Fn() -> AnyAnimation + Send + Sync>,
+    pub(crate) current: Box<AnyAnimation>,
     pub(crate) repeat_count: Option<usize>,
     pub(crate) finished_count: usize,
 }
@@ -20,11 +21,8 @@ impl LoopAnim {
     ///
     /// If `count` is `None`, the animation loops infinitely (capped at 1 hour
     /// for timeline duration calculations).
-    pub fn new(
-        factory: Box<dyn Fn() -> Box<dyn Animation> + Send + Sync>,
-        count: Option<usize>,
-    ) -> Self {
-        let current = factory();
+    pub fn new(factory: Box<dyn Fn() -> AnyAnimation + Send + Sync>, count: Option<usize>) -> Self {
+        let current = Box::new(factory());
         Self {
             factory,
             current,
@@ -53,7 +51,7 @@ impl Animation for LoopAnim {
                 }
             }
 
-            self.current = (self.factory)();
+            self.current = Box::new((self.factory)());
             dt = leftover;
             if dt == Duration::ZERO {
                 return (false, Duration::ZERO);
@@ -79,7 +77,7 @@ impl Animation for LoopAnim {
 
     /// Resets the loop counter and recreates the initial animation.
     fn reset(&mut self) {
-        self.current = (self.factory)();
+        self.current = Box::new((self.factory)());
         self.finished_count = 0;
     }
 }
@@ -106,9 +104,9 @@ impl Animation for LoopAnim {
 /// // Repeat infinitely
 /// loop_anim!(node_2.position.to(target, dur), None);
 /// ```
-pub fn loop_anim<F>(factory: F, count: Option<usize>) -> Box<dyn Animation>
+pub fn loop_anim<F>(factory: F, count: Option<usize>) -> AnyAnimation
 where
-    F: Fn() -> Box<dyn Animation> + Send + Sync + 'static,
+    F: Fn() -> AnyAnimation + Send + Sync + 'static,
 {
-    Box::new(LoopAnim::new(Box::new(factory), count))
+    AnyAnimation::Loop(LoopAnim::new(Box::new(factory), count))
 }

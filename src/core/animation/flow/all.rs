@@ -1,4 +1,5 @@
 use crate::core::animation::base::{Animation, AudioEvent};
+use crate::core::animation::AnyAnimation;
 use std::time::Duration;
 
 /// An animation that runs multiple animations in parallel.
@@ -7,13 +8,13 @@ use std::time::Duration;
 /// every frame. It is considered finished only when **every** child animation
 /// has completed.
 pub struct All {
-    pub(crate) animations: Vec<Box<dyn Animation>>,
+    pub(crate) animations: Vec<AnyAnimation>,
     pub(crate) finished: Vec<bool>,
 }
 
 impl All {
     /// Creates a new `All` container with the provided animations.
-    pub fn new(animations: Vec<Box<dyn Animation>>) -> Self {
+    pub fn new(animations: Vec<AnyAnimation>) -> Self {
         let len = animations.len();
         Self {
             animations,
@@ -104,6 +105,6 @@ impl Animation for All {
 ///     node.fill_color.to(Color::BLUE, dur),
 /// ];
 /// ```
-pub fn all(animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
-    Box::new(All::new(animations))
+pub fn all(animations: Vec<AnyAnimation>) -> AnyAnimation {
+    AnyAnimation::All(All::new(animations))
 }

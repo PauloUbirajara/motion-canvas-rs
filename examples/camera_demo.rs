@@ -32,17 +32,17 @@ fn main() {
         .with_position(Vec2::new(0.0, 0.0))
         .with_zoom(1.0);
 
-    project.scene.add(Box::new(camera.clone()));
+    project.scene.add(camera.clone());
 
     // Add HUD text (NOT in camera, so it stays fixed)
-    project.scene.add(Box::new(
+    project.scene.add(
         TextNode::default()
             .with_position(Vec2::new(400.0, 50.0))
             .with_text("Camera Control")
             .with_font_size(60.0)
             .with_fill(Color::WHITE)
             .with_anchor(Vec2::ZERO),
-    ));
+    );
 
     // Animation: Pan, Zoom, and Rotate the camera
     project.scene.video_timeline.add(loop_anim!(

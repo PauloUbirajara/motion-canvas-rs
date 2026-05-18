@@ -5,10 +5,12 @@
 
 pub mod base;
 pub mod binding;
+pub mod enum_defs;
 pub mod flow;
 pub mod tween;
 
 pub use base::*;
 pub use binding::*;
+pub use enum_defs::*;
 pub use flow::*;
 pub use tween::*;

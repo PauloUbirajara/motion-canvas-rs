@@ -659,55 +659,55 @@ fn main() {
     let (p9, t9, s9) = build_scene9();
 
     // ── Add all to scene (all invisible) ──
-    project.scene.add(Box::new(p1.clone()));
-    project.scene.add(Box::new(t1.clone()));
-    project.scene.add(Box::new(s1.clone()));
+    project.scene.add(p1.clone());
+    project.scene.add(t1.clone());
+    project.scene.add(s1.clone());
 
-    project.scene.add(Box::new(p2.clone()));
-    project.scene.add(Box::new(t2.clone()));
-    project.scene.add(Box::new(s2.clone()));
+    project.scene.add(p2.clone());
+    project.scene.add(t2.clone());
+    project.scene.add(s2.clone());
     let labels2_c: Vec<_> = labels2
         .iter()
         .map(|l| {
-            project.scene.add(Box::new(l.clone()));
+            project.scene.add(l.clone());
             l.clone()
         })
         .collect();
 
-    project.scene.add(Box::new(p3.clone()));
-    project.scene.add(Box::new(t3.clone()));
-    project.scene.add(Box::new(s3.clone()));
+    project.scene.add(p3.clone());
+    project.scene.add(t3.clone());
+    project.scene.add(s3.clone());
     let labels3_c: Vec<_> = labels3
         .iter()
         .map(|l| {
-            project.scene.add(Box::new(l.clone()));
+            project.scene.add(l.clone());
             l.clone()
         })
         .collect();
 
-    project.scene.add(Box::new(p4.clone()));
-    project.scene.add(Box::new(t4.clone()));
-    project.scene.add(Box::new(s4.clone()));
+    project.scene.add(p4.clone());
+    project.scene.add(t4.clone());
+    project.scene.add(s4.clone());
 
-    project.scene.add(Box::new(p5.clone()));
-    project.scene.add(Box::new(t5.clone()));
-    project.scene.add(Box::new(s5.clone()));
+    project.scene.add(p5.clone());
+    project.scene.add(t5.clone());
+    project.scene.add(s5.clone());
 
     for link in links5 {
         project.scene.add(link);
     }
 
-    project.scene.add(Box::new(p6.clone()));
-    project.scene.add(Box::new(t6.clone()));
-    project.scene.add(Box::new(s6.clone()));
+    project.scene.add(p6.clone());
+    project.scene.add(t6.clone());
+    project.scene.add(s6.clone());
 
-    project.scene.add(Box::new(p7.clone()));
-    project.scene.add(Box::new(t7.clone()));
-    project.scene.add(Box::new(s7.clone()));
+    project.scene.add(p7.clone());
+    project.scene.add(t7.clone());
+    project.scene.add(s7.clone());
     let labels7_c: Vec<_> = labels7
         .iter()
         .map(|l| {
-            project.scene.add(Box::new(l.clone()));
+            project.scene.add(l.clone());
             l.clone()
         })
         .collect();
@@ -715,14 +715,14 @@ fn main() {
         project.scene.add(binding);
     }
 
-    project.scene.add(Box::new(p8.clone()));
-    project.scene.add(Box::new(t8.clone()));
-    project.scene.add(Box::new(s8.clone()));
-    project.scene.add(Box::new(status8.clone()));
+    project.scene.add(p8.clone());
+    project.scene.add(t8.clone());
+    project.scene.add(s8.clone());
+    project.scene.add(status8.clone());
 
-    project.scene.add(Box::new(p9.clone()));
-    project.scene.add(Box::new(t9.clone()));
-    project.scene.add(Box::new(s9.clone()));
+    project.scene.add(p9.clone());
+    project.scene.add(t9.clone());
+    project.scene.add(s9.clone());
 
     // ── Timeline: one scene at a time ──
     project.scene.video_timeline.add(chain![

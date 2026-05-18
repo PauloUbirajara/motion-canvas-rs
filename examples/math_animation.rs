@@ -15,7 +15,7 @@ fn main() {
         .with_equation("y = a x^2")
         .with_font_size(48.0)
         .with_fill(Color::rgb8(0xf2, 0xf2, 0xf2));
-    project.scene.add(Box::new(tex.clone()));
+    project.scene.add(tex.clone());
 
     // 3. Define Animation Sequence
     project.scene.video_timeline.add(loop_anim(

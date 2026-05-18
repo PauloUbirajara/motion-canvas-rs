@@ -104,8 +104,8 @@ fn main() {
         .with_font_size(48.0)
         .with_fill(Color::WHITE);
 
-    project.scene.add(Box::new(circle.clone()));
-    project.scene.add(Box::new(text.clone()));
+    project.scene.add(circle.clone());
+    project.scene.add(text.clone());
 
     project.scene.video_timeline.add(all![
         circle.radius.to(100.0, Duration::from_secs(1)),
