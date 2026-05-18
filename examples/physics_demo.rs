@@ -285,21 +285,18 @@ fn build_scene5() -> (
     .with_mode(PhysicsMode::Kinematic);
 
     // 3. Connect bindings mapping 2x horizontal sin and 3x vertical cos oscillation waves
-    let t_clone1 = time_var.clone();
     let floor_link = floor.position.bind(time_var.clone(), move |t| {
         let dx = (t * 4.0).sin() * 70.0; // 2x Horizontal speed wave frequency
         let dy = (t * 6.0).cos() * 15.0; // 3x Vertical speed wave frequency
         Vec2::new(CX + dx, 450.0 + dy)
     });
 
-    let t_clone2 = time_var.clone();
     let left_link = left_wall.position.bind(time_var.clone(), move |t| {
         let dx = (t * 4.0).sin() * 70.0;
         let dy = (t * 6.0).cos() * 15.0;
         Vec2::new((CX - 200.0) + dx, 350.0 + dy)
     });
 
-    let t_clone3 = time_var.clone();
     let right_link = right_wall.position.bind(time_var.clone(), move |t| {
         let dx = (t * 4.0).sin() * 70.0;
         let dy = (t * 6.0).cos() * 15.0;
@@ -423,7 +420,14 @@ fn build_scene6() -> (PhysicsNode, TextNode, TextNode) {
     (p, title, subtitle)
 }
 
-fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
+fn build_scene7() -> (
+    PhysicsNode,
+    TextNode,
+    TextNode,
+    Vec<RigidBodyNode>,
+    Vec<TextNode>,
+    Vec<Box<dyn Node>>,
+) {
     let title = make_title("Friction");
     let subtitle = make_subtitle("Varying friction: 0.0 (ice) · 0.7 (medium) · 0.9 (rough)");
 
@@ -470,55 +474,125 @@ fn build_scene7() -> (PhysicsNode, TextNode, TextNode, Vec<TextNode>) {
         .with_friction(0.9),
     );
 
-    p.add_dynamic(
-        RigidBodyNode::new(Box::new(
-            Rect::default()
-                .with_size(Vec2::new(40.0, 40.0))
-                .with_fill(ACCENT_TEAL)
-                .with_radius(3.0),
-        ))
-        .with_position(Vec2::new(190.0, 150.0))
-        .with_shape(PhysicsShape::Cuboid(Vec2::new(20.0, 20.0)))
-        .with_bounciness(0.1)
-        .with_friction(0.0),
-    );
-
-    p.add_dynamic(
-        RigidBodyNode::new(Box::new(
-            Rect::default()
-                .with_size(Vec2::new(40.0, 40.0))
-                .with_fill(ACCENT_YELLOW)
-                .with_radius(3.0),
-        ))
-        .with_position(Vec2::new(430.0, 150.0))
-        .with_shape(PhysicsShape::Cuboid(Vec2::new(20.0, 20.0)))
-        .with_bounciness(0.1)
-        .with_friction(0.2),
-    );
-
-    p.add_dynamic(
-        RigidBodyNode::new(Box::new(
-            Rect::default()
-                .with_size(Vec2::new(40.0, 40.0))
-                .with_fill(ACCENT_RED)
-                .with_radius(3.0),
-        ))
-        .with_position(Vec2::new(670.0, 150.0))
-        .with_shape(PhysicsShape::Cuboid(Vec2::new(20.0, 20.0)))
-        .with_bounciness(0.1)
-        .with_friction(0.9),
-    );
-
-    let labels = vec![
-        make_label("Friction: 0.0", 240.0, 420.0, ACCENT_TEAL),
-        make_label("Friction: 0.2", 480.0, 420.0, ACCENT_YELLOW),
-        make_label("Friction: 0.9", 720.0, 420.0, ACCENT_RED),
+    // Create cubes with refs before adding to physics
+    let cube_configs: [(f32, Color, f32, &str); 3] = [
+        (190.0, ACCENT_TEAL, 0.0, "Friction: 0.0"),
+        (430.0, ACCENT_YELLOW, 0.2, "Friction: 0.7"),
+        (670.0, ACCENT_RED, 0.9, "Friction: 0.9"),
     ];
 
-    (p, title, subtitle, labels)
+    let mut cube_refs = Vec::new();
+    let mut labels = Vec::new();
+    let mut bindings: Vec<Box<dyn Node>> = Vec::new();
+
+    for (x, color, friction, label_text) in &cube_configs {
+        let cube = RigidBodyNode::new(Box::new(
+            Rect::default()
+                .with_size(Vec2::new(40.0, 40.0))
+                .with_fill(*color)
+                .with_radius(3.0),
+        ))
+        .with_position(Vec2::new(*x, 150.0))
+        .with_shape(PhysicsShape::Cuboid(Vec2::new(20.0, 20.0)))
+        .with_bounciness(0.1)
+        .with_friction(*friction);
+
+        // Floating label that tracks the cube
+        let label = TextNode::default()
+            .with_text(label_text)
+            .with_font_size(14.0)
+            .with_fill(*color)
+            .with_font("JetBrains Mono")
+            .with_anchor(Vec2::ZERO)
+            .with_opacity(0.0);
+
+        // Bind label position to cube position (offset above)
+        let binding = label
+            .position
+            .bind(cube.position.clone(), |pos| Vec2::new(pos.x, pos.y - 35.0));
+
+        cube_refs.push(cube.clone());
+        labels.push(label);
+        bindings.push(Box::new(binding));
+
+        p.add_dynamic(cube);
+    }
+
+    (p, title, subtitle, cube_refs, labels, bindings)
 }
 
-fn build_scene8() -> (PhysicsNode, TextNode, TextNode) {
+fn build_scene8() -> (
+    PhysicsNode,
+    TextNode,
+    TextNode,
+    RigidBodyNode,
+    Vec<RigidBodyNode>,
+    TextNode,
+) {
+    let title = make_title("Mode Switching");
+    let subtitle =
+        make_subtitle("Disabled → Dynamic → Kinematic — seamless signal ↔ physics transitions");
+
+    let mut p = PhysicsNode::new().with_opacity(0.0);
+
+    p.add_static(make_floor(460.0, 800.0, FLOOR_COLOR));
+    // Side walls for kinematic phase
+    p.add_static(make_wall(80.0, 350.0, 20.0, 300.0));
+    p.add_static(make_wall(880.0, 350.0, 20.0, 300.0));
+
+    // Main text body — starts Disabled, positioned at center
+    let text_body = RigidBodyNode::new(Box::new(
+        TextNode::default()
+            .with_text("motion-canvas-rs")
+            .with_font_size(36.0)
+            .with_fill(ACCENT_BLUE)
+            .with_font("JetBrains Mono")
+            .with_anchor(Vec2::ZERO),
+    ))
+    .with_position(Vec2::new(CX, 270.0))
+    .with_shape(PhysicsShape::Cuboid(Vec2::new(170.0, 20.0)))
+    .with_bounciness(0.3)
+    .with_mode(PhysicsMode::Disabled);
+
+    // Companion balls — spawn above, appear during Kinematic phase
+    let ball_colors = [ACCENT_RED, ACCENT_YELLOW, ACCENT_EMERALD, ACCENT_PURPLE];
+    let mut balls = Vec::new();
+    for (i, color) in ball_colors.iter().enumerate() {
+        let ball = RigidBodyNode::new(Box::new(
+            Circle::default().with_radius(15.0).with_fill(*color),
+        ))
+        .with_position(Vec2::new(
+            CX - 90.0 + (i as f32 * 60.0),
+            -50.0 - (i as f32 * 40.0),
+        ))
+        .with_shape(PhysicsShape::Ball(15.0))
+        .with_bounciness(0.6)
+        .with_mode(PhysicsMode::Disabled);
+        balls.push(ball);
+    }
+
+    // Status label
+    let status = TextNode::default()
+        .with_text("")
+        .with_position(Vec2::new(CX, 500.0))
+        .with_anchor(Vec2::ZERO)
+        .with_font_size(16.0)
+        .with_fill(TEXT_DIM)
+        .with_font("JetBrains Mono")
+        .with_opacity(0.0);
+
+    let text_ref = text_body.clone();
+    let ball_refs: Vec<RigidBodyNode> = balls.iter().map(|b| b.clone()).collect();
+
+    p.add_dynamic(text_body);
+    for ball in balls {
+        p.add_dynamic(ball);
+    }
+
+    (p, title, subtitle, text_ref, ball_refs, status)
+}
+
+fn build_scene9() -> (PhysicsNode, TextNode, TextNode) {
     let title = make_title("Final Example");
     let subtitle = make_subtitle("100 shapes, high bounciness, one container");
 
@@ -583,8 +657,9 @@ fn main() {
     let (p4, t4, s4) = build_scene4();
     let (p5, t5, s5, time5_var, links5) = build_scene5();
     let (p6, t6, s6) = build_scene6();
-    let (p7, t7, s7, labels7) = build_scene7();
-    let (p8, t8, s8) = build_scene8();
+    let (p7, t7, s7, _cube_refs7, labels7, bindings7) = build_scene7();
+    let (p8, t8, s8, text8, balls8, status8) = build_scene8();
+    let (p9, t9, s9) = build_scene9();
 
     // ── Add all to scene (all invisible) ──
     project.scene.add(Box::new(p1.clone()));
@@ -639,10 +714,18 @@ fn main() {
             l.clone()
         })
         .collect();
+    for binding in bindings7 {
+        project.scene.add(binding);
+    }
 
     project.scene.add(Box::new(p8.clone()));
     project.scene.add(Box::new(t8.clone()));
     project.scene.add(Box::new(s8.clone()));
+    project.scene.add(Box::new(status8.clone()));
+
+    project.scene.add(Box::new(p9.clone()));
+    project.scene.add(Box::new(t9.clone()));
+    project.scene.add(Box::new(s9.clone()));
 
     // ── Timeline: one scene at a time ──
     project.scene.video_timeline.add(chain![
@@ -729,7 +812,13 @@ fn main() {
         // Scene 7: Friction
         t7.opacity.to(1.0, FADE),
         wait!(1),
-        all![p7.opacity.to(1.0, FADE), s7.opacity.to(1.0, FADE),],
+        all![
+            p7.opacity.to(1.0, FADE),
+            s7.opacity.to(1.0, FADE),
+            labels7_c[0].opacity.to(1.0, FADE),
+            labels7_c[1].opacity.to(1.0, FADE),
+            labels7_c[2].opacity.to(1.0, FADE),
+        ],
         wait!(3.0),
         all![
             p7.opacity.to(0.0, FADE),
@@ -739,15 +828,95 @@ fn main() {
             labels7_c[1].opacity.to(0.0, FADE),
             labels7_c[2].opacity.to(0.0, FADE),
         ],
-        // Scene 8: Final Example
+        // Scene 8: Mode Switching — full demonstration
         t8.opacity.to(1.0, FADE),
         wait!(1),
-        all![p8.opacity.to(1.0, FADE), s8.opacity.to(1.0, FADE),],
-        wait!(10.0),
+        all![
+            p8.opacity.to(1.0, FADE),
+            s8.opacity.to(1.0, FADE),
+            status8.opacity.to(1.0, FADE),
+        ],
+        // ── Phase 1: Disabled — signal-driven tweens ──
+        status8
+            .text
+            .to("mode: Disabled".to_string(), Duration::from_millis(1)),
+        wait!(0.5),
+        // Slide text left
+        text8
+            .position
+            .to(Vec2::new(CX - 200.0, 270.0), Duration::from_millis(800)),
+        wait!(0.3),
+        // Slide text right
+        text8
+            .position
+            .to(Vec2::new(CX + 200.0, 270.0), Duration::from_millis(800)),
+        wait!(0.3),
+        // Slide back to center
+        text8
+            .position
+            .to(Vec2::new(CX, 270.0), Duration::from_millis(600)),
+        wait!(1.0),
+        // ── Phase 2: Dynamic — physics takes over, text falls ──
+        status8
+            .text
+            .to("mode: Dynamic".to_string(), Duration::from_millis(1)),
+        text8
+            .mode
+            .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+        wait!(3.0),
+        // ── Phase 3: Kinematic — text becomes a platform, balls drop onto it ──
+        status8
+            .text
+            .to("mode: Kinematic".to_string(), Duration::from_millis(1)),
+        text8
+            .mode
+            .to(PhysicsMode::Kinematic, Duration::from_millis(1)),
+        // Tween text up to act as a shelf
+        text8
+            .position
+            .to(Vec2::new(CX, 300.0), Duration::from_millis(800)),
+        // Enable balls as Dynamic so they fall onto the kinematic text
+        all![
+            balls8[0]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[1]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[2]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[3]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+        ],
+        wait!(2.0),
+        // Oscillate the kinematic shelf to show balls react
+        text8
+            .position
+            .to(Vec2::new(CX - 100.0, 280.0), Duration::from_millis(600)),
+        text8
+            .position
+            .to(Vec2::new(CX + 100.0, 320.0), Duration::from_millis(600)),
+        text8
+            .position
+            .to(Vec2::new(CX, 300.0), Duration::from_millis(400)),
+        wait!(2.0),
         all![
             p8.opacity.to(0.0, FADE),
             t8.opacity.to(0.0, FADE),
             s8.opacity.to(0.0, FADE),
+            status8.opacity.to(0.0, FADE),
+        ],
+        // Scene 9: Final Example
+        t9.opacity.to(1.0, FADE),
+        wait!(1),
+        all![p9.opacity.to(1.0, FADE), s9.opacity.to(1.0, FADE),],
+        wait!(10.0),
+        all![
+            p9.opacity.to(0.0, FADE),
+            t9.opacity.to(0.0, FADE),
+            s9.opacity.to(0.0, FADE),
         ],
         wait!(1),
     ]);
