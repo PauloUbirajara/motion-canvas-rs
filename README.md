@@ -118,7 +118,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 23 examples that can be found in the [examples directory](./examples).
+The project includes 24 examples that can be found in the [examples directory](./examples).
 
 <details>
     <summary> [ <a href="./examples/advanced_flow.rs">code</a> ] <b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -271,6 +271,20 @@ cargo run --example getting_started
 | - |
 | ![Getting Started](./assets/examples/getting_started.webp) |
 | [Getting Started Video](./assets/examples/getting_started.mp4) |
+
+</details>
+
+<details>
+<summary> [ <a href="./examples/gradient_demo.rs">code</a> ] <b>Gradient Demo</b> - Shapes, texts, fill and stroke gradients, and morph animations between solid and gradients using Vello.</summary>
+
+```sh
+cargo run --example gradient_demo --features math
+```
+
+| Preview |
+| - |
+| ![Gradient Demo](./assets/examples/gradient_demo.webp) |
+| [Gradient Demo Video](./assets/examples/gradient_demo.mp4) |
 
 </details>
 
