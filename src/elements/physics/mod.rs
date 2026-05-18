@@ -610,15 +610,22 @@ impl Node for PhysicsNode {
         }
 
         for (handle, wrapper) in &self.entries {
-            let rb = match self.engine.rigid_body_set.get(*handle) {
-                Some(rb) => rb,
-                None => continue,
+            let (pos, rot) = if wrapper.mode() == PhysicsMode::Disabled {
+                (
+                    wrapper.position_signal().get(),
+                    wrapper.rotation_signal().get(),
+                )
+            } else {
+                let rb = match self.engine.rigid_body_set.get(*handle) {
+                    Some(rb) => rb,
+                    None => continue,
+                };
+                let trans = rb.translation();
+                (Vec2::new(trans.x, trans.y), rb.rotation().angle())
             };
 
-            let trans = rb.translation();
-            let rot = rb.rotation().angle();
             let local =
-                Affine::translate((trans.x as f64, trans.y as f64)) * Affine::rotate(rot as f64);
+                Affine::translate((pos.x as f64, pos.y as f64)) * Affine::rotate(rot as f64);
 
             match wrapper {
                 BodyWrapper::Dynamic(n) => {
@@ -661,8 +668,15 @@ impl Node for PhysicsNode {
                             if !rb.is_fixed() {
                                 rb.set_body_type(RigidBodyType::Fixed, true);
                             }
-                            rb.set_translation(Vector::new(visual_pos.x, visual_pos.y), true);
-                            rb.set_rotation(rapier2d::math::Rotation::new(visual_rot), true);
+                            let current_pos = rb.translation();
+                            let current_rot = rb.rotation().angle();
+                            if (current_pos.x - visual_pos.x).abs() > 1e-5
+                                || (current_pos.y - visual_pos.y).abs() > 1e-5
+                                || (current_rot - visual_rot).abs() > 1e-5
+                            {
+                                rb.set_translation(Vector::new(visual_pos.x, visual_pos.y), true);
+                                rb.set_rotation(rapier2d::math::Rotation::new(visual_rot), true);
+                            }
                         }
                         BodyWrapper::Dynamic(db) => {
                             let current_mode = db.mode.get();
@@ -674,7 +688,40 @@ impl Node for PhysicsNode {
                                             false,
                                         );
                                     }
-                                    rb.sleep();
+                                    let current_pos = rb.translation();
+                                    let current_rot = rb.rotation().angle();
+                                    if (current_pos.x - visual_pos.x).abs() > 1e-5
+                                        || (current_pos.y - visual_pos.y).abs() > 1e-5
+                                        || (current_rot - visual_rot).abs() > 1e-5
+                                    {
+                                        rb.set_translation(
+                                            Vector::new(visual_pos.x, visual_pos.y),
+                                            false,
+                                        );
+                                        rb.set_rotation(
+                                            rapier2d::math::Rotation::new(visual_rot),
+                                            false,
+                                        );
+                                        rb.sleep();
+                                    }
+
+                                    // Set colliders as sensors so they don't collide or generate contact forces
+                                    let mut needs_update = false;
+                                    for &col_handle in rb.colliders() {
+                                        if let Some(collider) = self.engine.collider_set.get(col_handle) {
+                                            if !collider.is_sensor() {
+                                                needs_update = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if needs_update {
+                                        for &col_handle in rb.colliders() {
+                                            if let Some(collider) = self.engine.collider_set.get_mut(col_handle) {
+                                                collider.set_sensor(true);
+                                            }
+                                        }
+                                    }
                                 }
                                 PhysicsMode::Kinematic => {
                                     if !rb.is_kinematic() {
@@ -690,6 +737,24 @@ impl Node for PhysicsNode {
                                     rb.set_next_kinematic_rotation(rapier2d::math::Rotation::new(
                                         visual_rot,
                                     ));
+
+                                    // Set colliders as solid
+                                    let mut needs_update = false;
+                                    for &col_handle in rb.colliders() {
+                                        if let Some(collider) = self.engine.collider_set.get(col_handle) {
+                                            if collider.is_sensor() {
+                                                needs_update = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if needs_update {
+                                        for &col_handle in rb.colliders() {
+                                            if let Some(collider) = self.engine.collider_set.get_mut(col_handle) {
+                                                collider.set_sensor(false);
+                                            }
+                                        }
+                                    }
                                 }
                                 PhysicsMode::Dynamic => {
                                     if !rb.is_dynamic() {
@@ -703,6 +768,24 @@ impl Node for PhysicsNode {
                                             true,
                                         );
                                         rb.wake_up(true);
+                                    }
+
+                                    // Set colliders as solid
+                                    let mut needs_update = false;
+                                    for &col_handle in rb.colliders() {
+                                        if let Some(collider) = self.engine.collider_set.get(col_handle) {
+                                            if collider.is_sensor() {
+                                                needs_update = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if needs_update {
+                                        for &col_handle in rb.colliders() {
+                                            if let Some(collider) = self.engine.collider_set.get_mut(col_handle) {
+                                                collider.set_sensor(false);
+                                            }
+                                        }
                                     }
                                 }
                             }
