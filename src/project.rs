@@ -47,6 +47,8 @@ pub struct Project {
     pub paused: bool,
     /// Playback speed multiplier.
     pub speed: f32,
+    /// The master playback timeline state.
+    pub timeline: crate::core::Timeline,
 }
 
 impl Project {
@@ -67,6 +69,7 @@ impl Project {
             current_time: std::time::Duration::ZERO,
             paused: false,
             speed: 1.0,
+            timeline: crate::core::Timeline::new(),
         }
     }
 }
