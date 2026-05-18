@@ -1,5 +1,43 @@
 #![cfg(feature = "physics")]
 //! Physics container and body nodes wrapper for the Motion Canvas engine.
+//!
+//! This module integrates the 2D physics engine (powered by Rapier2D) into the reactive
+//! signal-based scene graph of `motion-canvas-rs`. It enables physics-driven simulations
+//! (gravity, collisions, friction, restitution) to seamlessly co-exist and transition with
+//! traditional signal-driven animations.
+//!
+//! ### Core Concepts
+//! - **[`PhysicsNode`]**: The main coordinate space and simulation container. All physical bodies
+//!   (static or dynamic) must be added to a `PhysicsNode` to participate in the simulation.
+//! - **[`RigidBodyNode`]**: Represents a physical body whose layout is driven by the physics solver,
+//!   by standard signal-driven animations, or a combination of both.
+//! - **[`StaticBodyNode`]**: Represents a fixed, immovable physical body (e.g. floors, walls).
+//! - **[`PhysicsMode`]**: Dictates how a rigid body behaves:
+//!   - `Disabled`: Handled purely by manual/tweened position signals (ignored by physics).
+//!   - `Kinematic`: Acts as a solid obstacle affecting other bodies while its position is keyframed.
+//!   - `Dynamic`: Fully driven by gravity, forces, and collisions.
+//!
+//! ### Example
+//! ```rust
+//! # use motion_canvas_rs::prelude::*;
+//! # use motion_canvas_rs::elements::shapes::Rect;
+//! // 1. Create the container
+//! let mut physics = PhysicsNode::new()
+//!     .with_gravity(Vec2::new(0.0, 981.0)); // standard gravity
+//!
+//! // 2. Create static floor
+//! let floor = StaticBodyNode::new(Box::new(Rect::default().with_size(Vec2::new(800.0, 20.0))))
+//!     .with_position(Vec2::new(400.0, 300.0))
+//!     .with_shape(PhysicsShape::Cuboid(Vec2::new(400.0, 10.0)));
+//! physics.add_static(floor);
+//!
+//! // 3. Create a dynamic ball
+//! let ball = RigidBodyNode::new(Box::new(Circle::default().with_radius(20.0)))
+//!     .with_position(Vec2::new(400.0, 100.0))
+//!     .with_shape(PhysicsShape::Ball(20.0))
+//!     .with_bounciness(0.7);
+//! physics.add_dynamic(ball);
+//! ```
 
 use crate::core::animation::{Node, Signal, Tweenable};
 use crate::core::physics::PhysicsEngine;
@@ -13,12 +51,22 @@ use std::time::Duration;
 #[cfg(feature = "runtime")]
 use vello::Scene;
 
+/// Default bounciness (restitution coefficient) for newly created rigid bodies.
 pub const DEFAULT_BOUNCINESS: f32 = 0.5;
+
+/// Default gravity acceleration along the Y-axis (pixels/second^2).
 pub const DEFAULT_GRAVITY_Y: f32 = 981.0;
+
+/// Default friction coefficient for newly created colliders.
 pub const DEFAULT_FRICTION: f32 = 0.5;
+
+/// Default simulation timestep in seconds (1/60s).
 pub const DEFAULT_TIMESTEP_SECS: f32 = 1.0 / 60.0;
 
 /// Controls the operational layout ownership framework of a physical item mid-timeline.
+///
+/// This mode is reactive (stored in a `Signal`) and can be changed dynamically during playback
+/// to achieve smooth handoffs between keyframe animations and physics simulations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum PhysicsMode {
     /// Item is ignored by physics calculations. Driven entirely by standard `.to()` tweens.
@@ -42,13 +90,17 @@ impl Tweenable for PhysicsMode {
     }
 }
 
+/// Bounding shapes used to represent physical colliders in the simulation.
 #[derive(Clone, Debug)]
 pub enum PhysicsShape {
+    /// A rectangle/box collider defined by its half-extents (width / 2, height / 2).
     Cuboid(Vec2),
+    /// A circular collider defined by its radius.
     Ball(f32),
 }
 
 impl PhysicsShape {
+    /// Converts this shape into a Rapier `ColliderBuilder` configuration.
     fn to_collider(&self) -> ColliderBuilder {
         match self {
             PhysicsShape::Cuboid(half) => ColliderBuilder::cuboid(half.x, half.y),
@@ -57,14 +109,17 @@ impl PhysicsShape {
     }
 }
 
-/// A composite tracking entry storing a visual element wrapper state configuration.
+/// Internal composite enum representing physical wrapper nodes registered in the engine.
 #[derive(Clone)]
 pub enum BodyWrapper {
+    /// A dynamic/kinematic rigid body wrapper.
     Dynamic(RigidBodyNode),
+    /// A static fixed body wrapper.
     Static(StaticBodyNode),
 }
 
 impl BodyWrapper {
+    /// Returns the current physics mode of the wrapped body.
     pub fn mode(&self) -> PhysicsMode {
         match self {
             BodyWrapper::Dynamic(n) => n.mode.get(),
@@ -72,6 +127,7 @@ impl BodyWrapper {
         }
     }
 
+    /// Accesses the underlying reactive position signal.
     pub fn position_signal(&self) -> &Signal<Vec2> {
         match self {
             BodyWrapper::Dynamic(n) => &n.position,
@@ -79,6 +135,7 @@ impl BodyWrapper {
         }
     }
 
+    /// Accesses the underlying reactive rotation signal.
     pub fn rotation_signal(&self) -> &Signal<f32> {
         match self {
             BodyWrapper::Dynamic(n) => &n.rotation,
@@ -87,15 +144,39 @@ impl BodyWrapper {
     }
 }
 
+/// A node wrapping any visual element as a dynamic/kinematic rigid body in the Rapier2d simulation.
+///
+/// Dynamic bodies fall under gravity, bounce off obstacles, and react to forces. Their reactive
+/// properties like position, rotation, and physics mode can be controlled and tweened via Signals.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// # use motion_canvas_rs::elements::shapes::Rect;
+/// let body = RigidBodyNode::new(Box::new(Rect::default()))
+///     .with_position(Vec2::new(100.0, 50.0))
+///     .with_shape(PhysicsShape::Cuboid(Vec2::new(50.0, 50.0)))
+///     .with_bounciness(0.8)
+///     .with_mode(PhysicsMode::Disabled); // Starts disabled for signal-driven tweens first
+/// ```
 pub struct RigidBodyNode {
+    /// The nested visual node that is rendered.
     pub inner: Box<dyn Node>,
+    /// The reactive position of the body. Can be animated/tweened directly in `Disabled` or `Kinematic` mode.
     pub position: Signal<Vec2>,
+    /// The reactive rotation of the body in radians. Can be animated/tweened directly in `Disabled` or `Kinematic` mode.
     pub rotation: Signal<f32>,
+    /// Controls whether the physics engine is tracking or driving this body.
     pub mode: Signal<PhysicsMode>,
+    /// The geometric bounds for collider queries.
     pub shape: PhysicsShape,
+    /// Bounciness / restitution coefficient. Defines how much energy is conserved upon impact (normally between 0.0 and 1.0).
     pub bounciness: f32,
+    /// Friction coefficient. Controls sliding behavior against other surfaces (normally between 0.0 and 1.0).
     pub friction: f32,
+    /// Initial linear velocity applied at the beginning of the simulation (pixels/second).
     pub initial_velocity: Vec2,
+    /// Initial angular velocity applied at the beginning of the simulation (radians/second).
     pub initial_angular_velocity: f32,
 }
 
@@ -116,6 +197,7 @@ impl Clone for RigidBodyNode {
 }
 
 impl RigidBodyNode {
+    /// Creates a new rigid body wrapping a visual node, initializing it with standard default properties.
     pub fn new(inner: Box<dyn Node>) -> Self {
         Self {
             inner,
@@ -130,41 +212,49 @@ impl RigidBodyNode {
         }
     }
 
+    /// Sets the initial reactive position signal of the rigid body.
     pub fn with_position(mut self, pos: Vec2) -> Self {
         self.position = Signal::new(pos);
         self
     }
 
+    /// Sets the initial reactive rotation signal of the rigid body in radians.
     pub fn with_rotation(mut self, rotation: f32) -> Self {
         self.rotation = Signal::new(rotation);
         self
     }
 
+    /// Sets the bounding shape of the rigid body's physical collider.
     pub fn with_shape(mut self, shape: PhysicsShape) -> Self {
         self.shape = shape;
         self
     }
 
+    /// Configures the bounciness (restitution coefficient) of the body.
     pub fn with_bounciness(mut self, bounciness: f32) -> Self {
         self.bounciness = bounciness;
         self
     }
 
+    /// Configures the friction coefficient of the body.
     pub fn with_friction(mut self, friction: f32) -> Self {
         self.friction = friction;
         self
     }
 
+    /// Sets the initial linear velocity (pixels/second) applied to the dynamic body.
     pub fn with_initial_velocity(mut self, vel: Vec2) -> Self {
         self.initial_velocity = vel;
         self
     }
 
+    /// Sets the initial angular velocity (radians/second) applied to the dynamic body.
     pub fn with_initial_angular_velocity(mut self, ang_vel: f32) -> Self {
         self.initial_angular_velocity = ang_vel;
         self
     }
 
+    /// Configures the initial operational mode of the physics body.
     pub fn with_mode(mut self, mode: PhysicsMode) -> Self {
         self.mode = Signal::new(mode);
         self
@@ -197,12 +287,32 @@ impl Node for RigidBodyNode {
     }
 }
 
+/// A node wrapping any visual element as an immovable fixed obstacle in the Rapier2d simulation.
+///
+/// Useful for floors, walls, ramps, and platforms. Although static bodies do not fall or slide
+/// under forces, they collide with dynamic bodies.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// # use motion_canvas_rs::elements::shapes::Rect;
+/// let wall = StaticBodyNode::new(Box::new(Rect::default()))
+///     .with_position(Vec2::new(100.0, 300.0))
+///     .with_shape(PhysicsShape::Cuboid(Vec2::new(10.0, 100.0)))
+///     .with_friction(0.1);
+/// ```
 pub struct StaticBodyNode {
+    /// The nested visual node that is rendered.
     pub inner: Box<dyn Node>,
+    /// Immovable position of the static body.
     pub position: Signal<Vec2>,
+    /// Immovable rotation of the static body in radians.
     pub rotation: Signal<f32>,
+    /// Bounding shape of the collider.
     pub shape: PhysicsShape,
+    /// Restitution / bounciness coefficient when dynamic bodies collide with this obstacle.
     pub bounciness: f32,
+    /// Friction coefficient.
     pub friction: f32,
 }
 
@@ -220,6 +330,7 @@ impl Clone for StaticBodyNode {
 }
 
 impl StaticBodyNode {
+    /// Creates a new static body wrapping a visual node.
     pub fn new(inner: Box<dyn Node>) -> Self {
         Self {
             inner,
@@ -231,26 +342,31 @@ impl StaticBodyNode {
         }
     }
 
+    /// Sets the position of the static body obstacle.
     pub fn with_position(mut self, pos: Vec2) -> Self {
         self.position = Signal::new(pos);
         self
     }
 
+    /// Sets the rotation of the static body obstacle in radians.
     pub fn with_rotation(mut self, rotation: f32) -> Self {
         self.rotation = Signal::new(rotation);
         self
     }
 
+    /// Sets the bounding shape of the static collider.
     pub fn with_shape(mut self, shape: PhysicsShape) -> Self {
         self.shape = shape;
         self
     }
 
+    /// Sets the bounciness (restitution coefficient) when dynamic bodies collide with this obstacle.
     pub fn with_bounciness(mut self, bounciness: f32) -> Self {
         self.bounciness = bounciness;
         self
     }
 
+    /// Sets the friction coefficient of the static body obstacle.
     pub fn with_friction(mut self, friction: f32) -> Self {
         self.friction = friction;
         self
@@ -282,12 +398,30 @@ impl Node for StaticBodyNode {
     }
 }
 
+/// The main coordinate space container driving real-time 2D physics simulations.
+///
+/// `PhysicsNode` coordinates updates between the Rapier2D solver and the visual node graph.
+/// It supports custom simulation timesteps, gravity, and opacity.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let container = PhysicsNode::new()
+///     .with_timestep(1.0 / 120.0) // sub-stepping for extra collision fidelity
+///     .with_gravity(Vec2::new(0.0, 9.81 * 100.0));
+/// ```
 pub struct PhysicsNode {
+    /// Visual opacity of all elements contained in the simulation.
     pub opacity: Signal<f32>,
+    /// The underlying Rapier2D simulator physics pipeline wrapper.
     engine: PhysicsEngine,
+    /// Registered bodies currently synchronized within the engine.
     entries: Vec<(RigidBodyHandle, BodyWrapper)>,
+    /// Cached original states used to perform accurate visual reset sequences.
     initial_states: Vec<(RigidBodyHandle, Vector<f32>, f32, Vector<f32>, f32)>,
+    /// Constant step integration time (e.g. 1/60s). Simulators require fixed updates for deterministic results.
     pub timestep: f32,
+    /// Frame time accumulator buffer used to guarantee perfect deterministic reproduction.
     accumulator: f32,
 }
 
@@ -345,25 +479,30 @@ impl Clone for PhysicsNode {
 }
 
 impl PhysicsNode {
+    /// Creates a new physics simulation node with standard default values.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Sets the fixed simulation timestep (default: 1/60s).
     pub fn with_timestep(mut self, timestep: f32) -> Self {
         self.timestep = timestep;
         self
     }
 
+    /// Sets the gravity acceleration vector (pixels/second^2).
     pub fn with_gravity(mut self, gravity: Vec2) -> Self {
         self.engine.gravity = Vector::new(gravity.x, gravity.y);
         self
     }
 
+    /// Sets the visual opacity of all bodies nested in this physics container.
     pub fn with_opacity(mut self, opacity: f32) -> Self {
         self.opacity = Signal::new(opacity);
         self
     }
 
+    /// Core internal routine inserting built Rapier bodies and colliders into the active pipeline.
     fn add_entry_internal(
         &mut self,
         wrapper: BodyWrapper,
@@ -393,6 +532,7 @@ impl PhysicsNode {
         ));
     }
 
+    /// Adds a dynamic (or kinematic/disabled) rigid body to the physics simulation workspace.
     pub fn add_dynamic(&mut self, rb: RigidBodyNode) {
         let pos = rb.position.get();
         let rot = rb.rotation.get();
@@ -419,6 +559,7 @@ impl PhysicsNode {
         self.add_entry_internal(BodyWrapper::Dynamic(rb), builder, col);
     }
 
+    /// Adds an immovable static body obstacle to the physics simulation workspace.
     pub fn add_static(&mut self, sb: StaticBodyNode) {
         let pos = sb.position.get();
         let rot = sb.rotation.get();
@@ -434,6 +575,7 @@ impl PhysicsNode {
         self.add_entry_internal(BodyWrapper::Static(sb), builder, col);
     }
 
+    /// Reconstructs a collider builder matching the shape configuration of a given handle.
     fn build_collider_from_handle(&self, handle: RigidBodyHandle) -> ColliderBuilder {
         for (_, collider) in self.engine.collider_set.iter() {
             if collider.parent() != Some(handle) {

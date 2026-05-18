@@ -1,12 +1,21 @@
+//! Global system font loader, layout manager, and glyph resolution cache.
+//!
+//! This module coordinates font lookups using `fontdb` and parses them using `skrifa`.
+//! It manages standard fallbacks, Math glyph faces for LaTeX nodes, and user-registered fonts.
+
 use fontdb::{Database, Family, Query};
 use skrifa::FontRef;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex, OnceLock};
 
+/// Represents loaded font raw data and its collection metadata.
 pub struct FontData {
+    /// The user-friendly identifier or family name of the font face.
     pub name: String,
+    /// The raw byte array containing the TTF/OTF font file content.
     pub data: Vec<u8>,
+    /// The face index inside a font collection (TTC/OTC). Normally 0 for standard single-face fonts.
     pub index: u32,
 }
 
@@ -35,9 +44,25 @@ static FONT_CACHE: LazyLock<Mutex<HashMap<String, Arc<FontData>>>> =
 static FONT_WARNINGS: LazyLock<Mutex<HashMap<String, bool>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
+/// Thread-safe global font coordinator.
+///
+/// It handles lazy-loading system fonts, registering custom local paths, and caching
+/// parsed binary assets to prevent redundant filesystem overhead.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::assets::font_manager::FontManager;
+/// // Get standard sans-serif font
+/// let font = FontManager::get_font("sans-serif");
+/// assert!(font.is_some());
+/// ```
 pub struct FontManager;
 
 impl FontManager {
+    /// Retrieves a font by its path or registered family name.
+    ///
+    /// It first checks the static query cache, then checks if `family` points to an active
+    /// local filepath, and finally queries the OS/system font database via `fontdb`.
     pub fn get_font(family: &str) -> Option<Arc<FontData>> {
         let mut cache = FONT_CACHE.lock().unwrap();
 
@@ -88,6 +113,7 @@ impl FontManager {
         None
     }
 
+    /// Internal helper method to load a matching database face into raw `FontData`.
     fn load_from_db(db: &Database, id: fontdb::ID, name: &str) -> Option<Arc<FontData>> {
         let actual_name = db
             .face(id)
@@ -102,6 +128,9 @@ impl FontManager {
         })
     }
 
+    /// Reads a font file from a local path and registers it dynamically with a custom face name.
+    ///
+    /// Once registered, any standard Text nodes querying this name will instantly resolve to it.
     pub fn register_font(
         name: &str,
         path: impl AsRef<Path>,
@@ -124,6 +153,10 @@ impl FontManager {
         Ok(())
     }
 
+    /// Tries to load the first available font from a prioritised list of families.
+    ///
+    /// If none of the requested families are found, it queries standard generic fallbacks
+    /// (e.g. Sans-Serif, Serif, Monospace).
     pub fn get_font_with_fallback(families: &[&str]) -> Option<Arc<FontData>> {
         let primary = families.first()?.to_string();
 
@@ -153,6 +186,7 @@ impl FontManager {
         None
     }
 
+    /// Logs a single thread-safe console warning when a fallback font is selected.
     fn warn_fallback(primary: &str, fallback: &str) {
         let mut warnings = FONT_WARNINGS.lock().unwrap();
         if !warnings.contains_key(primary) {
@@ -164,6 +198,9 @@ impl FontManager {
         }
     }
 
+    /// Automatically scans the system and internal list for standard Math TeX Gyre or compatible math fonts.
+    ///
+    /// Used by LaTeX math rendering nodes to fetch math-compatible layouts.
     pub fn get_math_font() -> (String, Option<Arc<FontData>>) {
         static MATH_CACHE: OnceLock<(String, Option<Arc<FontData>>)> = OnceLock::new();
 
@@ -194,6 +231,7 @@ impl FontManager {
         cached.clone()
     }
 
+    /// Parses `FontData` using Skrifa to extract a lightweight `FontRef` pointer for text rendering.
     pub fn get_font_ref(data: &Arc<FontData>) -> FontRef<'_> {
         FontRef::from_index(&data.data, data.index).unwrap()
     }
