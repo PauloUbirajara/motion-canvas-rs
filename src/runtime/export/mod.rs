@@ -297,7 +297,12 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     let pb = ProgressBar::new(total_frames as u64);
     pb.set_style(
         ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+            .template(
+                "[{elapsed_precise}] {bar:40.cyan/blue}\n\
+                 Frames: {pos}/{len}\n\
+                 Skipped: {msg:40.green}\n\
+                 Time To Render: {eta_precise}",
+            )
             .unwrap()
             .progress_chars("=>-"),
     );
@@ -362,7 +367,7 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
         // Progress Bar (now reflects saved count)
         let current_saved = saved_count.load(Ordering::SeqCst);
         pb.set_position(current_saved as u64);
-        pb.set_message(format!("(Skipped {})", skipped_count));
+        pb.set_message(format!("{}", skipped_count));
 
         // Periodically save the cache to disk to prevent losing progress if interrupted
         if project.use_cache && frame_count > 0 && frame_count % project.cache_write_interval == 0 {
@@ -394,6 +399,8 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
         pb.set_position(current_saved as u64);
         thread::sleep(Duration::from_millis(50));
     }
+
+    pb.set_style(ProgressStyle::default_bar().template("{msg}").unwrap());
 
     pb.finish_with_message(format!(
         "Export finished: {} frames rendered, {} skipped.",
