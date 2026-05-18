@@ -1,6 +1,6 @@
 # Motion Canvas in Rust
 
-![Motion Canvas Banner](./assets/cover.webp)
+![Motion Canvas Banner](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/cover.webp)
 
 A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst.
 
@@ -129,8 +129,8 @@ cargo run --example advanced_flow --features=full
 
 | Preview |
 | - |
-| ![Advanced Flow](./assets/examples/advanced_flow.webp) |
-| [Advanced Flow Video](./assets/examples/advanced_flow.mp4) |
+| ![Advanced Flow](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/advanced_flow.webp) |
+| [Advanced Flow Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/advanced_flow.mp4) |
 
 </details>
 
@@ -143,8 +143,8 @@ cargo run --example anchors
 
 | Preview |
 | - |
-| ![Anchors](./assets/examples/anchors.webp) |
-| [Anchors Video](./assets/examples/anchors.mp4) |
+| ![Anchors](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/anchors.webp) |
+| [Anchors Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/anchors.mp4) |
 
 </details>
 
@@ -157,8 +157,8 @@ cargo run --example audio_demo --features audio
 
 | Preview |
 | - |
-| ![Audio Demo](./assets/examples/audio_demo.webp) |
-| [Audio Demo Video](./assets/examples/audio_demo.mp4) |
+| ![Audio Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/audio_demo.webp) |
+| [Audio Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/audio_demo.mp4) |
 
 </details>
 
@@ -171,8 +171,8 @@ cargo run --example camera_demo
 
 | Preview |
 | - |
-| ![Camera Demo](./assets/examples/camera_demo.webp) |
-| [Camera Demo Video](./assets/examples/camera_demo.mp4) |
+| ![Camera Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/camera_demo.webp) |
+| [Camera Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/camera_demo.mp4) |
 
 </details>
 
@@ -185,8 +185,8 @@ cargo run --example code_advanced --features code
 
 | Preview |
 | - |
-| ![Code Advanced](./assets/examples/code_advanced.webp) |
-| [Code Advanced Video](./assets/examples/code_advanced.mp4) |
+| ![Code Advanced](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/code_advanced.webp) |
+| [Code Advanced Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/code_advanced.mp4) |
 
 </details>
 
@@ -199,8 +199,8 @@ cargo run --example code_animation --features code
 
 | Preview |
 | - |
-| ![Code Animation](./assets/examples/code_animation.webp) |
-| [Code Animation Video](./assets/examples/code_animation.mp4) |
+| ![Code Animation](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/code_animation.webp) |
+| [Code Animation Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/code_animation.mp4) |
 
 </details>
 
@@ -213,8 +213,8 @@ cargo run --example color_interpolation
 
 | Preview |
 | - |
-| ![Color Interpolation](./assets/examples/color_interpolation.webp) |
-| [Color Interpolation Video](./assets/examples/color_interpolation.mp4) |
+| ![Color Interpolation](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/color_interpolation.webp) |
+| [Color Interpolation Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/color_interpolation.mp4) |
 
 </details>
 
@@ -227,8 +227,8 @@ cargo run --example easing_scope
 
 | Preview |
 | - |
-| ![Easing Scope](./assets/examples/easing_scope.webp) |
-| [Easing Scope Video](./assets/examples/easing_scope.mp4) |
+| ![Easing Scope](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/easing_scope.webp) |
+| [Easing Scope Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/easing_scope.mp4) |
 
 </details>
 
@@ -241,7 +241,7 @@ cargo run --example explainer --release --features full
 
 | Preview |
 | - |
-| ![Explainer](./assets/examples/explainer.webp) |
+| ![Explainer](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/explainer.webp) |
 | [Explainer Video](https://www.youtube.com/watch?v=v4W1Y_TrWew) |
 
 </details>
@@ -255,8 +255,8 @@ cargo run --example export --features export
 
 | Preview |
 | - |
-| ![Export](./assets/examples/export.webp) |
-| [Export Video](./assets/examples/export.mp4) |
+| ![Export](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/export.webp) |
+| [Export Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/export.mp4) |
 
 </details>
 
@@ -269,8 +269,8 @@ cargo run --example getting_started
 
 | Preview |
 | - |
-| ![Getting Started](./assets/examples/getting_started.webp) |
-| [Getting Started Video](./assets/examples/getting_started.mp4) |
+| ![Getting Started](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/getting_started.webp) |
+| [Getting Started Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/getting_started.mp4) |
 
 </details>
 
@@ -283,8 +283,8 @@ cargo run --example gradient_demo --features math
 
 | Preview |
 | - |
-| ![Gradient Demo](./assets/examples/gradient_demo.webp) |
-| [Gradient Demo Video](./assets/examples/gradient_demo.mp4) |
+| ![Gradient Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/gradient_demo.webp) |
+| [Gradient Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/gradient_demo.mp4) |
 
 </details>
 
@@ -297,8 +297,8 @@ cargo run --example grid
 
 | Preview |
 | - |
-| ![Grid](./assets/examples/grid.webp) |
-| [Grid Video](./assets/examples/grid.mp4) |
+| ![Grid](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/grid.webp) |
+| [Grid Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/grid.mp4) |
 
 </details>
 
@@ -311,8 +311,8 @@ cargo run --example group_animation
 
 | Preview |
 | - |
-| ![Group Animation](./assets/examples/group_animation.webp) |
-| [Group Animation Video](./assets/examples/group_animation.mp4) |
+| ![Group Animation](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/group_animation.webp) |
+| [Group Animation Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/group_animation.mp4) |
 
 </details>
 
@@ -325,8 +325,8 @@ cargo run --example images --features image,svg
 
 | Preview |
 | - |
-| ![Images](./assets/examples/images.webp) |
-| [Images Video](./assets/examples/images.mp4) |
+| ![Images](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/images.webp) |
+| [Images Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/images.mp4) |
 
 </details>
 
@@ -339,8 +339,8 @@ cargo run --example math_animation --features math
 
 | Preview |
 | - |
-| ![Math Animation](./assets/examples/math_animation.webp) |
-| [Math Animation Video](./assets/examples/math_animation.mp4) |
+| ![Math Animation](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/math_animation.webp) |
+| [Math Animation Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/math_animation.mp4) |
 
 </details>
 
@@ -353,8 +353,8 @@ cargo run --example math_code --features math,code
 
 | Preview |
 | - |
-| ![Math Code](./assets/examples/math_code.webp) |
-| [Math Code Video](./assets/examples/math_code.mp4) |
+| ![Math Code](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/math_code.webp) |
+| [Math Code Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/math_code.mp4) |
 
 </details>
 
@@ -367,8 +367,8 @@ cargo run --example nested_cameras
 
 | Preview |
 | - |
-| ![Nested Cameras](./assets/examples/nested_cameras.webp) |
-| [Nested Cameras Video](./assets/examples/nested_cameras.mp4) |
+| ![Nested Cameras](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/nested_cameras.webp) |
+| [Nested Cameras Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/nested_cameras.mp4) |
 
 </details>
 
@@ -383,8 +383,8 @@ cargo run --example news_feed
 
 | Preview |
 | - |
-| ![News Feed](./assets/examples/news_feed.webp) |
-| [News Feed Video](./assets/examples/news_feed.mp4) |
+| ![News Feed](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/news_feed.webp) |
+| [News Feed Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/news_feed.mp4) |
 
 </details>
 
@@ -397,8 +397,8 @@ cargo run --example physics_demo --features physics
 
 | Preview |
 | - |
-| ![Physics Simulation](./assets/examples/physics_demo.webp) |
-| [Physics Simulation Video](./assets/examples/physics_demo.mp4) |
+| ![Physics Simulation](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/physics_demo.webp) |
+| [Physics Simulation Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/physics_demo.mp4) |
 
 </details>
 
@@ -411,8 +411,8 @@ cargo run --example polygon
 
 | Preview |
 | - |
-| ![Polygon](./assets/examples/polygon.webp) |
-| [Polygon Video](./assets/examples/polygon.mp4) |
+| ![Polygon](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/polygon.webp) |
+| [Polygon Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/polygon.mp4) |
 
 </details>
 
@@ -425,7 +425,7 @@ cargo run --example shapes
 
 | Preview |
 | - |
-| ![Shapes](./assets/examples/shapes.webp) |
+| ![Shapes](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/shapes.webp) |
 
 </details>
 
@@ -438,8 +438,8 @@ cargo run --example signals
 
 | Preview |
 | - |
-| ![Signals](./assets/examples/signals.webp) |
-| [Signals Video](./assets/examples/signals.mp4) |
+| ![Signals](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/signals.webp) |
+| [Signals Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/signals.mp4) |
 
 </details>
 
@@ -454,8 +454,8 @@ cargo run --example world_map --features image,svg
 
 | Preview |
 | - |
-| ![World Map](./assets/examples/world_map.webp) |
-| [World Map Video](./assets/examples/world_map.mp4) |
+| ![World Map](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/world_map.webp) |
+| [World Map Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/world_map.mp4) |
 
 </details>
 
