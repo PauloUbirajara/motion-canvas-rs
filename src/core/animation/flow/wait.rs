@@ -1,4 +1,5 @@
 use crate::core::animation::base::Animation;
+use crate::core::animation::AnyAnimation;
 use std::time::Duration;
 
 /// An animation that simply waits for a duration.
@@ -49,8 +50,8 @@ impl Animation for Wait {
 ///     node.opacity.to(0.0, dur),
 /// ];
 /// ```
-pub fn wait(duration: Duration) -> Box<dyn Animation> {
-    Box::new(Wait {
+pub fn wait(duration: Duration) -> AnyAnimation {
+    AnyAnimation::Wait(Wait {
         duration,
         elapsed: Duration::ZERO,
     })

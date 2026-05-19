@@ -1,4 +1,5 @@
 use crate::core::animation::base::{Animation, AudioEvent};
+use crate::core::animation::AnyAnimation;
 use std::time::Duration;
 
 /// An animation that delays the execution of another animation.
@@ -8,16 +9,16 @@ use std::time::Duration;
 pub struct Delay {
     pub(crate) duration: Duration,
     pub(crate) elapsed: Duration,
-    pub(crate) inner: Box<dyn Animation>,
+    pub(crate) inner: Box<AnyAnimation>,
 }
 
 impl Delay {
     /// Creates a new `Delay` for the provided duration and inner animation.
-    pub fn new(duration: Duration, inner: Box<dyn Animation>) -> Self {
+    pub fn new(duration: Duration, inner: AnyAnimation) -> Self {
         Self {
             duration,
             elapsed: Duration::ZERO,
-            inner,
+            inner: Box::new(inner),
         }
     }
 }
@@ -82,6 +83,6 @@ impl Animation for Delay {
 ///     delay!(Duration::from_secs_f32(0.5), node.opacity.to(0.0, dur.clone())),
 /// ];
 /// ```
-pub fn delay(duration: Duration, inner: Box<dyn Animation>) -> Box<dyn Animation> {
-    Box::new(Delay::new(duration, inner))
+pub fn delay(duration: Duration, inner: AnyAnimation) -> AnyAnimation {
+    AnyAnimation::Delay(Delay::new(duration, inner))
 }

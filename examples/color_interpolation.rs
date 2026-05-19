@@ -14,17 +14,25 @@ fn main() {
         .with_radius(50.0)
         .with_fill(Color::RED); // Red
 
-    project.scene.add(Box::new(circle.clone()));
+    project.scene.add(&circle);
 
     let duration = Duration::from_secs(1);
 
     project.scene.video_timeline.add(loop_anim(
         move || {
             chain![
-                circle.fill_color.to(Color::YELLOW, duration),
-                circle.fill_color.to(Color::GREEN, duration),
-                circle.fill_color.to(Color::BLUE, duration),
-                circle.fill_color.to(Color::RED, duration),
+                circle
+                    .fill_paint
+                    .to(Some(Paint::Solid(Color::YELLOW)), duration),
+                circle
+                    .fill_paint
+                    .to(Some(Paint::Solid(Color::GREEN)), duration),
+                circle
+                    .fill_paint
+                    .to(Some(Paint::Solid(Color::BLUE)), duration),
+                circle
+                    .fill_paint
+                    .to(Some(Paint::Solid(Color::RED)), duration),
             ]
         },
         None,

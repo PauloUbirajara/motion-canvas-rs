@@ -532,45 +532,49 @@ fn main() {
     }
 
     let camera = camera.with_nodes(camera_children);
-    project.scene.add(Box::new(camera.clone()));
+    project.scene.add(&camera);
 
     // ═══════════════════════════════════════════════════
     //  ANIMATION TIMELINE
     // ═══════════════════════════════════════════════════
 
     // Phase 1: Intro — clouds everywhere, then zoom in / scatter clouds / reveal map
-    let mut phase1_anims: Vec<Box<dyn Animation>> = Vec::new();
+    let mut phase1_anims: Vec<AnyAnimation> = Vec::new();
 
     // Camera zoom
-    phase1_anims.push(Box::new(
+    phase1_anims.push(
         camera
             .zoom
             .to(2.25, Duration::from_secs(3))
-            .ease(easings::cubic_in_out),
-    ));
+            .ease(easings::cubic_in_out)
+            .into(),
+    );
     // Map fade in
-    phase1_anims.push(Box::new(
+    phase1_anims.push(
         map.opacity
             .to(1.0, Duration::from_secs(2))
-            .ease(easings::cubic_out),
-    ));
+            .ease(easings::cubic_out)
+            .into(),
+    );
 
     // Scatter all clouds
     for (i, cn) in cloud_nodes.iter().enumerate() {
         let def = &CLOUDS[i];
-        phase1_anims.push(Box::new(
+        phase1_anims.push(
             cn.position
                 .to(Vec2::new(def.exit_x, def.exit_y), Duration::from_secs(3))
-                .ease(easings::cubic_in),
-        ));
-        phase1_anims.push(Box::new(
+                .ease(easings::cubic_in)
+                .into(),
+        );
+        phase1_anims.push(
             cn.opacity
                 .to(0.0, Duration::from_secs(2))
-                .ease(easings::cubic_in),
-        ));
+                .ease(easings::cubic_in)
+                .into(),
+        );
     }
 
-    let phase1_intro: Box<dyn Animation> = chain![
+    let phase1_intro: AnyAnimation = chain![
         // Everything happens at once: zoom, clouds scatter, map reveals, title appears
         all(phase1_anims),
         wait(Duration::from_millis(500)),
@@ -578,7 +582,7 @@ fn main() {
 
     // Phase 2: Pan camera to first landmark and show plane
     let first = &LANDMARKS[0];
-    let phase2_start: Box<dyn Animation> = chain![
+    let phase2_start: AnyAnimation = chain![
         camera
             .position
             .to(Vec2::new(first.x, first.y), Duration::from_secs(2))
@@ -602,7 +606,7 @@ fn main() {
     ];
 
     // Phase 3: Tour through each country (scale in -> move -> scale out -> show landmark)
-    let mut tour_legs: Vec<Box<dyn Animation>> = Vec::new();
+    let mut tour_legs: Vec<AnyAnimation> = Vec::new();
     for i in 0..LANDMARKS.len() - 1 {
         let from = &LANDMARKS[i];
         let to = &LANDMARKS[i + 1];
@@ -613,7 +617,7 @@ fn main() {
         let dy = to.y - from.y;
         let angle = dy.atan2(dx) + (std::f32::consts::PI);
 
-        let leg: Box<dyn Animation> = chain![
+        let leg: AnyAnimation = chain![
             // 1. Scale plane in at the start of the leg
             all![
                 plane
@@ -682,7 +686,7 @@ fn main() {
     let phase3_tour = chain(tour_legs);
 
     // Phase 4: Zoom out to show full map
-    let phase4_finale: Box<dyn Animation> = chain![
+    let phase4_finale: AnyAnimation = chain![
         // Hide the last landmark's name
         name_labels[LANDMARKS.len() - 1]
             .opacity
@@ -700,13 +704,14 @@ fn main() {
         ],
         // Pulse all pins (dynamic loop)
         {
-            let mut pulse_anims: Vec<Box<dyn Animation>> = Vec::new();
+            let mut pulse_anims: Vec<AnyAnimation> = Vec::new();
             for pin in &pins {
-                pulse_anims.push(Box::new(
+                pulse_anims.push(
                     pin.radius
                         .to(10.0, Duration::from_millis(300))
-                        .ease(easings::elastic_out),
-                ));
+                        .ease(easings::elastic_out)
+                        .into(),
+                );
             }
             sequence(Duration::from_millis(60), pulse_anims)
         },

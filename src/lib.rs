@@ -12,9 +12,11 @@ pub mod runtime;
 /// High-level configuration and project management
 pub use project::Project;
 
+pub use crate::core::animation::paint::Paint;
 /// Common mathematical types
 pub use glam::Vec2;
 pub use peniko::Color;
+pub use peniko::{ColorStop, ColorStops, Extend, Gradient, GradientKind};
 
 /// Custom Result type for the library
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -47,6 +49,7 @@ pub mod prelude {
     pub use crate::core::animation::base::Node;
     pub use crate::core::animation::tween::Signal;
     pub use crate::core::animation::tween::Tweenable;
+    pub use crate::core::{AnyAnimation, AnyNode};
 
     // Export the modules themselves for namespaced access
     pub use crate::easings;
@@ -77,9 +80,11 @@ pub mod prelude {
     pub use crate::assets::palette::Palette;
     pub use crate::Result;
 
+    pub use crate::core::animation::paint::Paint;
     pub use glam::Vec2;
-    pub use kurbo::{Affine, BezPath};
+    pub use kurbo::{Affine, BezPath, Point};
     pub use peniko::Color;
+    pub use peniko::{ColorStop, ColorStops, Extend, Gradient, GradientKind};
 
     #[cfg(feature = "runtime")]
     pub use vello::Scene;

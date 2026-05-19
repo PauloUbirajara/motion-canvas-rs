@@ -1,5 +1,6 @@
 #![cfg(feature = "math")]
-use crate::core::animation::{Node, Signal};
+#![allow(deprecated)]
+use crate::core::animation::{Node, Paint, Signal};
 use glam::Vec2;
 use kurbo::{Affine, BezPath, Shape};
 use peniko::{Brush, Color, Fill};
@@ -57,7 +58,11 @@ pub struct MathNode {
     /// The font size in points.
     pub font_size: Signal<f32>,
     /// The solid color used to fill the glyphs.
+    /// **Deprecated**: prefer `fill_paint` which supports both solid colors and gradients.
+    #[deprecated(since = "0.2.3", note = "use fill_paint instead")]
     pub fill_color: Signal<Color>,
+    /// The paint (color or gradient) used to fill the math glyphs.
+    pub fill_paint: Signal<Option<Paint>>,
     /// The overall opacity (0.0 to 1.0).
     pub opacity: Signal<f32>,
     /// Internal transition progress signal (0.0 to 1.0).
@@ -81,6 +86,7 @@ impl Default for MathNode {
             equation: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
             fill_color: Signal::new(DEFAULT_COLOR),
+            fill_paint: Signal::new(None),
             opacity: Signal::new(DEFAULT_OPACITY),
             transition_progress: Signal::new(1.0),
             anchor: Signal::new(Vec2::ZERO),
@@ -99,6 +105,7 @@ impl Clone for MathNode {
             equation: self.equation.clone(),
             font_size: self.font_size.clone(),
             fill_color: self.fill_color.clone(),
+            fill_paint: self.fill_paint.clone(),
             opacity: self.opacity.clone(),
             transition_progress: self.transition_progress.clone(),
             anchor: self.anchor.clone(),
@@ -174,9 +181,13 @@ impl MathNode {
         self
     }
 
-    /// Sets the solid fill color for the glyphs.
-    pub fn with_fill(mut self, color: Color) -> Self {
-        self.fill_color = Signal::new(color);
+    /// Sets the fill paint (color or gradient) for the glyphs.
+    pub fn with_fill(mut self, paint: impl Into<Paint>) -> Self {
+        let p = paint.into();
+        if let Paint::Solid(color) = p {
+            self.fill_color = Signal::new(color);
+        }
+        self.fill_paint = Signal::new(Some(p));
         self
     }
 
@@ -361,14 +372,20 @@ impl Node for MathNode {
         if progress < 1.0 {
             let prev_cache = self.prev_cache.lock().unwrap();
             if let Some(prev) = prev_cache.as_ref() {
-                let mut prev_color = color;
-                prev_color.a = (color.a as f32 * base_opacity * (1.0 - progress) * parent_opacity)
-                    .clamp(0.0, 255.0) as u8;
+                let prev_opacity = base_opacity * (1.0 - progress) * parent_opacity;
+                let brush = match self.fill_paint.get() {
+                    Some(paint) => paint.to_brush_with_opacity(prev_opacity),
+                    None => {
+                        let mut prev_color = color;
+                        prev_color.a = (color.a as f32 * prev_opacity).clamp(0.0, 255.0) as u8;
+                        Brush::Solid(prev_color)
+                    }
+                };
                 for (local_transform, pb) in prev.as_ref() {
                     scene.fill(
                         Fill::NonZero,
                         root_transform * *local_transform,
-                        &Brush::Solid(prev_color),
+                        &brush,
                         None,
                         pb,
                     );
@@ -382,15 +399,21 @@ impl Node for MathNode {
             } else {
                 base_opacity
             };
-            let mut current_color = color;
-            current_color.a =
-                (color.a as f32 * current_alpha * parent_opacity).clamp(0.0, 255.0) as u8;
+            let current_opacity = current_alpha * parent_opacity;
+            let brush = match self.fill_paint.get() {
+                Some(paint) => paint.to_brush_with_opacity(current_opacity),
+                None => {
+                    let mut current_color = color;
+                    current_color.a = (color.a as f32 * current_opacity).clamp(0.0, 255.0) as u8;
+                    Brush::Solid(current_color)
+                }
+            };
 
             for (local_transform, pb) in c.as_ref() {
                 scene.fill(
                     Fill::NonZero,
                     root_transform * *local_transform,
-                    &Brush::Solid(current_color),
+                    &brush,
                     None,
                     pb,
                 );
@@ -407,6 +430,7 @@ impl Node for MathNode {
         h.update_u64(self.equation.state_hash());
         h.update_u64(self.font_size.state_hash());
         h.update_u64(self.fill_color.state_hash());
+        h.update_u64(self.fill_paint.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.transition_progress.state_hash());
         h.update_u64(self.anchor.state_hash());
@@ -424,6 +448,7 @@ impl Node for MathNode {
         self.equation.reset();
         self.font_size.reset();
         self.fill_color.reset();
+        self.fill_paint.reset();
         self.opacity.reset();
         self.transition_progress.reset();
         self.anchor.reset();

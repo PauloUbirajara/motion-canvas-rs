@@ -1,4 +1,6 @@
-use crate::core::animation::{Node, Signal};
+#![allow(deprecated)]
+
+use crate::core::animation::{Node, Paint, Signal};
 use glam::Vec2;
 use kurbo::{Affine, Line as KurboLine, Stroke};
 use peniko::{Brush, Color};
@@ -38,7 +40,11 @@ pub struct Line {
     /// The ending point of the line relative to its position.
     pub end: Signal<Vec2>,
     /// The color of the line stroke.
+    /// **Deprecated**: prefer `stroke_paint` which supports both solid colors and gradients.
+    #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
+    /// The paint (color or gradient) used for the line stroke.
+    pub stroke_paint: Signal<Option<Paint>>,
     /// The width of the line stroke.
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
@@ -56,6 +62,7 @@ impl Default for Line {
             start: Signal::new(DEFAULT_START),
             end: Signal::new(DEFAULT_END),
             stroke_color: Signal::new(DEFAULT_COLOR),
+            stroke_paint: Signal::new(None),
             stroke_width: Signal::new(DEFAULT_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
             anchor: Signal::new(Vec2::ZERO),
@@ -114,9 +121,13 @@ impl Line {
         self
     }
 
-    /// Sets the stroke color and width for the line.
-    pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
-        self.stroke_color = Signal::new(color);
+    /// Sets the stroke paint and width for the line.
+    pub fn with_stroke(mut self, paint: impl Into<Paint>, width: f32) -> Self {
+        let p = paint.into();
+        if let Paint::Solid(color) = p {
+            self.stroke_color = Signal::new(color);
+        }
+        self.stroke_paint = Signal::new(Some(p));
         self.stroke_width = Signal::new(width);
         self
     }
@@ -168,10 +179,14 @@ impl Node for Line {
         let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let mut final_color = stroke_color;
-        final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-
-        let brush = Brush::Solid(final_color);
+        let brush = match self.stroke_paint.get() {
+            Some(paint) => paint.to_brush_with_opacity(combined_opacity),
+            None => {
+                let mut final_color = stroke_color;
+                final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+                Brush::Solid(final_color)
+            }
+        };
 
         scene.stroke(
             &Stroke::new(stroke_width as f64),
@@ -195,6 +210,7 @@ impl Node for Line {
         h.update_u64(self.end.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.stroke_color.state_hash());
+        h.update_u64(self.stroke_paint.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.anchor.state_hash());
         h.finish()
@@ -212,6 +228,7 @@ impl Node for Line {
         self.end.reset();
         self.stroke_width.reset();
         self.stroke_color.reset();
+        self.stroke_paint.reset();
         self.opacity.reset();
         self.anchor.reset();
     }

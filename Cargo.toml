@@ -1,6 +1,6 @@
 [package]
 name = "motion-canvas-rs"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Paulo Ubirajara"]
 description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
@@ -134,6 +134,10 @@ required-features = ["runtime", "export"]
 [[example]]
 name = "getting_started"
 required-features = ["runtime"]
+
+[[example]]
+name = "gradient_demo"
+required-features = ["runtime", "math"]
 
 [[example]]
 name = "grid"

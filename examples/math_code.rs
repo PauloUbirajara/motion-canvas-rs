@@ -70,11 +70,11 @@ fn main() {
         .with_scale(0.7)
         .with_position(Vec2::new(510.0, 260.0));
 
-    project.scene.add(Box::new(triangle_line_group.clone()));
-    project.scene.add(Box::new(pytagorean_theorem.clone()));
-    project.scene.add(Box::new(text_a.clone()));
-    project.scene.add(Box::new(text_b.clone()));
-    project.scene.add(Box::new(text_c.clone()));
+    project.scene.add(&triangle_line_group);
+    project.scene.add(&pytagorean_theorem);
+    project.scene.add(&text_a);
+    project.scene.add(&text_b);
+    project.scene.add(&text_c);
 
     project.scene.video_timeline.add(all![
         all![triangle_line_group

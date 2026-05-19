@@ -32,9 +32,9 @@ fn main() {
     });
 
     // Add to scene
-    project.scene.add(Box::new(grid.clone()));
-    project.scene.add(Box::new(text_node));
-    project.scene.add(Box::new(text_link));
+    project.scene.add(&grid);
+    project.scene.add(text_node);
+    project.scene.add(text_link);
 
     project.scene.video_timeline.add(chain![
         grid.opacity
@@ -44,7 +44,8 @@ fn main() {
         all![
             grid.rows.to(16.0, Duration::from_secs(2)),
             grid.columns.to(16.0, Duration::from_secs(2)),
-            grid.stroke_color.to(Palette::BLUE, Duration::from_secs(2)),
+            grid.stroke_paint
+                .to(Some(Paint::Solid(Palette::BLUE)), Duration::from_secs(2)),
             grid.spacing
                 .to(Vec2::new(100.0, 100.0), Duration::from_secs(2)),
         ],
@@ -52,8 +53,8 @@ fn main() {
         all![
             grid.rows.to(8.0, Duration::from_secs(2)),
             grid.columns.to(8.0, Duration::from_secs(2)),
-            grid.stroke_color
-                .to(Palette::ORANGE, Duration::from_secs(2)),
+            grid.stroke_paint
+                .to(Some(Paint::Solid(Palette::ORANGE)), Duration::from_secs(2)),
             grid.spacing
                 .to(Vec2::new(20.0, 20.0), Duration::from_secs(2)),
         ],

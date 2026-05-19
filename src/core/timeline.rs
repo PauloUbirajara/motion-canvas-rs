@@ -14,7 +14,7 @@ pub enum PlaybackState {
 /// to orchestrate the overall animation flow.
 pub struct Timeline {
     /// The list of sequential animations.
-    pub animations: Vec<Box<dyn Animation>>,
+    pub animations: Vec<crate::core::animation::AnyAnimation>,
     /// The current playback time within this timeline.
     pub current_time: Duration,
 
@@ -39,8 +39,8 @@ impl Timeline {
     }
 
     /// Appends an animation to the end of the timeline.
-    pub fn add(&mut self, animation: Box<dyn Animation>) {
-        self.animations.push(animation);
+    pub fn add(&mut self, animation: impl Into<crate::core::animation::AnyAnimation>) {
+        self.animations.push(animation.into());
     }
 
     /// Advances the timeline by `dt`.

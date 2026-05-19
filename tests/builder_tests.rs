@@ -30,7 +30,7 @@ fn test_circle_builder() {
     assert_eq!(position.x, 100.0);
     assert_eq!(position.y, 200.0);
     assert_eq!(circle.radius.get(), 75.0);
-    assert_eq!(circle.fill_color.get(), Color::BLUE);
+    assert_eq!(circle.fill_paint.get(), Some(Paint::Solid(Color::BLUE)));
 }
 
 #[test]
@@ -55,7 +55,7 @@ fn test_line_builder() {
     assert_eq!(line.start.get(), Vec2::new(0.0, 0.0));
     assert_eq!(line.end.get(), Vec2::new(100.0, 100.0));
     assert_eq!(line.stroke_width.get(), 5.0);
-    assert_eq!(line.stroke_color.get(), Color::GREEN);
+    assert_eq!(line.stroke_paint.get(), Some(Paint::Solid(Color::GREEN)));
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn test_polygon_builder() {
         .with_fill(Color::RED);
 
     assert_eq!(polygon.points.get(), points);
-    assert_eq!(polygon.fill_color.get(), Color::RED);
+    assert_eq!(polygon.fill_paint.get(), Some(Paint::Solid(Color::RED)));
 }
 
 #[test]

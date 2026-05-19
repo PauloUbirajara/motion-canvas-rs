@@ -450,7 +450,9 @@ fn main() {
         all![
             show(&case1.opacity, appear_dur),
             show(&packet.opacity, Duration::from_millis(200)),
-            packet.fill_color.to(GREEN, Duration::from_millis(0)), // Start healthy
+            packet
+                .fill_paint
+                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(0)), // Start healthy
             packet
                 .scale
                 .to(Vec2::new(1.0, 1.0), Duration::from_millis(200))
@@ -494,7 +496,9 @@ fn main() {
         ],
         // Alert Miss: Flash Yellow and head to DB
         all![
-            packet.fill_color.to(YELLOW, Duration::from_millis(200)),
+            packet
+                .fill_paint
+                .to(Some(Paint::Solid(YELLOW)), Duration::from_millis(200)),
             packet
                 .scale
                 .to(Vec2::new(1.2, 1.2), Duration::from_millis(200))
@@ -509,7 +513,9 @@ fn main() {
         ],
         // Return from DB to Fanout smoothly
         all![
-            packet.fill_color.to(GREEN, Duration::from_millis(200)),
+            packet
+                .fill_paint
+                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(200)),
             packet
                 .scale
                 .to(Vec2::new(1.0, 1.0), Duration::from_millis(200)),
@@ -646,7 +652,9 @@ fn main() {
         all![
             show(&case3.opacity, appear_dur),
             show(&packet.opacity, Duration::from_millis(200)),
-            packet.fill_color.to(GREEN, Duration::from_millis(0)),
+            packet
+                .fill_paint
+                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(0)),
             packet
                 .position
                 .to(Vec2::new(960.0, 130.0), Duration::from_millis(0)),
@@ -670,7 +678,9 @@ fn main() {
             sequence![
                 move_dur / 2, // Wait until halfway
                 all![
-                    packet.fill_color.to(RED, Duration::from_millis(150)),
+                    packet
+                        .fill_paint
+                        .to(Some(Paint::Solid(RED)), Duration::from_millis(150)),
                     packet
                         .scale
                         .to(Vec2::new(1.8, 1.8), Duration::from_millis(150))
@@ -695,7 +705,9 @@ fn main() {
             show(&packet.opacity, Duration::from_millis(200)),
             show(&packet_post.opacity, Duration::from_millis(200)),
             show(&packet_notif.opacity, Duration::from_millis(200)),
-            packet.fill_color.to(GREEN, Duration::from_millis(0)),
+            packet
+                .fill_paint
+                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(0)),
             packet
                 .position
                 .to(Vec2::new(960.0, 130.0), Duration::from_millis(0)),

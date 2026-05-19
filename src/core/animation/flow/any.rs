@@ -1,4 +1,5 @@
 use crate::core::animation::base::{Animation, AudioEvent};
+use crate::core::animation::AnyAnimation;
 use std::time::Duration;
 
 /// An animation that runs multiple animations in parallel, but finishes
@@ -7,12 +8,12 @@ use std::time::Duration;
 /// `Any` acts like a race condition: the first animation to reach its end
 /// causes the entire `Any` container to complete.
 pub struct Any {
-    pub(crate) animations: Vec<Box<dyn Animation>>,
+    pub(crate) animations: Vec<AnyAnimation>,
 }
 
 impl Any {
     /// Creates a new `Any` container with the provided animations.
-    pub fn new(animations: Vec<Box<dyn Animation>>) -> Self {
+    pub fn new(animations: Vec<AnyAnimation>) -> Self {
         Self { animations }
     }
 }
@@ -91,6 +92,6 @@ impl Animation for Any {
 ///     wait(Duration::from_secs(1)), // Finish after 1s regardless of position
 /// ];
 /// ```
-pub fn any(animations: Vec<Box<dyn Animation>>) -> Box<dyn Animation> {
-    Box::new(Any::new(animations))
+pub fn any(animations: Vec<AnyAnimation>) -> AnyAnimation {
+    AnyAnimation::Any(Any::new(animations))
 }

@@ -38,7 +38,7 @@ pub use wait::wait;
 #[macro_export]
 macro_rules! all {
     ($($anim:expr),* $(,)?) => {
-        $crate::flows::all(vec![$(Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>),*])
+        $crate::flows::all(vec![$(std::convert::Into::into($anim)),*])
     };
 }
 
@@ -59,7 +59,7 @@ macro_rules! all {
 #[macro_export]
 macro_rules! any {
     ($($anim:expr),* $(,)?) => {
-        $crate::flows::any(vec![$(Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>),*])
+        $crate::flows::any(vec![$(std::convert::Into::into($anim)),*])
     };
 }
 
@@ -82,7 +82,7 @@ macro_rules! any {
 #[macro_export]
 macro_rules! chain {
     ($($anim:expr),* $(,)?) => {
-        $crate::flows::chain(vec![$(Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>),*])
+        $crate::flows::chain(vec![$(std::convert::Into::into($anim)),*])
     };
 }
 
@@ -98,10 +98,7 @@ macro_rules! chain {
 #[macro_export]
 macro_rules! delay {
     ($d:expr, $anim:expr $(,)?) => {
-        $crate::flows::delay(
-            $d,
-            Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>,
-        )
+        $crate::flows::delay($d, std::convert::Into::into($anim))
     };
 }
 
@@ -122,7 +119,7 @@ macro_rules! delay {
 #[macro_export]
 macro_rules! sequence {
     ($stagger:expr, $($anim:expr),* $(,)?) => {
-        $crate::flows::sequence($stagger, vec![$(Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>),*])
+        $crate::flows::sequence($stagger, vec![$(std::convert::Into::into($anim)),*])
     };
 }
 
@@ -141,12 +138,7 @@ macro_rules! sequence {
 #[macro_export]
 macro_rules! loop_anim {
     ($factory:expr, $iters:expr $(,)?) => {
-        $crate::flows::loop_anim(
-            Box::new(move || {
-                Box::new($factory) as Box<dyn $crate::core::animation::base::Animation>
-            }),
-            $iters,
-        )
+        $crate::flows::loop_anim(move || std::convert::Into::into($factory), $iters)
     };
 }
 
@@ -166,7 +158,7 @@ macro_rules! loop_anim {
 #[macro_export]
 macro_rules! with_easing {
     ($easing:expr, [$($anim:expr),* $(,)?] $(,)?) => {
-        $crate::flows::with_easing($easing, vec![$(Box::new($anim) as Box<dyn $crate::core::animation::base::Animation>),*])
+        $crate::flows::with_easing($easing, vec![$(std::convert::Into::into($anim)),*])
     };
 }
 
@@ -182,8 +174,7 @@ macro_rules! with_easing {
 #[macro_export]
 macro_rules! play {
     ($node:expr) => {
-        Box::new($crate::elements::media::AudioAnimation::new($node))
-            as Box<dyn $crate::core::animation::base::Animation>
+        $crate::core::AnyAnimation::Audio($crate::elements::media::AudioAnimation::new($node))
     };
 }
 

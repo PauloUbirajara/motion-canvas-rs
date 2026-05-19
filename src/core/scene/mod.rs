@@ -24,16 +24,13 @@ pub trait Scene2D {
 /// and timelines for video and audio animations.
 pub struct BaseScene {
     /// The collection of visual nodes in the scene.
-    pub nodes: Vec<Box<dyn Node>>,
+    pub nodes: Vec<crate::core::animation::AnyNode>,
     /// The primary timeline for video animations.
     pub video_timeline: crate::core::Timeline,
     /// The separate timeline for purely audio events.
     #[cfg(feature = "audio")]
     pub audio_timeline: crate::core::Timeline,
-
     // New fields:
-    pub previous_frame_hash: u64,
-    pub is_dirty: bool,
 }
 
 impl BaseScene {
@@ -44,14 +41,12 @@ impl BaseScene {
             video_timeline: crate::core::Timeline::new(),
             #[cfg(feature = "audio")]
             audio_timeline: crate::core::Timeline::new(),
-            previous_frame_hash: 0,
-            is_dirty: true,
         }
     }
 
     /// Adds a node to the scene.
-    pub fn add(&mut self, node: Box<dyn Node>) {
-        self.nodes.push(node);
+    pub fn add(&mut self, node: impl Into<crate::core::animation::AnyNode>) {
+        self.nodes.push(node.into());
     }
 
     /// Resets all timelines and nodes within the scene to their initial state.
@@ -93,14 +88,6 @@ impl Scene2D for BaseScene {
         for node in &mut self.nodes {
             node.update(dt);
         }
-
-        let current_hash = self.state_hash();
-        if current_hash != self.previous_frame_hash {
-            self.is_dirty = true;
-            self.previous_frame_hash = current_hash;
-        } else {
-            self.is_dirty = false;
-        }
     }
 
     fn state_hash(&self) -> u64 {
@@ -110,13 +97,5 @@ impl Scene2D for BaseScene {
             .enumerate()
             .map(|(i, node)| crate::assets::hash::combine_hashes(node.state_hash(), i as u64))
             .reduce(|| 0u64, |a, b| a.wrapping_add(b))
-    }
-
-    fn is_dirty(&self) -> bool {
-        self.is_dirty
-    }
-
-    fn set_dirty(&mut self, dirty: bool) {
-        self.is_dirty = dirty;
     }
 }

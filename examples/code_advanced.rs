@@ -17,7 +17,7 @@ fn main() {
         .with_font_size(32.0)
         .with_dim_opacity(0.1);
 
-    project.scene.add(Box::new(code.clone()));
+    project.scene.add(&code);
 
     project.scene.video_timeline.add(sequence![
         Duration::from_secs(1),

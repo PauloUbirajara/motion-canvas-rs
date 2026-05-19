@@ -1,5 +1,7 @@
+#![allow(deprecated)]
+
 use crate::assets::font_manager::FontManager;
-use crate::core::animation::{Node, Signal};
+use crate::core::animation::{Node, Paint, Signal};
 use glam::Vec2;
 use kurbo::{Affine, BezPath, Shape};
 use peniko::{Brush, Color, Fill};
@@ -88,7 +90,11 @@ pub struct TextNode {
     /// The font size in pixels.
     pub font_size: Signal<f32>,
     /// The solid color used to fill the text.
+    /// **Deprecated**: prefer `fill_paint` which supports both solid colors and gradients.
+    #[deprecated(since = "0.2.3", note = "use fill_paint instead")]
     pub fill_color: Signal<Color>,
+    /// The paint (color or gradient) used to fill the text.
+    pub fill_paint: Signal<Option<Paint>>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
     /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
@@ -109,6 +115,7 @@ impl Default for TextNode {
             text: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
             fill_color: Signal::new(DEFAULT_COLOR),
+            fill_paint: Signal::new(None),
             opacity: Signal::new(DEFAULT_OPACITY),
             anchor: Signal::new(Vec2::ZERO),
             text_align: Signal::new(TextAlign::Center),
@@ -176,9 +183,13 @@ impl TextNode {
         self
     }
 
-    /// Sets the solid fill color.
-    pub fn with_fill(mut self, color: Color) -> Self {
-        self.fill_color = Signal::new(color);
+    /// Sets the fill paint (color or gradient).
+    pub fn with_fill(mut self, paint: impl Into<Paint>) -> Self {
+        let p = paint.into();
+        if let Paint::Solid(color) = p {
+            self.fill_color = Signal::new(color);
+        }
+        self.fill_paint = Signal::new(Some(p));
         self
     }
 
@@ -205,6 +216,7 @@ impl Clone for TextNode {
             text: self.text.clone(),
             font_size: self.font_size.clone(),
             fill_color: self.fill_color.clone(),
+            fill_paint: self.fill_paint.clone(),
             opacity: self.opacity.clone(),
             anchor: self.anchor.clone(),
             text_align: self.text_align.clone(),
@@ -383,9 +395,15 @@ impl Node for TextNode {
             * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
 
         let root_transform = parent_transform * local_transform;
-        let mut render_color = color;
-        render_color.a = (color.a as f32 * opacity * parent_opacity).clamp(0.0, 255.0) as u8;
-        let brush = Brush::Solid(render_color);
+        let combined_opacity = opacity * parent_opacity;
+        let brush = match self.fill_paint.get() {
+            Some(paint) => paint.to_brush_with_opacity(combined_opacity),
+            None => {
+                let mut render_color = color;
+                render_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
+                Brush::Solid(render_color)
+            }
+        };
         for (glyph_transform, pb) in c.as_ref() {
             scene.fill(
                 Fill::NonZero,
@@ -406,6 +424,7 @@ impl Node for TextNode {
         h.update_u64(self.text.state_hash());
         h.update_u64(self.font_size.state_hash());
         h.update_u64(self.fill_color.state_hash());
+        h.update_u64(self.fill_paint.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.anchor.state_hash());
         h.update_u64(self.text_align.state_hash());
@@ -424,6 +443,7 @@ impl Node for TextNode {
         self.text.reset();
         self.font_size.reset();
         self.fill_color.reset();
+        self.fill_paint.reset();
         self.opacity.reset();
         self.anchor.reset();
         self.text_align.reset();

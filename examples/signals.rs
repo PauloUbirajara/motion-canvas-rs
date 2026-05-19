@@ -68,17 +68,17 @@ fn main() {
     let y_text_link = y_label.text.bind(y_var.clone(), |y| format!("Y: {:.1}", y));
 
     // Add everything to the scene
-    project.scene.add(Box::new(axes));
-    project.scene.add(Box::new(point));
-    project.scene.add(Box::new(x_label));
-    project.scene.add(Box::new(y_label));
+    project.scene.add(axes);
+    project.scene.add(point);
+    project.scene.add(x_label);
+    project.scene.add(y_label);
 
     // Add the links as "invisible" nodes that just perform the sync
-    project.scene.add(Box::new(circle_pos_link));
-    project.scene.add(Box::new(x_label_pos_link));
-    project.scene.add(Box::new(y_label_pos_link));
-    project.scene.add(Box::new(x_text_link));
-    project.scene.add(Box::new(y_text_link));
+    project.scene.add(circle_pos_link);
+    project.scene.add(x_label_pos_link);
+    project.scene.add(y_label_pos_link);
+    project.scene.add(x_text_link);
+    project.scene.add(y_text_link);
 
     // 6. Animate our independent variables!
     project.scene.video_timeline.add(chain![

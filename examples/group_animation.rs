@@ -33,7 +33,7 @@ fn main() {
         .with_position(Vec2::new(400.0, 300.0));
 
     // We must add the group to the scene's nodes to render it
-    project.scene.add(Box::new(group.clone()));
+    project.scene.add(&group);
 
     // Define animations and add them to the timeline
     project.scene.video_timeline.add(chain![

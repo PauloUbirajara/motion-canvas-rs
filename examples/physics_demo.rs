@@ -237,7 +237,6 @@ fn build_scene4() -> (PhysicsNode, TextNode, TextNode) {
     (p, title, subtitle)
 }
 
-// Scene 5 rewritten to return binding nodes driven entirely by explicit external signal maps
 fn build_scene5() -> (
     PhysicsNode,
     TextNode,
@@ -554,17 +553,15 @@ fn build_scene8() -> (
     .with_bounciness(0.3)
     .with_mode(PhysicsMode::Disabled);
 
-    // Companion balls — spawn above, appear during Kinematic phase
+    // Balls — spawn above, appear during Disabled, Kinematic and Dynamic phase
     let ball_colors = [ACCENT_RED, ACCENT_YELLOW, ACCENT_EMERALD, ACCENT_PURPLE];
     let mut balls = Vec::new();
-    for (i, color) in ball_colors.iter().enumerate() {
+    for i in 0..12 {
+        let color = ball_colors[(i % 4) as usize];
         let ball = RigidBodyNode::new(Box::new(
-            Circle::default().with_radius(15.0).with_fill(*color),
+            Circle::default().with_radius(15.0).with_fill(color),
         ))
-        .with_position(Vec2::new(
-            CX - 90.0 + (i as f32 * 60.0),
-            -50.0 - (i as f32 * 40.0),
-        ))
+        .with_position(Vec2::new(CX - 90.0 + ((i % 4) as f32 * 60.0), -50.0))
         .with_shape(PhysicsShape::Ball(15.0))
         .with_bounciness(0.6)
         .with_mode(PhysicsMode::Disabled);
@@ -662,55 +659,55 @@ fn main() {
     let (p9, t9, s9) = build_scene9();
 
     // ── Add all to scene (all invisible) ──
-    project.scene.add(Box::new(p1.clone()));
-    project.scene.add(Box::new(t1.clone()));
-    project.scene.add(Box::new(s1.clone()));
+    project.scene.add(&p1);
+    project.scene.add(&t1);
+    project.scene.add(&s1);
 
-    project.scene.add(Box::new(p2.clone()));
-    project.scene.add(Box::new(t2.clone()));
-    project.scene.add(Box::new(s2.clone()));
+    project.scene.add(&p2);
+    project.scene.add(&t2);
+    project.scene.add(&s2);
     let labels2_c: Vec<_> = labels2
         .iter()
         .map(|l| {
-            project.scene.add(Box::new(l.clone()));
+            project.scene.add(l);
             l.clone()
         })
         .collect();
 
-    project.scene.add(Box::new(p3.clone()));
-    project.scene.add(Box::new(t3.clone()));
-    project.scene.add(Box::new(s3.clone()));
+    project.scene.add(&p3);
+    project.scene.add(&t3);
+    project.scene.add(&s3);
     let labels3_c: Vec<_> = labels3
         .iter()
         .map(|l| {
-            project.scene.add(Box::new(l.clone()));
+            project.scene.add(l);
             l.clone()
         })
         .collect();
 
-    project.scene.add(Box::new(p4.clone()));
-    project.scene.add(Box::new(t4.clone()));
-    project.scene.add(Box::new(s4.clone()));
+    project.scene.add(&p4);
+    project.scene.add(&t4);
+    project.scene.add(&s4);
 
-    project.scene.add(Box::new(p5.clone()));
-    project.scene.add(Box::new(t5.clone()));
-    project.scene.add(Box::new(s5.clone()));
+    project.scene.add(&p5);
+    project.scene.add(&t5);
+    project.scene.add(&s5);
 
     for link in links5 {
         project.scene.add(link);
     }
 
-    project.scene.add(Box::new(p6.clone()));
-    project.scene.add(Box::new(t6.clone()));
-    project.scene.add(Box::new(s6.clone()));
+    project.scene.add(&p6);
+    project.scene.add(&t6);
+    project.scene.add(&s6);
 
-    project.scene.add(Box::new(p7.clone()));
-    project.scene.add(Box::new(t7.clone()));
-    project.scene.add(Box::new(s7.clone()));
+    project.scene.add(&p7);
+    project.scene.add(&t7);
+    project.scene.add(&s7);
     let labels7_c: Vec<_> = labels7
         .iter()
         .map(|l| {
-            project.scene.add(Box::new(l.clone()));
+            project.scene.add(l);
             l.clone()
         })
         .collect();
@@ -718,14 +715,14 @@ fn main() {
         project.scene.add(binding);
     }
 
-    project.scene.add(Box::new(p8.clone()));
-    project.scene.add(Box::new(t8.clone()));
-    project.scene.add(Box::new(s8.clone()));
-    project.scene.add(Box::new(status8.clone()));
+    project.scene.add(&p8);
+    project.scene.add(&t8);
+    project.scene.add(&s8);
+    project.scene.add(&status8);
 
-    project.scene.add(Box::new(p9.clone()));
-    project.scene.add(Box::new(t9.clone()));
-    project.scene.add(Box::new(s9.clone()));
+    project.scene.add(&p9);
+    project.scene.add(&t9);
+    project.scene.add(&s9);
 
     // ── Timeline: one scene at a time ──
     project.scene.video_timeline.add(chain![
@@ -856,6 +853,22 @@ fn main() {
             .position
             .to(Vec2::new(CX, 270.0), Duration::from_millis(600)),
         wait!(1.0),
+        // Enable balls as Dynamic so they fall onto the disabled text
+        all![
+            balls8[0]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[1]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[2]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[3]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+        ],
+        wait!(3.0),
         // ── Phase 2: Dynamic — physics takes over, text falls ──
         status8
             .text
@@ -863,6 +876,22 @@ fn main() {
         text8
             .mode
             .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+        wait!(1.0),
+        // Enable balls as Dynamic so they fall onto the dynamic text
+        all![
+            balls8[4]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[5]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[6]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+            balls8[7]
+                .mode
+                .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
+        ],
         wait!(3.0),
         // ── Phase 3: Kinematic — text becomes a platform, balls drop onto it ──
         status8
@@ -875,18 +904,18 @@ fn main() {
         text8
             .position
             .to(Vec2::new(CX, 300.0), Duration::from_millis(800)),
-        // Enable balls as Dynamic so they fall onto the kinematic text
+        // Enable remaining balls as Dynamic so they fall onto the kinematic text
         all![
-            balls8[0]
+            balls8[8]
                 .mode
                 .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
-            balls8[1]
+            balls8[9]
                 .mode
                 .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
-            balls8[2]
+            balls8[10]
                 .mode
                 .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
-            balls8[3]
+            balls8[11]
                 .mode
                 .to(PhysicsMode::Dynamic, Duration::from_millis(1)),
         ],

@@ -56,8 +56,8 @@ fn main() {
             .with_font_size(18.0)
             .with_fill(Color::rgb8(0xcc, 0xcc, 0xcc));
 
-        project.scene.add(Box::new(ball.clone()));
-        project.scene.add(Box::new(label.clone()));
+        project.scene.add(&ball);
+        project.scene.add(&label);
 
         balls.push(ball);
     }

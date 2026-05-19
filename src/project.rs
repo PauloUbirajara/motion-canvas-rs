@@ -12,6 +12,7 @@ const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x1a, 0x1a, 0x1a);
 const DEFAULT_USE_CACHE: bool = true;
 const DEFAULT_USE_GPU: bool = true;
 const DEFAULT_USE_FFMPEG: bool = false;
+const DEFAULT_CACHE_WRITE_INTERVAL: u32 = 500;
 
 /// The central configuration and state for a motion canvas animation.
 ///
@@ -49,6 +50,8 @@ pub struct Project {
     pub speed: f32,
     /// The master playback timeline state.
     pub timeline: crate::core::Timeline,
+    /// The number of frames between incremental cache manifest writes to disk.
+    pub cache_write_interval: u32,
 }
 
 impl Project {
@@ -70,6 +73,7 @@ impl Project {
             paused: false,
             speed: 1.0,
             timeline: crate::core::Timeline::new(),
+            cache_write_interval: DEFAULT_CACHE_WRITE_INTERVAL,
         }
     }
 }
@@ -109,6 +113,12 @@ impl Project {
     /// Enables or disables frame-level caching.
     pub fn with_cache(mut self, use_cache: bool) -> Self {
         self.use_cache = use_cache;
+        self
+    }
+
+    /// Sets the cache manifest write interval (number of frames).
+    pub fn with_cache_write_interval(mut self, interval: u32) -> Self {
+        self.cache_write_interval = interval;
         self
     }
 

@@ -1,5 +1,8 @@
+#![allow(deprecated)]
+
 use crate::assets::hash::Hasher;
 use crate::core::animation::base::Node;
+use crate::core::animation::paint::Paint;
 use crate::core::animation::tween::Signal;
 use glam::Vec2;
 use kurbo::{Affine, BezPath, Stroke};
@@ -34,7 +37,11 @@ pub struct GridNode {
     /// The distance between adjacent grid lines.
     pub spacing: Signal<Vec2>,
     /// The color of the grid lines.
+    /// **Deprecated**: prefer `stroke_paint` which supports both solid colors and gradients.
+    #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
+    /// The paint (color or gradient) used for the grid lines.
+    pub stroke_paint: Signal<Option<Paint>>,
     /// The width of the grid lines.
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
@@ -49,6 +56,7 @@ impl Default for GridNode {
             rows: Signal::new(10.0),
             spacing: Signal::new(Vec2::new(50.0, 50.0)),
             stroke_color: Signal::new(Color::rgb8(100, 100, 100)),
+            stroke_paint: Signal::new(None),
             stroke_width: Signal::new(1.0),
             opacity: Signal::new(1.0),
         }
@@ -100,9 +108,13 @@ impl GridNode {
         self
     }
 
-    /// Sets the stroke color and width for the grid lines.
-    pub fn with_stroke(mut self, color: Color, width: f32) -> Self {
-        self.stroke_color = Signal::new(color);
+    /// Sets the stroke paint and width for the grid lines.
+    pub fn with_stroke(mut self, paint: impl Into<Paint>, width: f32) -> Self {
+        let p = paint.into();
+        if let Paint::Solid(color) = p {
+            self.stroke_color = Signal::new(color);
+        }
+        self.stroke_paint = Signal::new(Some(p));
         self.stroke_width = Signal::new(width);
         self
     }
@@ -126,11 +138,17 @@ impl Node for GridNode {
         let cols = self.columns.get().max(0.0);
         let rows = self.rows.get().max(0.0);
         let spacing = self.spacing.get();
-        let stroke_color = self.stroke_color.get().multiply_alpha(opacity);
         let stroke_width = self.stroke_width.get();
 
         let transform = parent_transform * Affine::translate((pos.x as f64, pos.y as f64));
-        let brush = Brush::Solid(stroke_color);
+        let brush = match self.stroke_paint.get() {
+            Some(paint) => paint.to_brush_with_opacity(opacity),
+            None => {
+                let mut stroke_color = self.stroke_color.get();
+                stroke_color.a = (stroke_color.a as f32 * opacity).clamp(0.0, 255.0) as u8;
+                Brush::Solid(stroke_color)
+            }
+        };
         let stroke = Stroke::new(stroke_width as f64);
 
         let width = cols * spacing.x;
@@ -172,6 +190,7 @@ impl Node for GridNode {
         h.update_u64(self.rows.state_hash());
         h.update_u64(self.spacing.state_hash());
         h.update_u64(self.stroke_color.state_hash());
+        h.update_u64(self.stroke_paint.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.finish()
@@ -187,6 +206,7 @@ impl Node for GridNode {
         self.rows.reset();
         self.spacing.reset();
         self.stroke_color.reset();
+        self.stroke_paint.reset();
         self.stroke_width.reset();
         self.opacity.reset();
     }

@@ -42,10 +42,10 @@ fn main() {
         .with_fill(Color::rgb8(0xf1, 0xc4, 0x0f)) // Yellow
         .with_opacity(0.0);
 
-    project.scene.add(Box::new(outer_camera.clone()));
+    project.scene.add(&outer_camera);
 
-    project.scene.add(Box::new(outer_status.clone()));
-    project.scene.add(Box::new(inner_status.clone()));
+    project.scene.add(&outer_status);
+    project.scene.add(&inner_status);
 
     // Animation Flow
     project.scene.video_timeline.add(loop_anim!(
