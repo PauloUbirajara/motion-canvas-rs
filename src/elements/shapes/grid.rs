@@ -41,7 +41,7 @@ pub struct GridNode {
     #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
     /// The paint (color or gradient) used for the grid lines.
-    pub stroke_paint: Signal<Option<Paint>>,
+    pub stroke_paint: Signal<Paint>,
     /// The width of the grid lines.
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
@@ -56,7 +56,7 @@ impl Default for GridNode {
             rows: Signal::new(10.0),
             spacing: Signal::new(Vec2::new(50.0, 50.0)),
             stroke_color: Signal::new(Color::rgb8(100, 100, 100)),
-            stroke_paint: Signal::new(None),
+            stroke_paint: Signal::new(Paint::None),
             stroke_width: Signal::new(1.0),
             opacity: Signal::new(1.0),
         }
@@ -114,7 +114,7 @@ impl GridNode {
         if let Paint::Solid(color) = p {
             self.stroke_color = Signal::new(color);
         }
-        self.stroke_paint = Signal::new(Some(p));
+        self.stroke_paint = Signal::new(p);
         self.stroke_width = Signal::new(width);
         self
     }
@@ -142,12 +142,12 @@ impl Node for GridNode {
 
         let transform = parent_transform * Affine::translate((pos.x as f64, pos.y as f64));
         let brush = match self.stroke_paint.get() {
-            Some(paint) => paint.to_brush_with_opacity(opacity),
-            None => {
+            Paint::None => {
                 let mut stroke_color = self.stroke_color.get();
                 stroke_color.a = (stroke_color.a as f32 * opacity).clamp(0.0, 255.0) as u8;
                 Brush::Solid(stroke_color)
             }
+            paint => paint.to_brush_with_opacity(opacity),
         };
         let stroke = Stroke::new(stroke_width as f64);
 

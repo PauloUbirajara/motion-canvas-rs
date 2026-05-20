@@ -62,7 +62,7 @@ pub struct MathNode {
     #[deprecated(since = "0.2.3", note = "use fill_paint instead")]
     pub fill_color: Signal<Color>,
     /// The paint (color or gradient) used to fill the math glyphs.
-    pub fill_paint: Signal<Option<Paint>>,
+    pub fill_paint: Signal<Paint>,
     /// The overall opacity (0.0 to 1.0).
     pub opacity: Signal<f32>,
     /// Internal transition progress signal (0.0 to 1.0).
@@ -86,7 +86,7 @@ impl Default for MathNode {
             equation: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
             fill_color: Signal::new(DEFAULT_COLOR),
-            fill_paint: Signal::new(None),
+            fill_paint: Signal::new(Paint::None),
             opacity: Signal::new(DEFAULT_OPACITY),
             transition_progress: Signal::new(1.0),
             anchor: Signal::new(Vec2::ZERO),
@@ -187,7 +187,7 @@ impl MathNode {
         if let Paint::Solid(color) = p {
             self.fill_color = Signal::new(color);
         }
-        self.fill_paint = Signal::new(Some(p));
+        self.fill_paint = Signal::new(p);
         self
     }
 
@@ -374,12 +374,12 @@ impl Node for MathNode {
             if let Some(prev) = prev_cache.as_ref() {
                 let prev_opacity = base_opacity * (1.0 - progress) * parent_opacity;
                 let brush = match self.fill_paint.get() {
-                    Some(paint) => paint.to_brush_with_opacity(prev_opacity),
-                    None => {
+                    Paint::None => {
                         let mut prev_color = color;
                         prev_color.a = (color.a as f32 * prev_opacity).clamp(0.0, 255.0) as u8;
                         Brush::Solid(prev_color)
                     }
+                    paint => paint.to_brush_with_opacity(prev_opacity),
                 };
                 for (local_transform, pb) in prev.as_ref() {
                     scene.fill(
@@ -401,12 +401,12 @@ impl Node for MathNode {
             };
             let current_opacity = current_alpha * parent_opacity;
             let brush = match self.fill_paint.get() {
-                Some(paint) => paint.to_brush_with_opacity(current_opacity),
-                None => {
+                Paint::None => {
                     let mut current_color = color;
                     current_color.a = (color.a as f32 * current_opacity).clamp(0.0, 255.0) as u8;
                     Brush::Solid(current_color)
                 }
+                paint => paint.to_brush_with_opacity(current_opacity),
             };
 
             for (local_transform, pb) in c.as_ref() {

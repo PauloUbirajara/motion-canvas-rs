@@ -45,13 +45,13 @@ pub struct Rect {
     #[deprecated(since = "0.2.3", note = "use fill_paint instead")]
     pub fill_color: Signal<Color>,
     /// The paint (color or gradient) used to fill the rectangle.
-    pub fill_paint: Signal<Option<Paint>>,
+    pub fill_paint: Signal<Paint>,
     /// The color of the border stroke.
     /// **Deprecated**: prefer `stroke_paint` which supports both solid colors and gradients.
     #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
     /// The paint (color or gradient) used for the border stroke.
-    pub stroke_paint: Signal<Option<Paint>>,
+    pub stroke_paint: Signal<Paint>,
     /// The width of the border stroke.
     pub stroke_width: Signal<f32>,
     /// The corner radius for rounded rectangles.
@@ -70,9 +70,9 @@ impl Default for Rect {
             scale: Signal::new(Vec2::ONE),
             size: Signal::new(DEFAULT_SIZE),
             fill_color: Signal::new(DEFAULT_COLOR),
-            fill_paint: Signal::new(None),
+            fill_paint: Signal::new(Paint::None),
             stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
-            stroke_paint: Signal::new(None),
+            stroke_paint: Signal::new(Paint::None),
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             radius: Signal::new(DEFAULT_RADIUS),
             opacity: Signal::new(DEFAULT_OPACITY),
@@ -138,7 +138,7 @@ impl Rect {
         if let Paint::Solid(color) = p {
             self.fill_color = Signal::new(color);
         }
-        self.fill_paint = Signal::new(Some(p));
+        self.fill_paint = Signal::new(p);
         self
     }
 
@@ -148,7 +148,7 @@ impl Rect {
         if let Paint::Solid(color) = p {
             self.stroke_color = Signal::new(color);
         }
-        self.stroke_paint = Signal::new(Some(p));
+        self.stroke_paint = Signal::new(p);
         self.stroke_width = Signal::new(width);
         self
     }
@@ -196,26 +196,26 @@ impl Node for Rect {
 
         // Fill
         let fill_brush = match self.fill_paint.get() {
-            Some(paint) => paint.to_brush_with_opacity(combined_opacity),
-            None => {
+            Paint::None => {
                 let mut final_color = fill_color_val;
                 final_color.a =
                     (fill_color_val.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
                 Brush::Solid(final_color)
             }
+            paint => paint.to_brush_with_opacity(combined_opacity),
         };
         scene.fill(Fill::NonZero, combined_transform, &fill_brush, None, &rect);
 
         // Stroke
         if stroke_width > 0.001 {
             let stroke_brush = match self.stroke_paint.get() {
-                Some(paint) => paint.to_brush_with_opacity(combined_opacity),
-                None => {
+                Paint::None => {
                     let mut final_stroke = stroke_color;
                     final_stroke.a =
                         (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
                     Brush::Solid(final_stroke)
                 }
+                paint => paint.to_brush_with_opacity(combined_opacity),
             };
             scene.stroke(
                 &kurbo::Stroke::new(stroke_width as f64),

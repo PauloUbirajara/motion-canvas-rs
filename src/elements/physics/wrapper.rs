@@ -1,6 +1,6 @@
 use crate::core::animation::{Node, Signal};
 use crate::elements::physics::traits::PhysicsBody;
-use crate::elements::physics::{PhysicsMode, RigidBodyNode, StaticBodyNode};
+use crate::elements::physics::{PhysicsMode, PhysicsShape, RigidBodyNode, StaticBodyNode};
 use glam::Vec2;
 use kurbo::Affine;
 use rapier2d::prelude::{ColliderSet, RigidBody};
@@ -16,6 +16,32 @@ pub enum BodyWrapper {
     Dynamic(RigidBodyNode),
     /// A static fixed body wrapper.
     Static(StaticBodyNode),
+}
+
+impl BodyWrapper {
+    /// Accesses the underlying visual shape configuration.
+    pub fn shape(&self) -> &PhysicsShape {
+        match self {
+            Self::Dynamic(n) => &n.shape,
+            Self::Static(n) => &n.shape,
+        }
+    }
+
+    /// Accesses the restitution coefficient.
+    pub fn bounciness(&self) -> f32 {
+        match self {
+            Self::Dynamic(n) => n.bounciness,
+            Self::Static(n) => n.bounciness,
+        }
+    }
+
+    /// Accesses the friction coefficient.
+    pub fn friction(&self) -> f32 {
+        match self {
+            Self::Dynamic(n) => n.friction,
+            Self::Static(n) => n.friction,
+        }
+    }
 }
 
 impl Node for BodyWrapper {

@@ -43,13 +43,13 @@ pub struct Circle {
     #[deprecated(since = "0.2.3", note = "use fill_paint instead")]
     pub fill_color: Signal<Color>,
     /// The paint (color or gradient) used to fill the circle.
-    pub fill_paint: Signal<Option<Paint>>,
+    pub fill_paint: Signal<Paint>,
     /// The color of the border stroke.
     /// **Deprecated**: prefer `stroke_paint` which supports both solid colors and gradients.
     #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
     /// The paint (color or gradient) used for the border stroke.
-    pub stroke_paint: Signal<Option<Paint>>,
+    pub stroke_paint: Signal<Paint>,
     /// The width of the border stroke.
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
@@ -66,9 +66,9 @@ impl Default for Circle {
             scale: Signal::new(Vec2::ONE),
             radius: Signal::new(DEFAULT_RADIUS),
             fill_color: Signal::new(DEFAULT_COLOR),
-            fill_paint: Signal::new(None),
+            fill_paint: Signal::new(Paint::None),
             stroke_color: Signal::new(DEFAULT_STROKE_COLOR),
-            stroke_paint: Signal::new(None),
+            stroke_paint: Signal::new(Paint::None),
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
             anchor: Signal::new(Vec2::ZERO),
@@ -127,7 +127,7 @@ impl Circle {
         if let Paint::Solid(color) = p {
             self.fill_color = Signal::new(color);
         }
-        self.fill_paint = Signal::new(Some(p));
+        self.fill_paint = Signal::new(p);
         self
     }
 
@@ -137,7 +137,7 @@ impl Circle {
         if let Paint::Solid(color) = p {
             self.stroke_color = Signal::new(color);
         }
-        self.stroke_paint = Signal::new(Some(p));
+        self.stroke_paint = Signal::new(p);
         self.stroke_width = Signal::new(width);
         self
     }
@@ -178,12 +178,12 @@ impl Node for Circle {
 
         // Fill
         let fill_brush = match self.fill_paint.get() {
-            Some(paint) => paint.to_brush_with_opacity(combined_opacity),
-            None => {
+            Paint::None => {
                 let mut final_color = fill_color;
                 final_color.a = (fill_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
                 Brush::Solid(final_color)
             }
+            paint => paint.to_brush_with_opacity(combined_opacity),
         };
         scene.fill(
             Fill::NonZero,
@@ -196,13 +196,13 @@ impl Node for Circle {
         // Stroke
         if stroke_width > 0.001 {
             let stroke_brush = match self.stroke_paint.get() {
-                Some(paint) => paint.to_brush_with_opacity(combined_opacity),
-                None => {
+                Paint::None => {
                     let mut final_stroke = stroke_color;
                     final_stroke.a =
                         (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
                     Brush::Solid(final_stroke)
                 }
+                paint => paint.to_brush_with_opacity(combined_opacity),
             };
             scene.stroke(
                 &kurbo::Stroke::new(stroke_width as f64),

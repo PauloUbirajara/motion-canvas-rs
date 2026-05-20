@@ -21,18 +21,10 @@ fn main() {
     project.scene.video_timeline.add(loop_anim(
         move || {
             chain![
-                circle
-                    .fill_paint
-                    .to(Some(Paint::Solid(Color::YELLOW)), duration),
-                circle
-                    .fill_paint
-                    .to(Some(Paint::Solid(Color::GREEN)), duration),
-                circle
-                    .fill_paint
-                    .to(Some(Paint::Solid(Color::BLUE)), duration),
-                circle
-                    .fill_paint
-                    .to(Some(Paint::Solid(Color::RED)), duration),
+                circle.fill_paint.to(Paint::Solid(Color::YELLOW), duration),
+                circle.fill_paint.to(Paint::Solid(Color::GREEN), duration),
+                circle.fill_paint.to(Paint::Solid(Color::BLUE), duration),
+                circle.fill_paint.to(Paint::Solid(Color::RED), duration),
             ]
         },
         None,

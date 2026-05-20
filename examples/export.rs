@@ -29,8 +29,11 @@ fn main() {
     project.scene.video_timeline.add(all![
         // Circle color and size
         circle
-            .fill_color
-            .to(Color::rgb8(0xf2, 0xf2, 0xf2), Duration::from_secs(2))
+            .fill_paint
+            .to(
+                Paint::Solid(Color::rgb8(0xf2, 0xf2, 0xf2)),
+                Duration::from_secs(2)
+            )
             .ease(easings::quad_in_out),
         circle
             .radius

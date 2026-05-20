@@ -44,7 +44,7 @@ pub struct Line {
     #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
     /// The paint (color or gradient) used for the line stroke.
-    pub stroke_paint: Signal<Option<Paint>>,
+    pub stroke_paint: Signal<Paint>,
     /// The width of the line stroke.
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
@@ -62,7 +62,7 @@ impl Default for Line {
             start: Signal::new(DEFAULT_START),
             end: Signal::new(DEFAULT_END),
             stroke_color: Signal::new(DEFAULT_COLOR),
-            stroke_paint: Signal::new(None),
+            stroke_paint: Signal::new(Paint::None),
             stroke_width: Signal::new(DEFAULT_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
             anchor: Signal::new(Vec2::ZERO),
@@ -127,7 +127,7 @@ impl Line {
         if let Paint::Solid(color) = p {
             self.stroke_color = Signal::new(color);
         }
-        self.stroke_paint = Signal::new(Some(p));
+        self.stroke_paint = Signal::new(p);
         self.stroke_width = Signal::new(width);
         self
     }
@@ -180,12 +180,12 @@ impl Node for Line {
         let combined_opacity = parent_opacity * opacity;
 
         let brush = match self.stroke_paint.get() {
-            Some(paint) => paint.to_brush_with_opacity(combined_opacity),
-            None => {
+            Paint::None => {
                 let mut final_color = stroke_color;
                 final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
                 Brush::Solid(final_color)
             }
+            paint => paint.to_brush_with_opacity(combined_opacity),
         };
 
         scene.stroke(

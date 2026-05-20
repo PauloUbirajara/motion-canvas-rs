@@ -1065,7 +1065,7 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
         ],
         chain![
             sig_demo.radius.to(80.0, ms(700)).ease(easings::elastic_out),
-            sig_demo.fill_color.to(TEAL, ms(500)),
+            sig_demo.fill_paint.to(Paint::Solid(TEAL), ms(500)),
             sig_demo
                 .position
                 .to(Vec2::new(950.0, 350.0), ms(500))
@@ -1073,7 +1073,7 @@ export.rs          // FFmpeg pipe: rawvideo -> libx264
             wait(ms(300)),
             all![
                 sig_demo.radius.to(50.0, ms(400)),
-                sig_demo.fill_color.to(RED, ms(400)),
+                sig_demo.fill_paint.to(Paint::Solid(RED), ms(400)),
                 sig_demo.position.to(Vec2::new(900.0, 300.0), ms(400))
             ],
         ],

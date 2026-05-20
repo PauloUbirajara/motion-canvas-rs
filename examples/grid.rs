@@ -45,7 +45,7 @@ fn main() {
             grid.rows.to(16.0, Duration::from_secs(2)),
             grid.columns.to(16.0, Duration::from_secs(2)),
             grid.stroke_paint
-                .to(Some(Paint::Solid(Palette::BLUE)), Duration::from_secs(2)),
+                .to(Paint::Solid(Palette::BLUE), Duration::from_secs(2)),
             grid.spacing
                 .to(Vec2::new(100.0, 100.0), Duration::from_secs(2)),
         ],
@@ -54,7 +54,7 @@ fn main() {
             grid.rows.to(8.0, Duration::from_secs(2)),
             grid.columns.to(8.0, Duration::from_secs(2)),
             grid.stroke_paint
-                .to(Some(Paint::Solid(Palette::ORANGE)), Duration::from_secs(2)),
+                .to(Paint::Solid(Palette::ORANGE), Duration::from_secs(2)),
             grid.spacing
                 .to(Vec2::new(20.0, 20.0), Duration::from_secs(2)),
         ],
