@@ -126,7 +126,7 @@ impl Clone for CameraNode {
             rotation: self.rotation.clone(),
             zoom: self.zoom.clone(),
             anchor: self.anchor.clone(),
-            opacity: Signal::new(1.0),
+            opacity: self.opacity.clone(),
             size: self.size.clone(),
             centered: self.centered.clone(),
         }

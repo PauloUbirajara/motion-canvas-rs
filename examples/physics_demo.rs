@@ -590,6 +590,83 @@ fn build_scene8() -> (
 }
 
 fn build_scene9() -> (PhysicsNode, TextNode, TextNode) {
+    let title = make_title("Custom Colliders");
+    let subtitle = make_subtitle("Custom convex polygons falling through static pegs");
+
+    let mut p = PhysicsNode::new().with_opacity(0.0);
+
+    // Floor
+    p.add_static(make_floor(490.0, 600.0, FLOOR_COLOR));
+
+    // Staggered rows of pegs
+    const NUM_ROWS: usize = 5;
+    let peg_radius = 8.0;
+
+    for r in 0..NUM_ROWS {
+        let y = 180.0 + r as f32 * 60.0;
+        let is_even = r % 2 == 0;
+        let num_pegs = if is_even { 5 } else { 6 };
+
+        for c in 0..num_pegs {
+            let offset_x = if is_even {
+                (c as f32 - 2.0) * 80.0
+            } else {
+                (c as f32 - 2.5) * 80.0
+            };
+            let x = CX + offset_x;
+
+            p.add_static(
+                StaticBodyNode::new(Box::new(
+                    Circle::default()
+                        .with_radius(peg_radius)
+                        .with_fill(WALL_COLOR),
+                ))
+                .with_position(Vec2::new(x, y))
+                .with_shape(PhysicsShape::Ball(peg_radius))
+                .with_bounciness(0.6),
+            );
+        }
+    }
+
+    // Spawn falling diamonds with Custom physics colliders
+    for i in 0..12 {
+        let x_offset = CX - 100.0 + (i as f32 * 18.0);
+        let y_offset = 80.0 - (i as f32 * 65.0);
+
+        let points = vec![
+            Vec2::new(0.0, -22.0),
+            Vec2::new(14.0, 0.0),
+            Vec2::new(0.0, 22.0),
+            Vec2::new(-14.0, 0.0),
+        ];
+
+        let diamond_visual = Polygon::default()
+            .with_points(points)
+            .with_fill(ACCENT_PURPLE);
+
+        let custom_col = PhysicsShape::Custom(std::sync::Arc::new(move || {
+            rapier2d::prelude::ColliderBuilder::convex_polyline(vec![
+                rapier2d::prelude::Point::new(0.0, -22.0),
+                rapier2d::prelude::Point::new(14.0, 0.0),
+                rapier2d::prelude::Point::new(0.0, 22.0),
+                rapier2d::prelude::Point::new(-14.0, 0.0),
+            ])
+            .expect("Invalid custom shape polygon")
+        }));
+
+        p.add_dynamic(
+            RigidBodyNode::new(Box::new(diamond_visual))
+                .with_position(Vec2::new(x_offset, y_offset))
+                .with_shape(custom_col)
+                .with_bounciness(0.5)
+                .with_friction(0.15),
+        );
+    }
+
+    (p, title, subtitle)
+}
+
+fn build_scene10() -> (PhysicsNode, TextNode, TextNode) {
     let title = make_title("Final Example");
     let subtitle = make_subtitle("100 shapes, high bounciness, one container");
 
@@ -657,6 +734,7 @@ fn main() {
     let (p7, t7, s7, _cube_refs7, labels7, bindings7) = build_scene7();
     let (p8, t8, s8, text8, balls8, status8) = build_scene8();
     let (p9, t9, s9) = build_scene9();
+    let (p10, t10, s10) = build_scene10();
 
     // ── Add all to scene (all invisible) ──
     project.scene.add(&p1);
@@ -723,6 +801,10 @@ fn main() {
     project.scene.add(&p9);
     project.scene.add(&t9);
     project.scene.add(&s9);
+
+    project.scene.add(&p10);
+    project.scene.add(&t10);
+    project.scene.add(&s10);
 
     // ── Timeline: one scene at a time ──
     project.scene.video_timeline.add(chain![
@@ -937,15 +1019,25 @@ fn main() {
             s8.opacity.to(0.0, FADE),
             status8.opacity.to(0.0, FADE),
         ],
-        // Scene 9: Final Example
+        // Scene 9: Custom Colliders
         t9.opacity.to(1.0, FADE),
         wait!(1),
         all![p9.opacity.to(1.0, FADE), s9.opacity.to(1.0, FADE),],
-        wait!(10.0),
+        wait!(6.0),
         all![
             p9.opacity.to(0.0, FADE),
             t9.opacity.to(0.0, FADE),
             s9.opacity.to(0.0, FADE),
+        ],
+        // Scene 10: Final Example
+        t10.opacity.to(1.0, FADE),
+        wait!(1),
+        all![p10.opacity.to(1.0, FADE), s10.opacity.to(1.0, FADE),],
+        wait!(10.0),
+        all![
+            p10.opacity.to(0.0, FADE),
+            t10.opacity.to(0.0, FADE),
+            s10.opacity.to(0.0, FADE),
         ],
         wait!(1),
     ]);
