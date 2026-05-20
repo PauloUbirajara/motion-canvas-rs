@@ -202,6 +202,15 @@ fn test_physics_body_builders() {
     assert_eq!(static_body.rotation.get(), 0.1);
     assert_eq!(static_body.bounciness, 0.4);
     assert_eq!(static_body.friction, 0.8);
+
+    // Test PhysicsShape::Custom
+    let custom_shape = PhysicsShape::Custom(std::sync::Arc::new(|| {
+        rapier2d::prelude::ColliderBuilder::capsule_y(10.0, 5.0)
+    }));
+    let rigid_custom = RigidBodyNode::new(Box::new(Rect::default())).with_shape(custom_shape);
+
+    assert!(matches!(rigid_custom.shape, PhysicsShape::Custom(_)));
+    assert_eq!(format!("{:?}", rigid_custom.shape), "Custom");
 }
 
 #[test]

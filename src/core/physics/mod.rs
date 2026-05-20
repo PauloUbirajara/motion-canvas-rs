@@ -11,6 +11,9 @@
 
 use rapier2d::prelude::*;
 
+/// Default gravity acceleration along the Y-axis (pixels/second^2).
+pub const DEFAULT_GRAVITY_Y: f32 = 981.0;
+
 /// A purely headless container for the underlying Rapier2D simulation context.
 ///
 /// It aggregates the necessary sets and solvers needed to simulate rigid bodies,
@@ -53,7 +56,7 @@ impl Default for PhysicsEngine {
     /// Creates a default physics engine with standard gravity (981 px/s^2 downwards) and empty resource sets.
     fn default() -> Self {
         Self {
-            gravity: Vector::new(0.0, 981.0),
+            gravity: Vector::new(0.0, DEFAULT_GRAVITY_Y),
             rigid_body_set: RigidBodySet::new(),
             collider_set: ColliderSet::new(),
             integration_parameters: IntegrationParameters::default(),
