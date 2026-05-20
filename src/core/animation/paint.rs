@@ -2,6 +2,9 @@ use crate::core::animation::tween::Tweenable;
 use kurbo::Point;
 use peniko::{Brush, Color, ColorStop, ColorStops, Gradient, GradientKind};
 
+/// The default length and radius used when creating standard gradients.
+pub const DEFAULT_GRADIENT_LENGTH: f64 = 100.0;
+
 /// A representable and animatable paint property that can be either a solid color or a gradient.
 ///
 /// Wraps `peniko::Color` and `peniko::Gradient` and implements `Tweenable` to enable
@@ -285,4 +288,72 @@ impl Tweenable for Paint {
         }
         h.finish()
     }
+}
+
+/// Macro to create a linear gradient with N equidistant color stops.
+///
+/// Requires at least 2 colors. The gradient is centered with a default length of 100.0.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let grad = linear_gradient!(Color::RED, Color::BLUE);
+/// ```
+#[macro_export]
+macro_rules! linear_gradient {
+    ($($color:expr),+ $(,)?) => {{
+        let colors = [$($color),+];
+        assert!(colors.len() >= 2, "Gradients require at least 2 colors");
+        let mut stops = Vec::with_capacity(colors.len());
+        let n = colors.len() as f32;
+        for (i, &color) in colors.iter().enumerate() {
+            stops.push($crate::prelude::ColorStop {
+                offset: (i as f32) / (n - 1.0),
+                color,
+            });
+        }
+        $crate::prelude::Gradient {
+            kind: $crate::prelude::GradientKind::Linear {
+                start: $crate::prelude::Point::new(-$crate::core::animation::paint::DEFAULT_GRADIENT_LENGTH, 0.0),
+                end: $crate::prelude::Point::new($crate::core::animation::paint::DEFAULT_GRADIENT_LENGTH, 0.0),
+            },
+            extend: $crate::prelude::Extend::Pad,
+            stops: $crate::prelude::ColorStops::from(stops),
+        }
+    }};
+}
+
+/// Macro to create a radial gradient with N equidistant color stops.
+///
+/// Requires at least 2 colors. The gradient has a default outer radius of 100.0.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let grad = radial_gradient!(Color::RED, Color::BLUE);
+/// ```
+#[macro_export]
+macro_rules! radial_gradient {
+    ($($color:expr),+ $(,)?) => {{
+        let colors = [$($color),+];
+        assert!(colors.len() >= 2, "Gradients require at least 2 colors");
+        let mut stops = Vec::with_capacity(colors.len());
+        let n = colors.len() as f32;
+        for (i, &color) in colors.iter().enumerate() {
+            stops.push($crate::prelude::ColorStop {
+                offset: (i as f32) / (n - 1.0),
+                color,
+            });
+        }
+        $crate::prelude::Gradient {
+            kind: $crate::prelude::GradientKind::Radial {
+                start_center: $crate::prelude::Point::new(0.0, 0.0),
+                start_radius: 0.0,
+                end_center: $crate::prelude::Point::new(0.0, 0.0),
+                end_radius: $crate::core::animation::paint::DEFAULT_GRADIENT_LENGTH as f32,
+            },
+            extend: $crate::prelude::Extend::Pad,
+            stops: $crate::prelude::ColorStops::from(stops),
+        }
+    }};
 }

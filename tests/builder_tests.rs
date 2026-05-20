@@ -249,3 +249,38 @@ fn test_audio_event_offsets() {
     // play2 starts at play1 duration (1s) + wait1 duration (2s) = 3s
     assert_eq!(b_event.start_time, Duration::from_secs(3));
 }
+
+#[test]
+fn test_gradient_macros() {
+    let grad_lin = linear_gradient!(Color::RED, Color::GREEN, Color::BLUE);
+    assert!(matches!(grad_lin.kind, GradientKind::Linear { .. }));
+    let stops = grad_lin.stops.as_slice();
+    assert_eq!(stops.len(), 3);
+    assert_eq!(stops[0].offset, 0.0);
+    assert_eq!(stops[0].color, Color::RED);
+    assert_eq!(stops[1].offset, 0.5);
+    assert_eq!(stops[1].color, Color::GREEN);
+    assert_eq!(stops[2].offset, 1.0);
+    assert_eq!(stops[2].color, Color::BLUE);
+
+    let grad_rad = radial_gradient!(Color::YELLOW, Color::CYAN);
+    assert!(matches!(grad_rad.kind, GradientKind::Radial { .. }));
+    let stops_rad = grad_rad.stops.as_slice();
+    assert_eq!(stops_rad.len(), 2);
+    assert_eq!(stops_rad[0].offset, 0.0);
+    assert_eq!(stops_rad[0].color, Color::YELLOW);
+    assert_eq!(stops_rad[1].offset, 1.0);
+    assert_eq!(stops_rad[1].color, Color::CYAN);
+}
+
+#[test]
+#[should_panic(expected = "Gradients require at least 2 colors")]
+fn test_gradient_macro_less_than_two_colors() {
+    let _ = linear_gradient!(Color::RED);
+}
+
+#[test]
+#[should_panic(expected = "Gradients require at least 2 colors")]
+fn test_radial_gradient_macro_less_than_two_colors() {
+    let _ = radial_gradient!(Color::RED);
+}
