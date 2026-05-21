@@ -3,7 +3,7 @@ use std::time::Duration;
 
 fn main() {
     let mut project = Project::default()
-        .with_title("Grid Example")
+        .with_title("Grid")
         .with_dimensions(1280, 720)
         .close_on_finish();
 

@@ -62,7 +62,7 @@ fn main() {
     let mut project = Project::default()
         .with_fps(60)
         .with_background(BG)
-        .with_title("News Feed System")
+        .with_title("News Feed")
         .with_dimensions(1920, 1080)
         .close_on_finish();
 
