@@ -1,4 +1,5 @@
 pub mod container;
+pub mod masks;
 pub mod media;
 pub mod shapes;
 
@@ -6,6 +7,7 @@ pub mod shapes;
 pub mod physics;
 
 pub use container::*;
+pub use masks::{MaskNode, MaskNode as Mask};
 pub use media::*;
 pub use shapes::*;
 

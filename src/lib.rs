@@ -64,7 +64,9 @@ pub mod prelude {
     pub use crate::core::animation::flow::*;
     pub use crate::core::easings::*;
 
+    pub use crate::core::masks::MaskMode;
     pub use crate::elements::container::*;
+    pub use crate::elements::masks::{MaskNode, MaskNode as Mask};
     pub use crate::elements::media::*;
     pub use crate::elements::shapes::*;
 

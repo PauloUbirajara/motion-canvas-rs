@@ -160,6 +160,10 @@ name = "math_animation"
 required-features = ["runtime", "math"]
 
 [[example]]
+name = "mask_demo"
+required-features = ["runtime"]
+
+[[example]]
 name = "math_code"
 required-features = ["runtime", "math", "code"]
 

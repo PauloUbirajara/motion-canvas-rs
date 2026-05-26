@@ -284,3 +284,42 @@ fn test_gradient_macro_less_than_two_colors() {
 fn test_radial_gradient_macro_less_than_two_colors() {
     let _ = radial_gradient!(Color::RED);
 }
+
+#[test]
+#[cfg(feature = "runtime")]
+fn test_peniko_mix() {
+    let mut scene = vello::Scene::new();
+    let bm = peniko::BlendMode {
+        mix: peniko::Mix::Normal,
+        compose: peniko::Compose::SrcIn,
+    };
+    scene.push_layer(
+        bm,
+        1.0,
+        kurbo::Affine::IDENTITY,
+        &kurbo::Rect::new(-10.0, -10.0, 10.0, 10.0),
+    );
+    scene.pop_layer();
+}
+
+#[test]
+fn test_mask_node_builder() {
+    let mask_circle = Circle::default().with_radius(50.0);
+    let source_rect = Rect::default().with_size(Vec2::new(100.0, 100.0));
+
+    let mask_node = MaskNode::new(Box::new(mask_circle), Box::new(source_rect))
+        .with_position(Vec2::new(10.0, 20.0))
+        .with_mode(MaskMode::Subtract);
+
+    assert_eq!(mask_node.position.get(), Vec2::new(10.0, 20.0));
+    assert_eq!(mask_node.mode.get(), MaskMode::Subtract);
+
+    mask_node.mode.set(MaskMode::Intersect);
+    assert_eq!(mask_node.mode.get(), MaskMode::Intersect);
+
+    mask_node.mode.set(MaskMode::Union);
+    assert_eq!(mask_node.mode.get(), MaskMode::Union);
+
+    mask_node.mode.set(MaskMode::Exclude);
+    assert_eq!(mask_node.mode.get(), MaskMode::Exclude);
+}

@@ -23,6 +23,7 @@ pub enum AnyNode {
     Path(PathNode),
     Group(GroupNode),
     Camera(CameraNode),
+    Mask(MaskNode),
     #[cfg(feature = "code")]
     Code(CodeNode),
     #[cfg(feature = "image")]
@@ -52,6 +53,7 @@ impl Clone for AnyNode {
             Self::Path(n) => Self::Path(n.clone()),
             Self::Group(n) => Self::Group(n.clone()),
             Self::Camera(n) => Self::Camera(n.clone()),
+            Self::Mask(n) => Self::Mask(n.clone()),
             #[cfg(feature = "code")]
             Self::Code(n) => Self::Code(n.clone()),
             #[cfg(feature = "image")]
@@ -87,6 +89,7 @@ impl Node for AnyNode {
             Self::Path(n) => n.render(vello_scene, parent_transform, parent_opacity),
             Self::Group(n) => n.render(vello_scene, parent_transform, parent_opacity),
             Self::Camera(n) => n.render(vello_scene, parent_transform, parent_opacity),
+            Self::Mask(n) => n.render(vello_scene, parent_transform, parent_opacity),
             #[cfg(feature = "code")]
             Self::Code(n) => n.render(vello_scene, parent_transform, parent_opacity),
             #[cfg(feature = "image")]
@@ -120,6 +123,7 @@ impl Node for AnyNode {
             Self::Path(n) => n.update(dt),
             Self::Group(n) => n.update(dt),
             Self::Camera(n) => n.update(dt),
+            Self::Mask(n) => n.update(dt),
             #[cfg(feature = "code")]
             Self::Code(n) => n.update(dt),
             #[cfg(feature = "image")]
@@ -149,6 +153,7 @@ impl Node for AnyNode {
             Self::Path(n) => n.state_hash(),
             Self::Group(n) => n.state_hash(),
             Self::Camera(n) => n.state_hash(),
+            Self::Mask(n) => n.state_hash(),
             #[cfg(feature = "code")]
             Self::Code(n) => n.state_hash(),
             #[cfg(feature = "image")]
@@ -182,6 +187,7 @@ impl Node for AnyNode {
             Self::Path(n) => n.reset(),
             Self::Group(n) => n.reset(),
             Self::Camera(n) => n.reset(),
+            Self::Mask(n) => n.reset(),
             #[cfg(feature = "code")]
             Self::Code(n) => n.reset(),
             #[cfg(feature = "image")]
@@ -244,6 +250,11 @@ impl From<GroupNode> for AnyNode {
 impl From<CameraNode> for AnyNode {
     fn from(n: CameraNode) -> Self {
         Self::Camera(n)
+    }
+}
+impl From<MaskNode> for AnyNode {
+    fn from(n: MaskNode) -> Self {
+        Self::Mask(n)
     }
 }
 
@@ -333,6 +344,11 @@ impl From<Box<GroupNode>> for AnyNode {
 impl From<Box<CameraNode>> for AnyNode {
     fn from(n: Box<CameraNode>) -> Self {
         Self::Camera(*n)
+    }
+}
+impl From<Box<MaskNode>> for AnyNode {
+    fn from(n: Box<MaskNode>) -> Self {
+        Self::Mask(*n)
     }
 }
 
@@ -448,6 +464,11 @@ impl From<&GroupNode> for AnyNode {
 impl From<&CameraNode> for AnyNode {
     fn from(n: &CameraNode) -> Self {
         Self::Camera(n.clone())
+    }
+}
+impl From<&MaskNode> for AnyNode {
+    fn from(n: &MaskNode) -> Self {
+        Self::Mask(n.clone())
     }
 }
 
