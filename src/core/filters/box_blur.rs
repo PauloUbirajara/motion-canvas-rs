@@ -7,6 +7,8 @@ pub trait Blur {
     fn with_blur(self, radius: f32) -> Self;
 }
 
+use rayon::prelude::*;
+
 /// A separable box blur on a raw RGBA8 pixel buffer.
 pub fn box_blur_rgba(pixels: &mut [u8], width: u32, height: u32, radius: u32) {
     if radius == 0 || pixels.is_empty() {
@@ -16,82 +18,74 @@ pub fn box_blur_rgba(pixels: &mut [u8], width: u32, height: u32, radius: u32) {
     let h = height as usize;
     let r = radius as usize;
 
+    // 1. Horizontal blur (pixels -> temp)
     let mut temp = vec![0u8; pixels.len()];
+    horizontal_blur_rgba(pixels, &mut temp, w, r);
 
-    // Pass 1: Horizontal blur (pixels -> temp)
-    for y in 0..h {
-        let row_offset = y * w * 4;
-        let mut r_sum = 0u32;
-        let mut g_sum = 0u32;
-        let mut b_sum = 0u32;
-        let mut a_sum = 0u32;
+    // 2. Transpose (temp -> temp_t)
+    let mut temp_t = vec![0u8; pixels.len()];
+    transpose(&temp, &mut temp_t, w, h);
 
-        let window_size = 2 * r + 1;
-        for i in 0..window_size {
-            let x = i.saturating_sub(r).min(w - 1);
-            let idx = row_offset + x * 4;
-            r_sum += pixels[idx] as u32;
-            g_sum += pixels[idx + 1] as u32;
-            b_sum += pixels[idx + 2] as u32;
-            a_sum += pixels[idx + 3] as u32;
-        }
+    // 3. Horizontal blur on transposed image (temp_t -> pixels_t)
+    let mut pixels_t = vec![0u8; pixels.len()];
+    horizontal_blur_rgba(&temp_t, &mut pixels_t, h, r);
 
-        for x in 0..w {
-            let out_idx = row_offset + x * 4;
-            temp[out_idx] = (r_sum / window_size as u32) as u8;
-            temp[out_idx + 1] = (g_sum / window_size as u32) as u8;
-            temp[out_idx + 2] = (b_sum / window_size as u32) as u8;
-            temp[out_idx + 3] = (a_sum / window_size as u32) as u8;
+    // 4. Transpose back (pixels_t -> pixels)
+    transpose(&pixels_t, pixels, h, w);
+}
 
-            let left_x = x.saturating_sub(r).min(w - 1);
-            let right_x = (x + r + 1).min(w - 1);
+/// A horizontal box blur on a row-major RGBA8 pixel buffer.
+fn horizontal_blur_rgba(src: &[u8], dst: &mut [u8], w: usize, r: usize) {
+    dst.par_chunks_exact_mut(w * 4)
+        .zip(src.par_chunks_exact(w * 4))
+        .for_each(|(dst_row, src_row)| {
+            let mut r_sum = 0u32;
+            let mut g_sum = 0u32;
+            let mut b_sum = 0u32;
+            let mut a_sum = 0u32;
 
-            let left_idx = row_offset + left_x * 4;
-            let right_idx = row_offset + right_x * 4;
+            let window_size = 2 * r + 1;
+            for i in 0..window_size {
+                let x = i.saturating_sub(r).min(w - 1);
+                let idx = x * 4;
+                r_sum += src_row[idx] as u32;
+                g_sum += src_row[idx + 1] as u32;
+                b_sum += src_row[idx + 2] as u32;
+                a_sum += src_row[idx + 3] as u32;
+            }
 
-            r_sum = r_sum + pixels[right_idx] as u32 - pixels[left_idx] as u32;
-            g_sum = g_sum + pixels[right_idx + 1] as u32 - pixels[left_idx + 1] as u32;
-            b_sum = b_sum + pixels[right_idx + 2] as u32 - pixels[left_idx + 2] as u32;
-            a_sum = a_sum + pixels[right_idx + 3] as u32 - pixels[left_idx + 3] as u32;
-        }
-    }
+            for x in 0..w {
+                let out_idx = x * 4;
+                dst_row[out_idx] = (r_sum / window_size as u32) as u8;
+                dst_row[out_idx + 1] = (g_sum / window_size as u32) as u8;
+                dst_row[out_idx + 2] = (b_sum / window_size as u32) as u8;
+                dst_row[out_idx + 3] = (a_sum / window_size as u32) as u8;
 
-    // Pass 2: Vertical blur (temp -> pixels)
-    for x in 0..w {
-        let mut r_sum = 0u32;
-        let mut g_sum = 0u32;
-        let mut b_sum = 0u32;
-        let mut a_sum = 0u32;
+                let left_x = x.saturating_sub(r).min(w - 1);
+                let right_x = (x + r + 1).min(w - 1);
 
-        let window_size = 2 * r + 1;
-        for i in 0..window_size {
-            let y = i.saturating_sub(r).min(h - 1);
-            let idx = (y * w + x) * 4;
-            r_sum += temp[idx] as u32;
-            g_sum += temp[idx + 1] as u32;
-            b_sum += temp[idx + 2] as u32;
-            a_sum += temp[idx + 3] as u32;
-        }
+                let left_idx = left_x * 4;
+                let right_idx = right_x * 4;
 
-        for y in 0..h {
-            let out_idx = (y * w + x) * 4;
-            pixels[out_idx] = (r_sum / window_size as u32) as u8;
-            pixels[out_idx + 1] = (g_sum / window_size as u32) as u8;
-            pixels[out_idx + 2] = (b_sum / window_size as u32) as u8;
-            pixels[out_idx + 3] = (a_sum / window_size as u32) as u8;
+                r_sum = r_sum + src_row[right_idx] as u32 - src_row[left_idx] as u32;
+                g_sum = g_sum + src_row[right_idx + 1] as u32 - src_row[left_idx + 1] as u32;
+                b_sum = b_sum + src_row[right_idx + 2] as u32 - src_row[left_idx + 2] as u32;
+                a_sum = a_sum + src_row[right_idx + 3] as u32 - src_row[left_idx + 3] as u32;
+            }
+        });
+}
 
-            let top_y = y.saturating_sub(r).min(h - 1);
-            let bottom_y = (y + r + 1).min(h - 1);
-
-            let top_idx = (top_y * w + x) * 4;
-            let bottom_idx = (bottom_y * w + x) * 4;
-
-            r_sum = r_sum + temp[bottom_idx] as u32 - temp[top_idx] as u32;
-            g_sum = g_sum + temp[bottom_idx + 1] as u32 - temp[top_idx + 1] as u32;
-            b_sum = b_sum + temp[bottom_idx + 2] as u32 - temp[top_idx + 2] as u32;
-            a_sum = a_sum + temp[bottom_idx + 3] as u32 - temp[top_idx + 3] as u32;
-        }
-    }
+/// Performs a parallel 2D transpose of a row-major RGBA8 buffer.
+fn transpose(src: &[u8], dst: &mut [u8], w: usize, h: usize) {
+    dst.par_chunks_exact_mut(h * 4)
+        .enumerate()
+        .for_each(|(x, col_dst)| {
+            for y in 0..h {
+                let src_idx = (y * w + x) * 4;
+                let dst_idx = y * 4;
+                col_dst[dst_idx..dst_idx + 4].copy_from_slice(&src[src_idx..src_idx + 4]);
+            }
+        });
 }
 
 /// A wrapper to apply a box blur filter to any element drawing code.
