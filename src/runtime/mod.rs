@@ -13,7 +13,7 @@ use crate::Project;
 
 /// Extension trait to provide ergonomic runtime methods to [`Project`].
 ///
-/// This trait keeps the core `Project` struct clean of side-effects while
+/// This trait keeps the core `Project` struct free of side-effects while
 /// allowing for a simple `.show()` or `.export()` API.
 pub trait ProjectRuntimeExt {
     /// Opens the playback window for the project.

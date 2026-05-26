@@ -3,7 +3,7 @@
 //!
 //! This module integrates the 2D physics engine (powered by Rapier2D) into the reactive
 //! signal-based scene graph of `motion-canvas-rs`. It enables physics-driven simulations
-//! (gravity, collisions, friction, restitution) to seamlessly co-exist and transition with
+//! (gravity, collisions, friction, restitution) to co-exist and transition with
 //! traditional signal-driven animations.
 
 pub mod dynamic_body;
@@ -23,6 +23,7 @@ use kurbo::Affine;
 use rapier2d::prelude::{
     ColliderBuilder, RigidBodyBuilder, RigidBodyHandle, RigidBodyType, Vector,
 };
+use std::sync::Arc;
 use std::time::Duration;
 
 #[cfg(feature = "runtime")]
@@ -32,7 +33,7 @@ use vello::Scene;
 pub const DEFAULT_BOUNCINESS: f32 = 0.5;
 
 /// Default gravity acceleration along the Y-axis (pixels/second^2).
-pub const DEFAULT_GRAVITY_Y: f32 = 981.0;
+pub use crate::core::physics::DEFAULT_GRAVITY_Y;
 
 /// Default friction coefficient for newly created colliders.
 pub const DEFAULT_FRICTION: f32 = 0.5;
@@ -68,12 +69,24 @@ impl Tweenable for PhysicsMode {
 }
 
 /// Bounding shapes used to represent physical colliders in the simulation.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum PhysicsShape {
     /// A rectangle/box collider defined by its half-extents (width / 2, height / 2).
     Cuboid(Vec2),
     /// A circular collider defined by its radius.
     Ball(f32),
+    /// A custom collider shape defined by a custom closure returning a ColliderBuilder.
+    Custom(Arc<dyn Fn() -> ColliderBuilder + Send + Sync>),
+}
+
+impl std::fmt::Debug for PhysicsShape {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Cuboid(v) => f.debug_tuple("Cuboid").field(v).finish(),
+            Self::Ball(r) => f.debug_tuple("Ball").field(r).finish(),
+            Self::Custom(_) => f.debug_tuple("Custom").finish(),
+        }
+    }
 }
 
 impl PhysicsShape {
@@ -82,6 +95,7 @@ impl PhysicsShape {
         match self {
             PhysicsShape::Cuboid(half) => ColliderBuilder::cuboid(half.x, half.y),
             PhysicsShape::Ball(r) => ColliderBuilder::ball(*r),
+            PhysicsShape::Custom(f) => f(),
         }
     }
 }
@@ -109,7 +123,7 @@ pub struct PhysicsNode {
     initial_states: Vec<(RigidBodyHandle, Vector<f32>, f32, Vector<f32>, f32)>,
     /// Constant step integration time (e.g. 1/60s). Simulators require fixed updates for deterministic results.
     pub timestep: f32,
-    /// Frame time accumulator buffer used to guarantee perfect deterministic reproduction.
+    /// Frame time accumulator buffer used to guarantee deterministic reproduction.
     accumulator: f32,
 }
 
@@ -159,7 +173,11 @@ impl Clone for PhysicsNode {
                     .rotation(*init_rot)
             };
 
-            let col_builder = self.build_collider_from_handle(*handle);
+            let col_builder = entry
+                .shape()
+                .to_collider()
+                .restitution(entry.bounciness())
+                .friction(entry.friction());
             cloned.add_entry_internal(entry.clone(), rb_builder, col_builder);
         }
         cloned
@@ -261,30 +279,6 @@ impl PhysicsNode {
             .rotation(rot);
 
         self.add_entry_internal(BodyWrapper::Static(sb), builder, col);
-    }
-
-    /// Reconstructs a collider builder matching the shape configuration of a given handle.
-    fn build_collider_from_handle(&self, handle: RigidBodyHandle) -> ColliderBuilder {
-        for (_, collider) in self.engine.collider_set.iter() {
-            if collider.parent() != Some(handle) {
-                continue;
-            }
-            let restitution = collider.restitution();
-            let friction = collider.friction();
-            let shape = collider.shape();
-
-            if let Some(ball) = shape.as_ball() {
-                return ColliderBuilder::ball(ball.radius)
-                    .restitution(restitution)
-                    .friction(friction);
-            }
-            if let Some(cuboid) = shape.as_cuboid() {
-                return ColliderBuilder::cuboid(cuboid.half_extents.x, cuboid.half_extents.y)
-                    .restitution(restitution)
-                    .friction(friction);
-            }
-        }
-        ColliderBuilder::cuboid(1.0, 1.0)
     }
 }
 
@@ -415,7 +409,11 @@ impl Node for PhysicsNode {
                     .rotation(*init_rot)
             };
 
-            let col_builder = self.build_collider_from_handle(*handle);
+            let col_builder = entry
+                .shape()
+                .to_collider()
+                .restitution(entry.bounciness())
+                .friction(entry.friction());
 
             let rb_built = rb_builder.build();
             let new_handle = new_engine.rigid_body_set.insert(rb_built);

@@ -62,7 +62,7 @@ fn main() {
     let mut project = Project::default()
         .with_fps(60)
         .with_background(BG)
-        .with_title("News Feed System")
+        .with_title("News Feed")
         .with_dimensions(1920, 1080)
         .close_on_finish();
 
@@ -452,7 +452,7 @@ fn main() {
             show(&packet.opacity, Duration::from_millis(200)),
             packet
                 .fill_paint
-                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(0)), // Start healthy
+                .to(Paint::Solid(GREEN), Duration::from_millis(0)), // Start healthy
             packet
                 .scale
                 .to(Vec2::new(1.0, 1.0), Duration::from_millis(200))
@@ -498,7 +498,7 @@ fn main() {
         all![
             packet
                 .fill_paint
-                .to(Some(Paint::Solid(YELLOW)), Duration::from_millis(200)),
+                .to(Paint::Solid(YELLOW), Duration::from_millis(200)),
             packet
                 .scale
                 .to(Vec2::new(1.2, 1.2), Duration::from_millis(200))
@@ -511,11 +511,11 @@ fn main() {
                     .ease(smooth)
             ]
         ],
-        // Return from DB to Fanout smoothly
+        // Return from DB to Fanout
         all![
             packet
                 .fill_paint
-                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(200)),
+                .to(Paint::Solid(GREEN), Duration::from_millis(200)),
             packet
                 .scale
                 .to(Vec2::new(1.0, 1.0), Duration::from_millis(200)),
@@ -654,7 +654,7 @@ fn main() {
             show(&packet.opacity, Duration::from_millis(200)),
             packet
                 .fill_paint
-                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(0)),
+                .to(Paint::Solid(GREEN), Duration::from_millis(0)),
             packet
                 .position
                 .to(Vec2::new(960.0, 130.0), Duration::from_millis(0)),
@@ -680,7 +680,7 @@ fn main() {
                 all![
                     packet
                         .fill_paint
-                        .to(Some(Paint::Solid(RED)), Duration::from_millis(150)),
+                        .to(Paint::Solid(RED), Duration::from_millis(150)),
                     packet
                         .scale
                         .to(Vec2::new(1.8, 1.8), Duration::from_millis(150))
@@ -707,7 +707,7 @@ fn main() {
             show(&packet_notif.opacity, Duration::from_millis(200)),
             packet
                 .fill_paint
-                .to(Some(Paint::Solid(GREEN)), Duration::from_millis(0)),
+                .to(Paint::Solid(GREEN), Duration::from_millis(0)),
             packet
                 .position
                 .to(Vec2::new(960.0, 130.0), Duration::from_millis(0)),

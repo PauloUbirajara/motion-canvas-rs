@@ -22,3 +22,7 @@ time cargo doc --no-deps --document-private-items
 # Check if available to push
 echo "Checking if available to push..."
 time cargo publish --dry-run --allow-dirty
+
+# Optional, check coverage
+# Requires nightly toolchain
+# cargo +nightly rustdoc -- -Z unstable-options --show-coverage --document-private-items

@@ -13,7 +13,7 @@ use crate::assets::svg_manager::SvgManager;
 /// A visual node that renders an SVG vector image from a file path.
 ///
 /// `SvgNode` uses `vello_svg` to render SVGs directly as vector graphics,
-/// maintaining perfect sharpness at any scale.
+/// maintaining sharpness at any scale.
 #[derive(Clone)]
 pub struct SvgNode {
     /// The absolute position of the SVG's center (before anchor adjustment).
@@ -34,6 +34,8 @@ pub struct SvgNode {
     pub anchor: Signal<Vec2>,
     /// The source filesystem path for the SVG.
     pub path: String,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
 }
 
 impl Default for SvgNode {
@@ -48,6 +50,7 @@ impl Default for SvgNode {
             opacity: Signal::new(1.0),
             anchor: Signal::new(Vec2::ZERO),
             path: String::new(),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 }
@@ -114,55 +117,69 @@ impl SvgNode {
     }
 }
 
+impl crate::core::filters::Blur for SvgNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
+    }
+}
+
 impl Node for SvgNode {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let (Some(ref tree), Some(ref svg_scene)) = (&self.tree, &self.scene) else {
-            return;
-        };
-
-        let size = self.size.get();
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let sc = self.scale.get();
-        let anchor = self.anchor.get();
-
-        // Use the actual content bounding box for precise centering
-        let bbox = tree.root().bounding_box();
-        let svg_w = bbox.width();
-        let svg_h = bbox.height();
-
-        // (anchor + 1.0) * size / 2.0 maps [-1, 1] to [0, size]
-        let anchor_offset = (anchor + Vec2::new(1.0, 1.0)) * size * 0.5;
-
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
-            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
-
+        let blur_radius = self.blur.get().max(0.0);
         let opacity = self.opacity.get();
-        let final_opacity = opacity * parent_opacity;
+        let combined_opacity = parent_opacity * opacity;
 
-        if final_opacity <= 0.0 {
-            return;
-        }
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let (Some(ref tree), Some(ref svg_scene)) = (&self.tree, &self.scene) else {
+                    return;
+                };
 
-        // Final transform: apply scaling to fit the content bbox into the target size
-        let transform = parent_transform
-            * local_transform
-            * Affine::scale_non_uniform(size.x as f64 / svg_w as f64, size.y as f64 / svg_h as f64)
-            * Affine::translate((-bbox.left() as f64, -bbox.top() as f64));
+                let size = self.size.get();
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let sc = self.scale.get();
+                let anchor = self.anchor.get();
 
-        // Always use push_layer for consistent opacity application across all frames
-        // Use IDENTITY for the layer and apply transform to the scene append to avoid vello layer transform issues
-        scene.push_layer(
-            peniko::Mix::Normal,
-            final_opacity,
-            Affine::IDENTITY,
-            &kurbo::Rect::new(-1e10, -1e10, 1e10, 1e10),
+                // Use the actual content bounding box for precise centering
+                let bbox = tree.root().bounding_box();
+                let svg_w = bbox.width();
+                let svg_h = bbox.height();
+
+                // (anchor + 1.0) * size / 2.0 maps [-1, 1] to [0, size]
+                let anchor_offset = (anchor + Vec2::new(1.0, 1.0)) * size * 0.5;
+
+                let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+                    * Affine::rotate(rot as f64)
+                    * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+                    * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
+
+                // Final transform: apply scaling to fit the content bbox into the target size
+                let transform = parent_transform
+                    * local_transform
+                    * Affine::scale_non_uniform(
+                        size.x as f64 / svg_w as f64,
+                        size.y as f64 / svg_h as f64,
+                    )
+                    * Affine::translate((-bbox.left() as f64, -bbox.top() as f64));
+
+                // Always use push_layer for consistent opacity application across all frames
+                // Use IDENTITY for the layer and apply transform to the scene append to avoid vello layer transform issues
+                scene.push_layer(
+                    peniko::Mix::Normal,
+                    target_opacity,
+                    Affine::IDENTITY,
+                    &kurbo::Rect::new(-1e10, -1e10, 1e10, 1e10),
+                );
+                scene.append(svg_scene, Some(transform));
+                scene.pop_layer();
+            },
         );
-        scene.append(svg_scene, Some(transform));
-        scene.pop_layer();
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
@@ -175,6 +192,7 @@ impl Node for SvgNode {
         h.update_u64(self.size.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.anchor.state_hash());
+        h.update_u64(self.blur.state_hash());
         h.finish()
     }
 
@@ -189,5 +207,6 @@ impl Node for SvgNode {
         self.size.reset();
         self.opacity.reset();
         self.anchor.reset();
+        self.blur.reset();
     }
 }

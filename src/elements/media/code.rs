@@ -15,7 +15,7 @@ use vello::Scene;
 /// A node that renders syntax-highlighted code with support for "magic move" transitions.
 ///
 /// `CodeNode` uses `syntect` for syntax highlighting and implements a diffing algorithm
-/// that allows code tokens to smoothly animate between different states (edits, line selections).
+/// that allows code tokens to animate between different states (edits, line selections).
 ///
 /// ### Example
 /// ```rust
@@ -50,6 +50,8 @@ pub struct CodeNode {
     pub font_family: String,
     /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
 }
 
 impl Default for CodeNode {
@@ -73,6 +75,7 @@ impl Default for CodeNode {
             language,
             theme,
             font_family,
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 }
@@ -91,7 +94,15 @@ impl Clone for CodeNode {
             theme: self.theme.clone(),
             font_family: self.font_family.clone(),
             anchor: self.anchor.clone(),
+            blur: self.blur.clone(),
         }
+    }
+}
+
+impl crate::core::filters::Blur for CodeNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
     }
 }
 
@@ -319,150 +330,157 @@ impl CodeNode {
 
 impl Node for CodeNode {
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let code_val = self.code.get();
+        let blur_radius = self.blur.get().max(0.0);
         let opacity = self.opacity.get();
-
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let sc = self.scale.get();
-        let anchor = self.anchor.get();
-
-        // Calculate bounding box for centering and anchor
-        let mut min_x = f64::MAX;
-        let mut min_y = f64::MAX;
-        let mut max_x = f64::MIN;
-        let mut max_y = f64::MIN;
-
-        for token in &code_val.tokens {
-            // Find bounds of each token. We can estimate based on token.pos and font size
-            // or just use token.pos for simplicity if accurate bounds aren't available.
-            // code_tokenizer gives us token.pos.
-            min_x = min_x.min(token.pos.x as f64);
-            min_y = min_y.min(token.pos.y as f64);
-            max_x = max_x.max((token.pos.x + token.size) as f64); // Assume square-ish? No, width varies.
-            max_y = max_y.max((token.pos.y + token.size) as f64);
-        }
-
-        let size_vec = if min_x == f64::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
-        };
-        let center_offset = if min_x == f64::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
-        };
-
-        let anchor_offset = anchor * size_vec * 0.5;
-
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
-            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
-            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
-
-        let root_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let dim_factor = self.dim_opacity.get();
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let code_val = self.code.get();
 
-        let trans = match &code_val.transition {
-            Some(t) => t,
-            None => {
-                // Static render
-                let has_selection = !code_val.selection.is_empty();
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let sc = self.scale.get();
+                let anchor = self.anchor.get();
+
+                // Calculate bounding box for centering and anchor
+                let mut min_x = f64::MAX;
+                let mut min_y = f64::MAX;
+                let mut max_x = f64::MIN;
+                let mut max_y = f64::MIN;
+
                 for token in &code_val.tokens {
-                    let is_selected =
-                        !has_selection || code_val.selection.contains(&token.line_index);
-                    let dim = if is_selected { 1.0 } else { dim_factor };
+                    min_x = min_x.min(token.pos.x as f64);
+                    min_y = min_y.min(token.pos.y as f64);
+                    max_x = max_x.max((token.pos.x + token.size) as f64);
+                    max_y = max_y.max((token.pos.y + token.size) as f64);
+                }
+
+                let size_vec = if min_x == f64::MAX {
+                    Vec2::ZERO
+                } else {
+                    Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
+                };
+                let center_offset = if min_x == f64::MAX {
+                    Vec2::ZERO
+                } else {
+                    Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
+                };
+
+                let anchor_offset = anchor * size_vec * 0.5;
+
+                let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+                    * Affine::rotate(rot as f64)
+                    * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+                    * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+                    * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
+
+                let root_transform = parent_transform * local_transform;
+
+                let dim_factor = self.dim_opacity.get();
+
+                let trans = match &code_val.transition {
+                    Some(t) => t,
+                    None => {
+                        // Static render
+                        let has_selection = !code_val.selection.is_empty();
+                        for token in &code_val.tokens {
+                            let is_selected =
+                                !has_selection || code_val.selection.contains(&token.line_index);
+                            let dim = if is_selected { 1.0 } else { dim_factor };
+                            draw_token(
+                                scene,
+                                root_transform
+                                    * Affine::translate((token.pos.x as f64, token.pos.y as f64)),
+                                token,
+                                token.color,
+                                target_opacity * dim,
+                            );
+                        }
+                        return;
+                    }
+                };
+
+                let p = trans.progress;
+                let mut matched_from = vec![false; trans.from_tokens.len()];
+                let mut matched_to = vec![false; trans.to_tokens.len()];
+
+                // 1. Draw moving matches
+                for &(from_idx, to_idx) in &trans.matches {
+                    let from = &trans.from_tokens[from_idx];
+                    let to = &trans.to_tokens[to_idx];
+
+                    let current_pos = from.pos.lerp(to.pos, p);
+                    let current_color = Color::interpolate(&from.color, &to.color, p);
+
+                    let scale = if from.size != to.size {
+                        (from.size + (to.size - from.size) * p) / to.size
+                    } else {
+                        1.0
+                    };
+
+                    let from_is_dimmed = !trans.from_selection.is_empty()
+                        && !trans.from_selection.contains(&from.line_index);
+                    let to_is_dimmed = !trans.to_selection.is_empty()
+                        && !trans.to_selection.contains(&to.line_index);
+
+                    let from_dim = if from_is_dimmed { dim_factor } else { 1.0 };
+                    let to_dim = if to_is_dimmed { dim_factor } else { 1.0 };
+                    let current_dim = from_dim + (to_dim - from_dim) * p;
+
                     draw_token(
                         scene,
                         root_transform
-                            * Affine::translate((token.pos.x as f64, token.pos.y as f64)),
-                        token,
-                        token.color,
-                        combined_opacity * dim,
+                            * Affine::translate((current_pos.x as f64, current_pos.y as f64))
+                            * Affine::scale(scale as f64),
+                        to,
+                        current_color,
+                        target_opacity * current_dim,
                     );
+
+                    matched_from[from_idx] = true;
+                    matched_to[to_idx] = true;
                 }
-                return;
-            }
-        };
 
-        let p = trans.progress;
-        let mut matched_from = vec![false; trans.from_tokens.len()];
-        let mut matched_to = vec![false; trans.to_tokens.len()];
+                // Draw unmatched from-tokens (vanishing)
+                for (i, matched) in matched_from.iter().enumerate() {
+                    if !*matched {
+                        let from = &trans.from_tokens[i];
+                        let is_dimmed = !trans.from_selection.is_empty()
+                            && !trans.from_selection.contains(&from.line_index);
+                        let dim = if is_dimmed { dim_factor } else { 1.0 };
+                        draw_token(
+                            scene,
+                            root_transform
+                                * Affine::translate((from.pos.x as f64, from.pos.y as f64)),
+                            from,
+                            from.color,
+                            target_opacity * dim * (1.0 - p),
+                        );
+                    }
+                }
 
-        // 1. Draw moving matches
-        for &(from_idx, to_idx) in &trans.matches {
-            let from = &trans.from_tokens[from_idx];
-            let to = &trans.to_tokens[to_idx];
-
-            let current_pos = from.pos.lerp(to.pos, p);
-            let current_color = Color::interpolate(&from.color, &to.color, p);
-
-            let scale = if from.size != to.size {
-                (from.size + (to.size - from.size) * p) / to.size
-            } else {
-                1.0
-            };
-
-            let from_is_dimmed = !trans.from_selection.is_empty()
-                && !trans.from_selection.contains(&from.line_index);
-            let to_is_dimmed =
-                !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
-
-            let from_dim = if from_is_dimmed { dim_factor } else { 1.0 };
-            let to_dim = if to_is_dimmed { dim_factor } else { 1.0 };
-            let current_dim = from_dim + (to_dim - from_dim) * p;
-
-            draw_token(
-                scene,
-                root_transform
-                    * Affine::translate((current_pos.x as f64, current_pos.y as f64))
-                    * Affine::scale(scale as f64),
-                to,
-                current_color,
-                combined_opacity * current_dim,
-            );
-
-            matched_from[from_idx] = true;
-            matched_to[to_idx] = true;
-        }
-
-        // Draw unmatched from-tokens (vanishing)
-        for (i, matched) in matched_from.iter().enumerate() {
-            if !*matched {
-                let from = &trans.from_tokens[i];
-                let is_dimmed = !trans.from_selection.is_empty()
-                    && !trans.from_selection.contains(&from.line_index);
-                let dim = if is_dimmed { dim_factor } else { 1.0 };
-                draw_token(
-                    scene,
-                    root_transform * Affine::translate((from.pos.x as f64, from.pos.y as f64)),
-                    from,
-                    from.color,
-                    combined_opacity * dim * (1.0 - p),
-                );
-            }
-        }
-
-        // Draw unmatched to-tokens (appearing)
-        for (i, matched) in matched_to.iter().enumerate() {
-            if !*matched {
-                let to = &trans.to_tokens[i];
-                let is_dimmed =
-                    !trans.to_selection.is_empty() && !trans.to_selection.contains(&to.line_index);
-                let dim = if is_dimmed { dim_factor } else { 1.0 };
-                draw_token(
-                    scene,
-                    root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)),
-                    to,
-                    to.color,
-                    combined_opacity * dim * p,
-                );
-            }
-        }
+                // Draw unmatched to-tokens (appearing)
+                for (i, matched) in matched_to.iter().enumerate() {
+                    if !*matched {
+                        let to = &trans.to_tokens[i];
+                        let is_dimmed = !trans.to_selection.is_empty()
+                            && !trans.to_selection.contains(&to.line_index);
+                        let dim = if is_dimmed { dim_factor } else { 1.0 };
+                        draw_token(
+                            scene,
+                            root_transform * Affine::translate((to.pos.x as f64, to.pos.y as f64)),
+                            to,
+                            to.color,
+                            target_opacity * dim * p,
+                        );
+                    }
+                }
+            },
+        );
     }
 
     fn update(&mut self, _dt: Duration) {}
@@ -479,6 +497,7 @@ impl Node for CodeNode {
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.dim_opacity.state_hash());
         h.update_u64(self.anchor.state_hash());
+        h.update_u64(self.blur.state_hash());
 
         h.update_bytes(self.language.as_bytes());
         h.update_bytes(self.theme.as_bytes());
@@ -500,5 +519,6 @@ impl Node for CodeNode {
         self.opacity.reset();
         self.dim_opacity.reset();
         self.anchor.reset();
+        self.blur.reset();
     }
 }

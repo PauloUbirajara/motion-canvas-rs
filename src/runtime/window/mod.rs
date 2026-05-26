@@ -64,13 +64,6 @@ impl AnimationWindow {
         println!("{}", *TUI_CONTROLS);
 
         let pb = ProgressBar::new((total_duration.as_secs_f32() * 1000.0) as u64);
-        pb.set_style(
-            ProgressStyle::default_bar()
-                .template("{msg} [{bar:40.cyan/blue}] {pos}/{len}ms | {status}")
-                .unwrap()
-                .progress_chars("=>-"),
-        );
-
         Ok(Self { project, pb })
     }
 
@@ -311,7 +304,10 @@ impl AnimationWindow {
         self.pb.set_style(
             ProgressStyle::default_bar()
                 .template(&format!(
-                    "{{msg}} [{{bar:40.cyan/blue}}] {{pos}}/{{len}}ms | Time: {:.2}s | Speed: {:.1}x | {}",
+                    "{{msg}} [{{bar:40.cyan/blue}}] {{pos}}/{{len}}ms\n\
+                    Time: {:.2}s\n\
+                    Speed: {:.1}x\n\
+                    {}",
                     self.project.current_time.as_secs_f32(),
                     self.project.speed,
                     status_str

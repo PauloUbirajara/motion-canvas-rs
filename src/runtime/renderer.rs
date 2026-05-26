@@ -1,4 +1,4 @@
-use crate::core::scene::Scene2D;
+use crate::core::scene::{OffscreenRenderer, Scene2D};
 use indicatif::ProgressBar;
 use std::future::Future;
 use vello::{
@@ -18,6 +18,7 @@ pub struct VelloRenderer {
     scene: Scene,
     use_gpu: bool,
     background_color: vello::peniko::Color,
+    offscreen_renderer: Option<std::rc::Rc<crate::core::scene::GpuOffscreenRenderer>>,
 }
 
 impl VelloRenderer {
@@ -30,6 +31,7 @@ impl VelloRenderer {
             scene: Scene::new(),
             use_gpu,
             background_color,
+            offscreen_renderer: None,
         }
     }
 
@@ -83,10 +85,40 @@ impl VelloRenderer {
 
     pub fn render(&mut self, scene_2d: &mut dyn Scene2D, width: u32, height: u32) {
         if let (Some(surface), Some(renderer)) = (&self.surface, &mut self.renderer) {
+            let device_handle = &self.context.devices[surface.dev_id];
+
+            let recreate = match &self.offscreen_renderer {
+                Some(r) => r.width() != width || r.height() != height,
+                None => true,
+            };
+            if recreate {
+                self.offscreen_renderer = Some(std::rc::Rc::new(
+                    crate::core::scene::GpuOffscreenRenderer::new(
+                        &device_handle.device,
+                        &device_handle.queue,
+                        width,
+                        height,
+                        self.use_gpu,
+                    ),
+                ));
+            }
+
+            // Bind offscreen renderer in the thread-local
+            crate::core::scene::ACTIVE_OFFSCREEN_RENDERER.with(|cell| {
+                *cell.borrow_mut() = self
+                    .offscreen_renderer
+                    .clone()
+                    .map(|r| r as std::rc::Rc<dyn crate::core::scene::OffscreenRenderer>);
+            });
+
             self.scene.reset();
             scene_2d.render(&mut self.scene);
 
-            let device_handle = &self.context.devices[surface.dev_id];
+            // Clean up offscreen renderer binding
+            crate::core::scene::ACTIVE_OFFSCREEN_RENDERER.with(|cell| {
+                *cell.borrow_mut() = None;
+            });
+
             let surface_texture = match surface.surface.get_current_texture() {
                 Ok(t) => t,
                 Err(_) => return, // Surface lost or outdated

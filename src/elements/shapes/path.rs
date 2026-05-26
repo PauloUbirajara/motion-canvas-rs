@@ -89,21 +89,6 @@ impl PathData {
     }
 }
 
-impl Default for PathNode {
-    fn default() -> Self {
-        Self {
-            position: Signal::new(Vec2::ZERO),
-            rotation: Signal::new(0.0),
-            scale: Signal::new(Vec2::ONE),
-            data: Arc::new(PathData::default()),
-            stroke_color: Signal::new(Color::WHITE),
-            stroke_paint: Signal::new(None),
-            stroke_width: Signal::new(1.0),
-            opacity: Signal::new(1.0),
-        }
-    }
-}
-
 /// A node that renders a complex vector path.
 ///
 /// `PathNode` uses Vello's `BezPath` to represent arbitrary shapes or lines.
@@ -136,11 +121,29 @@ pub struct PathNode {
     #[deprecated(since = "0.2.3", note = "use stroke_paint instead")]
     pub stroke_color: Signal<Color>,
     /// The paint (color or gradient) used for the path's stroke.
-    pub stroke_paint: Signal<Option<Paint>>,
+    pub stroke_paint: Signal<Paint>,
     /// The width of the path's stroke.
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
+}
+
+impl Default for PathNode {
+    fn default() -> Self {
+        Self {
+            position: Signal::new(Vec2::ZERO),
+            rotation: Signal::new(0.0),
+            scale: Signal::new(Vec2::ONE),
+            data: Arc::new(PathData::default()),
+            stroke_color: Signal::new(Color::WHITE),
+            stroke_paint: Signal::new(Paint::None),
+            stroke_width: Signal::new(1.0),
+            opacity: Signal::new(1.0),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
+        }
+    }
 }
 
 impl PathNode {
@@ -152,9 +155,10 @@ impl PathNode {
             scale: Signal::new(Vec2::ONE),
             data: Arc::new(PathData::new(path)),
             stroke_color: Signal::new(color),
-            stroke_paint: Signal::new(None),
+            stroke_paint: Signal::new(Paint::None),
             stroke_width: Signal::new(width),
             opacity: Signal::new(1.0),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 
@@ -200,8 +204,15 @@ impl PathNode {
         if let Paint::Solid(color) = p {
             self.stroke_color = Signal::new(color);
         }
-        self.stroke_paint = Signal::new(Some(p));
+        self.stroke_paint = Signal::new(p);
         self.stroke_width = Signal::new(width);
+        self
+    }
+}
+
+impl crate::core::filters::Blur for PathNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
         self
     }
 }
@@ -209,35 +220,45 @@ impl PathNode {
 impl Node for PathNode {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let stroke_color = self.stroke_color.get();
-        let stroke_width = self.stroke_width.get();
+        let blur_radius = self.blur.get().max(0.0);
         let opacity = self.opacity.get();
-
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let sc = self.scale.get();
-
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
-
-        let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        let brush = match self.stroke_paint.get() {
-            Some(paint) => paint.to_brush_with_opacity(combined_opacity),
-            None => {
-                let mut final_color = stroke_color;
-                final_color.a = (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-                Brush::Solid(final_color)
-            }
-        };
-        scene.stroke(
-            &Stroke::new(stroke_width as f64),
-            combined_transform,
-            &brush,
-            None,
-            &self.data.path,
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let stroke_color = self.stroke_color.get();
+                let stroke_width = self.stroke_width.get();
+
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let sc = self.scale.get();
+
+                let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+                    * Affine::rotate(rot as f64)
+                    * Affine::scale_non_uniform(sc.x as f64, sc.y as f64);
+
+                let combined_transform = parent_transform * local_transform;
+
+                let brush = match self.stroke_paint.get() {
+                    Paint::None => {
+                        let mut final_color = stroke_color;
+                        final_color.a =
+                            (stroke_color.a as f32 * target_opacity).clamp(0.0, 255.0) as u8;
+                        Brush::Solid(final_color)
+                    }
+                    paint => paint.to_brush_with_opacity(target_opacity),
+                };
+                scene.stroke(
+                    &Stroke::new(stroke_width as f64),
+                    combined_transform,
+                    &brush,
+                    None,
+                    &self.data.path,
+                );
+            },
         );
     }
     fn update(&mut self, _dt: Duration) {}
@@ -251,6 +272,7 @@ impl Node for PathNode {
         h.update_u64(self.stroke_paint.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.blur.state_hash());
         h.finish()
     }
 
@@ -266,5 +288,6 @@ impl Node for PathNode {
         self.stroke_paint.reset();
         self.stroke_width.reset();
         self.opacity.reset();
+        self.blur.reset();
     }
 }

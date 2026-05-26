@@ -1,6 +1,6 @@
 [package]
 name = "motion-canvas-rs"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 authors = ["Paulo Ubirajara"]
 description = "A high-performance vector animation engine inspired by Motion Canvas, built on Vello and Typst."
@@ -104,6 +104,10 @@ name = "audio_demo"
 required-features = ["runtime", "audio"]
 
 [[example]]
+name = "blur_demo"
+required-features = ["runtime", "math", "code", "svg"]
+
+[[example]]
 name = "camera_demo"
 required-features = ["runtime"]
 
@@ -154,6 +158,10 @@ required-features = ["runtime", "image", "svg"]
 [[example]]
 name = "math_animation"
 required-features = ["runtime", "math"]
+
+[[example]]
+name = "mask_demo"
+required-features = ["runtime"]
 
 [[example]]
 name = "math_code"

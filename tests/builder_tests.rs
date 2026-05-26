@@ -30,7 +30,7 @@ fn test_circle_builder() {
     assert_eq!(position.x, 100.0);
     assert_eq!(position.y, 200.0);
     assert_eq!(circle.radius.get(), 75.0);
-    assert_eq!(circle.fill_paint.get(), Some(Paint::Solid(Color::BLUE)));
+    assert_eq!(circle.fill_paint.get(), Paint::Solid(Color::BLUE));
 }
 
 #[test]
@@ -55,7 +55,7 @@ fn test_line_builder() {
     assert_eq!(line.start.get(), Vec2::new(0.0, 0.0));
     assert_eq!(line.end.get(), Vec2::new(100.0, 100.0));
     assert_eq!(line.stroke_width.get(), 5.0);
-    assert_eq!(line.stroke_paint.get(), Some(Paint::Solid(Color::GREEN)));
+    assert_eq!(line.stroke_paint.get(), Paint::Solid(Color::GREEN));
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn test_polygon_builder() {
         .with_fill(Color::RED);
 
     assert_eq!(polygon.points.get(), points);
-    assert_eq!(polygon.fill_paint.get(), Some(Paint::Solid(Color::RED)));
+    assert_eq!(polygon.fill_paint.get(), Paint::Solid(Color::RED));
 }
 
 #[test]
@@ -202,6 +202,15 @@ fn test_physics_body_builders() {
     assert_eq!(static_body.rotation.get(), 0.1);
     assert_eq!(static_body.bounciness, 0.4);
     assert_eq!(static_body.friction, 0.8);
+
+    // Test PhysicsShape::Custom
+    let custom_shape = PhysicsShape::Custom(std::sync::Arc::new(|| {
+        rapier2d::prelude::ColliderBuilder::capsule_y(10.0, 5.0)
+    }));
+    let rigid_custom = RigidBodyNode::new(Box::new(Rect::default())).with_shape(custom_shape);
+
+    assert!(matches!(rigid_custom.shape, PhysicsShape::Custom(_)));
+    assert_eq!(format!("{:?}", rigid_custom.shape), "Custom");
 }
 
 #[test]
@@ -239,4 +248,78 @@ fn test_audio_event_offsets() {
     assert_eq!(a_event.start_time, Duration::from_secs(0));
     // play2 starts at play1 duration (1s) + wait1 duration (2s) = 3s
     assert_eq!(b_event.start_time, Duration::from_secs(3));
+}
+
+#[test]
+fn test_gradient_macros() {
+    let grad_lin = linear_gradient!(Color::RED, Color::GREEN, Color::BLUE);
+    assert!(matches!(grad_lin.kind, GradientKind::Linear { .. }));
+    let stops = grad_lin.stops.as_slice();
+    assert_eq!(stops.len(), 3);
+    assert_eq!(stops[0].offset, 0.0);
+    assert_eq!(stops[0].color, Color::RED);
+    assert_eq!(stops[1].offset, 0.5);
+    assert_eq!(stops[1].color, Color::GREEN);
+    assert_eq!(stops[2].offset, 1.0);
+    assert_eq!(stops[2].color, Color::BLUE);
+
+    let grad_rad = radial_gradient!(Color::YELLOW, Color::CYAN);
+    assert!(matches!(grad_rad.kind, GradientKind::Radial { .. }));
+    let stops_rad = grad_rad.stops.as_slice();
+    assert_eq!(stops_rad.len(), 2);
+    assert_eq!(stops_rad[0].offset, 0.0);
+    assert_eq!(stops_rad[0].color, Color::YELLOW);
+    assert_eq!(stops_rad[1].offset, 1.0);
+    assert_eq!(stops_rad[1].color, Color::CYAN);
+}
+
+#[test]
+#[should_panic(expected = "Gradients require at least 2 colors")]
+fn test_gradient_macro_less_than_two_colors() {
+    let _ = linear_gradient!(Color::RED);
+}
+
+#[test]
+#[should_panic(expected = "Gradients require at least 2 colors")]
+fn test_radial_gradient_macro_less_than_two_colors() {
+    let _ = radial_gradient!(Color::RED);
+}
+
+#[test]
+#[cfg(feature = "runtime")]
+fn test_peniko_mix() {
+    let mut scene = vello::Scene::new();
+    let bm = peniko::BlendMode {
+        mix: peniko::Mix::Normal,
+        compose: peniko::Compose::SrcIn,
+    };
+    scene.push_layer(
+        bm,
+        1.0,
+        kurbo::Affine::IDENTITY,
+        &kurbo::Rect::new(-10.0, -10.0, 10.0, 10.0),
+    );
+    scene.pop_layer();
+}
+
+#[test]
+fn test_mask_node_builder() {
+    let mask_circle = Circle::default().with_radius(50.0);
+    let source_rect = Rect::default().with_size(Vec2::new(100.0, 100.0));
+
+    let mask_node = MaskNode::new(Box::new(mask_circle), Box::new(source_rect))
+        .with_position(Vec2::new(10.0, 20.0))
+        .with_mode(MaskMode::Subtract);
+
+    assert_eq!(mask_node.position.get(), Vec2::new(10.0, 20.0));
+    assert_eq!(mask_node.mode.get(), MaskMode::Subtract);
+
+    mask_node.mode.set(MaskMode::Intersect);
+    assert_eq!(mask_node.mode.get(), MaskMode::Intersect);
+
+    mask_node.mode.set(MaskMode::Union);
+    assert_eq!(mask_node.mode.get(), MaskMode::Union);
+
+    mask_node.mode.set(MaskMode::Exclude);
+    assert_eq!(mask_node.mode.get(), MaskMode::Exclude);
 }

@@ -180,7 +180,7 @@ pub struct SignalData<T> {
 ///
 /// `Signal` is the primary way to define animatable properties for `Node` elements.
 /// It wraps a `Tweenable` value and provides methods to create animations that
-/// change this value smoothly.
+/// change this value over time.
 ///
 /// ### Example
 /// ```rust
@@ -322,7 +322,7 @@ impl<T: Tweenable + PartialEq> Signal<T> {
     }
 }
 
-/// An animation that smoothly changes a `Signal`'s value over time.
+/// An animation that changes a `Signal`'s value over time.
 pub struct SignalTween<T> {
     data: Arc<Mutex<SignalData<T>>>,
     start_value: Option<T>,

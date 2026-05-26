@@ -2,12 +2,17 @@ use crate::core::animation::tween::Tweenable;
 use kurbo::Point;
 use peniko::{Brush, Color, ColorStop, ColorStops, Gradient, GradientKind};
 
+/// The default length and radius used when creating standard gradients.
+pub const DEFAULT_GRADIENT_LENGTH: f64 = 100.0;
+
 /// A representable and animatable paint property that can be either a solid color or a gradient.
 ///
 /// Wraps `peniko::Color` and `peniko::Gradient` and implements `Tweenable` to enable
 /// smooth color-to-gradient and gradient-to-gradient transitions.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Paint {
+    /// No paint, or fallback to legacy deprecated color signals if configured.
+    None,
     /// A solid single-color paint.
     Solid(Color),
     /// A gradient paint (linear, radial, sweep, etc.).
@@ -18,6 +23,7 @@ impl Paint {
     /// Converts this `Paint` into a standard Peniko `Brush`.
     pub fn to_brush(&self) -> Brush {
         match self {
+            Paint::None => Brush::Solid(Color::TRANSPARENT),
             Paint::Solid(color) => Brush::Solid(*color),
             Paint::Gradient(grad) => Brush::Gradient(grad.clone()),
         }
@@ -26,6 +32,7 @@ impl Paint {
     /// Resolves this `Paint` to a `Brush` and scales its transparency by the given opacity factor.
     pub fn to_brush_with_opacity(&self, opacity: f32) -> Brush {
         match self {
+            Paint::None => Brush::Solid(Color::TRANSPARENT),
             Paint::Solid(color) => {
                 let mut c = *color;
                 c.a = (color.a as f32 * opacity).clamp(0.0, 255.0) as u8;
@@ -138,6 +145,45 @@ impl Tweenable for Paint {
     fn interpolate(a: &Self, b: &Self, t: f32) -> Self {
         let t = t.clamp(0.0, 1.0);
         match (a, b) {
+            (Paint::None, Paint::None) => Paint::None,
+            (Paint::None, Paint::Solid(c)) => {
+                let mut start_c = *c;
+                start_c.a = 0;
+                Paint::Solid(Color::interpolate(&start_c, c, t))
+            }
+            (Paint::Solid(c), Paint::None) => {
+                let mut end_c = *c;
+                end_c.a = 0;
+                Paint::Solid(Color::interpolate(c, &end_c, t))
+            }
+            (Paint::None, Paint::Gradient(g)) => {
+                let mut transparent_g = g.clone();
+                let mut stops = Vec::new();
+                for stop in g.stops.iter() {
+                    let mut c = stop.color;
+                    c.a = 0;
+                    stops.push(ColorStop {
+                        offset: stop.offset,
+                        color: c,
+                    });
+                }
+                transparent_g.stops = ColorStops::from(stops);
+                Paint::interpolate(&Paint::Gradient(transparent_g), b, t)
+            }
+            (Paint::Gradient(g), Paint::None) => {
+                let mut transparent_g = g.clone();
+                let mut stops = Vec::new();
+                for stop in g.stops.iter() {
+                    let mut c = stop.color;
+                    c.a = 0;
+                    stops.push(ColorStop {
+                        offset: stop.offset,
+                        color: c,
+                    });
+                }
+                transparent_g.stops = ColorStops::from(stops);
+                Paint::interpolate(a, &Paint::Gradient(transparent_g), t)
+            }
             (Paint::Solid(c1), Paint::Solid(c2)) => Paint::Solid(Color::interpolate(c1, c2, t)),
             (Paint::Gradient(g1), Paint::Gradient(g2)) => {
                 let kind = match (&g1.kind, &g2.kind) {
@@ -199,12 +245,15 @@ impl Tweenable for Paint {
     fn state_hash(&self) -> u64 {
         let mut h = crate::assets::hash::Hasher::new();
         match self {
-            Paint::Solid(c) => {
+            Paint::None => {
                 h.update_u64(0);
+            }
+            Paint::Solid(c) => {
+                h.update_u64(1);
                 h.update_u64(Color::state_hash(c));
             }
             Paint::Gradient(g) => {
-                h.update_u64(1);
+                h.update_u64(2);
                 match &g.kind {
                     GradientKind::Linear { start, end } => {
                         h.update_u64(0);
@@ -239,4 +288,72 @@ impl Tweenable for Paint {
         }
         h.finish()
     }
+}
+
+/// Macro to create a linear gradient with N equidistant color stops.
+///
+/// Requires at least 2 colors. The gradient is centered with a default length of 100.0.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let grad = linear_gradient!(Color::RED, Color::BLUE);
+/// ```
+#[macro_export]
+macro_rules! linear_gradient {
+    ($($color:expr),+ $(,)?) => {{
+        let colors = [$($color),+];
+        assert!(colors.len() >= 2, "Gradients require at least 2 colors");
+        let mut stops = Vec::with_capacity(colors.len());
+        let n = colors.len() as f32;
+        for (i, &color) in colors.iter().enumerate() {
+            stops.push($crate::prelude::ColorStop {
+                offset: (i as f32) / (n - 1.0),
+                color,
+            });
+        }
+        $crate::prelude::Gradient {
+            kind: $crate::prelude::GradientKind::Linear {
+                start: $crate::prelude::Point::new(-$crate::core::animation::paint::DEFAULT_GRADIENT_LENGTH, 0.0),
+                end: $crate::prelude::Point::new($crate::core::animation::paint::DEFAULT_GRADIENT_LENGTH, 0.0),
+            },
+            extend: $crate::prelude::Extend::Pad,
+            stops: $crate::prelude::ColorStops::from(stops),
+        }
+    }};
+}
+
+/// Macro to create a radial gradient with N equidistant color stops.
+///
+/// Requires at least 2 colors. The gradient has a default outer radius of 100.0.
+///
+/// ### Example
+/// ```rust
+/// # use motion_canvas_rs::prelude::*;
+/// let grad = radial_gradient!(Color::RED, Color::BLUE);
+/// ```
+#[macro_export]
+macro_rules! radial_gradient {
+    ($($color:expr),+ $(,)?) => {{
+        let colors = [$($color),+];
+        assert!(colors.len() >= 2, "Gradients require at least 2 colors");
+        let mut stops = Vec::with_capacity(colors.len());
+        let n = colors.len() as f32;
+        for (i, &color) in colors.iter().enumerate() {
+            stops.push($crate::prelude::ColorStop {
+                offset: (i as f32) / (n - 1.0),
+                color,
+            });
+        }
+        $crate::prelude::Gradient {
+            kind: $crate::prelude::GradientKind::Radial {
+                start_center: $crate::prelude::Point::new(0.0, 0.0),
+                start_radius: 0.0,
+                end_center: $crate::prelude::Point::new(0.0, 0.0),
+                end_radius: $crate::core::animation::paint::DEFAULT_GRADIENT_LENGTH as f32,
+            },
+            extend: $crate::prelude::Extend::Pad,
+            stops: $crate::prelude::ColorStops::from(stops),
+        }
+    }};
 }

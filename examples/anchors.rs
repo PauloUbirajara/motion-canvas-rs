@@ -3,7 +3,7 @@ use std::time::Duration;
 
 fn main() {
     let mut project = Project::default()
-        .with_title("Anchor Test")
+        .with_title("Anchors")
         .with_dimensions(1200, 800)
         .close_on_finish();
 

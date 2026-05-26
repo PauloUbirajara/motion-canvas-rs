@@ -665,20 +665,18 @@ fn main() {
         wait!(1),
         // Color morph: sunset → ocean
         all![
-            s1.fill_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s1.fill_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s1_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s1_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s1_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
             s1_g_line.end.to(Vec2::new(120.0, 0.0), MORPH),
-            s1_g_start.stroke_color.to(CYAN, MORPH),
-            s1_g_end.stroke_color.to(INDIGO, MORPH),
+            s1_g_start.stroke_paint.to(Paint::Solid(CYAN), MORPH),
+            s1_g_end.stroke_paint.to(Paint::Solid(INDIGO), MORPH),
         ],
         wait!(1),
         // Color morph: ocean → sunset
         all![
-            s1.fill_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s1.fill_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s1_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -687,14 +685,14 @@ fn main() {
                 .to(Vec2::new(cx + 120.0, cy + 120.0), MORPH),
             s1_g_line.start.to(Vec2::new(-120.0, -120.0), MORPH),
             s1_g_line.end.to(Vec2::new(120.0, 120.0), MORPH),
-            s1_g_start.stroke_color.to(CORAL, MORPH),
-            s1_g_end.stroke_color.to(VIOLET, MORPH),
+            s1_g_start.stroke_paint.to(Paint::Solid(CORAL), MORPH),
+            s1_g_end.stroke_paint.to(Paint::Solid(VIOLET), MORPH),
         ],
         wait!(1),
         // Direction morph: diagonal → horizontal sunset
         all![
             s1.fill_paint
-                .to(Some(Paint::Gradient(sunset_horiz.clone())), MORPH),
+                .to(Paint::Gradient(sunset_horiz.clone()), MORPH),
             s1_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s1_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s1_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
@@ -704,7 +702,7 @@ fn main() {
         // Direction morph: horizontal → vertical sunset
         all![
             s1.fill_paint
-                .to(Some(Paint::Gradient(sunset_vert.clone())), MORPH),
+                .to(Paint::Gradient(sunset_vert.clone()), MORPH),
             s1_g_start.position.to(Vec2::new(cx, cy - 120.0), MORPH),
             s1_g_end.position.to(Vec2::new(cx, cy + 120.0), MORPH),
             s1_g_line.start.to(Vec2::new(0.0, -120.0), MORPH),
@@ -714,7 +712,7 @@ fn main() {
         // Direction morph: vertical → diagonal sunset
         all![
             s1.fill_paint
-                .to(Some(Paint::Gradient(sunset_diag.clone())), MORPH),
+                .to(Paint::Gradient(sunset_diag.clone()), MORPH),
             s1_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -744,23 +742,22 @@ fn main() {
         wait!(1),
         // Radial color and radius morph: glow (Fuchsia 130px) -> glow_alt (Cyan 180px)
         all![
-            s2.fill_paint
-                .to(Some(Paint::Gradient(glow_alt.clone())), MORPH),
+            s2.fill_paint.to(Paint::Gradient(glow_alt.clone()), MORPH),
             s2_g_radius.radius.to(180.0, MORPH),
-            s2_g_center.stroke_color.to(CYAN, MORPH),
+            s2_g_center.stroke_paint.to(Paint::Solid(CYAN), MORPH),
             s2_g_radius
-                .stroke_color
-                .to(Color::rgba8(0x00, 0xf2, 0xfe, 80), MORPH),
+                .stroke_paint
+                .to(Paint::Solid(Color::rgba8(0x00, 0xf2, 0xfe, 80)), MORPH),
         ],
         wait!(1),
         // Morph back to glow
         all![
-            s2.fill_paint.to(Some(Paint::Gradient(glow.clone())), MORPH),
+            s2.fill_paint.to(Paint::Gradient(glow.clone()), MORPH),
             s2_g_radius.radius.to(130.0, MORPH),
-            s2_g_center.stroke_color.to(FUCHSIA, MORPH),
+            s2_g_center.stroke_paint.to(Paint::Solid(FUCHSIA), MORPH),
             s2_g_radius
-                .stroke_color
-                .to(Color::rgba8(0xff, 0x00, 0x7f, 80), MORPH),
+                .stroke_paint
+                .to(Paint::Solid(Color::rgba8(0xff, 0x00, 0x7f, 80)), MORPH),
         ],
         wait!(1),
         all![
@@ -782,8 +779,7 @@ fn main() {
         wait!(1),
         // Morph: ocean (horizontal) -> sunset (diagonal)
         all![
-            s3.stroke_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s3.stroke_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s3_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -792,26 +788,25 @@ fn main() {
                 .to(Vec2::new(cx + 120.0, cy + 120.0), MORPH),
             s3_g_line.start.to(Vec2::new(-120.0, -120.0), MORPH),
             s3_g_line.end.to(Vec2::new(120.0, 120.0), MORPH),
-            s3_g_start.stroke_color.to(CORAL, MORPH),
-            s3_g_end.stroke_color.to(VIOLET, MORPH),
+            s3_g_start.stroke_paint.to(Paint::Solid(CORAL), MORPH),
+            s3_g_end.stroke_paint.to(Paint::Solid(VIOLET), MORPH),
         ],
         wait!(1),
         // Morph: sunset (diagonal) -> ocean (horizontal)
         all![
-            s3.stroke_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s3.stroke_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s3_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s3_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s3_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
             s3_g_line.end.to(Vec2::new(120.0, 0.0), MORPH),
-            s3_g_start.stroke_color.to(CYAN, MORPH),
-            s3_g_end.stroke_color.to(INDIGO, MORPH),
+            s3_g_start.stroke_paint.to(Paint::Solid(CYAN), MORPH),
+            s3_g_end.stroke_paint.to(Paint::Solid(INDIGO), MORPH),
         ],
         wait!(1),
         // Direction morph: horizontal ocean -> vertical ocean
         all![
             s3.stroke_paint
-                .to(Some(Paint::Gradient(ocean_vert.clone())), MORPH),
+                .to(Paint::Gradient(ocean_vert.clone()), MORPH),
             s3_g_start.position.to(Vec2::new(cx, cy - 120.0), MORPH),
             s3_g_end.position.to(Vec2::new(cx, cy + 120.0), MORPH),
             s3_g_line.start.to(Vec2::new(0.0, -120.0), MORPH),
@@ -820,8 +815,7 @@ fn main() {
         wait!(1),
         // Direction morph: vertical ocean -> horizontal ocean
         all![
-            s3.stroke_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s3.stroke_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s3_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s3_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s3_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
@@ -847,20 +841,18 @@ fn main() {
         wait!(1),
         // Morph: sunset (diagonal) -> ocean (horizontal)
         all![
-            s4.stroke_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s4.stroke_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s4_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s4_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s4_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
             s4_g_line.end.to(Vec2::new(120.0, 0.0), MORPH),
-            s4_g_start.stroke_color.to(CYAN, MORPH),
-            s4_g_end.stroke_color.to(INDIGO, MORPH),
+            s4_g_start.stroke_paint.to(Paint::Solid(CYAN), MORPH),
+            s4_g_end.stroke_paint.to(Paint::Solid(INDIGO), MORPH),
         ],
         wait!(1),
         // Morph: ocean (horizontal) -> sunset (diagonal)
         all![
-            s4.stroke_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s4.stroke_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s4_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -869,8 +861,8 @@ fn main() {
                 .to(Vec2::new(cx + 120.0, cy + 120.0), MORPH),
             s4_g_line.start.to(Vec2::new(-120.0, -120.0), MORPH),
             s4_g_line.end.to(Vec2::new(120.0, 120.0), MORPH),
-            s4_g_start.stroke_color.to(CORAL, MORPH),
-            s4_g_end.stroke_color.to(VIOLET, MORPH),
+            s4_g_start.stroke_paint.to(Paint::Solid(CORAL), MORPH),
+            s4_g_end.stroke_paint.to(Paint::Solid(VIOLET), MORPH),
         ],
         wait!(1),
         all![
@@ -891,8 +883,7 @@ fn main() {
         wait!(1),
         // Morph: ocean (horizontal) -> sunset (diagonal)
         all![
-            s5.stroke_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s5.stroke_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s5_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -901,20 +892,19 @@ fn main() {
                 .to(Vec2::new(cx + 120.0, cy + 120.0), MORPH),
             s5_g_line.start.to(Vec2::new(-120.0, -120.0), MORPH),
             s5_g_line.end.to(Vec2::new(120.0, 120.0), MORPH),
-            s5_g_start.stroke_color.to(CORAL, MORPH),
-            s5_g_end.stroke_color.to(VIOLET, MORPH),
+            s5_g_start.stroke_paint.to(Paint::Solid(CORAL), MORPH),
+            s5_g_end.stroke_paint.to(Paint::Solid(VIOLET), MORPH),
         ],
         wait!(1),
         // Morph: sunset (diagonal) -> ocean (horizontal)
         all![
-            s5.stroke_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s5.stroke_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s5_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s5_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s5_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
             s5_g_line.end.to(Vec2::new(120.0, 0.0), MORPH),
-            s5_g_start.stroke_color.to(CYAN, MORPH),
-            s5_g_end.stroke_color.to(INDIGO, MORPH),
+            s5_g_start.stroke_paint.to(Paint::Solid(CYAN), MORPH),
+            s5_g_end.stroke_paint.to(Paint::Solid(INDIGO), MORPH),
         ],
         wait!(1),
         all![
@@ -937,7 +927,7 @@ fn main() {
         all![
             s6_grid
                 .stroke_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+                .to(Paint::Gradient(sunset.clone()), MORPH),
             s6_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -946,21 +936,21 @@ fn main() {
                 .to(Vec2::new(cx + 120.0, cy + 120.0), MORPH),
             s6_g_line.start.to(Vec2::new(-120.0, -120.0), MORPH),
             s6_g_line.end.to(Vec2::new(120.0, 120.0), MORPH),
-            s6_g_start.stroke_color.to(CORAL, MORPH),
-            s6_g_end.stroke_color.to(VIOLET, MORPH),
+            s6_g_start.stroke_paint.to(Paint::Solid(CORAL), MORPH),
+            s6_g_end.stroke_paint.to(Paint::Solid(VIOLET), MORPH),
         ],
         wait!(1),
         // Morph: sunset (diagonal) -> ocean (horizontal)
         all![
             s6_grid
                 .stroke_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+                .to(Paint::Gradient(ocean.clone()), MORPH),
             s6_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s6_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s6_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
             s6_g_line.end.to(Vec2::new(120.0, 0.0), MORPH),
-            s6_g_start.stroke_color.to(CYAN, MORPH),
-            s6_g_end.stroke_color.to(INDIGO, MORPH),
+            s6_g_start.stroke_paint.to(Paint::Solid(CYAN), MORPH),
+            s6_g_end.stroke_paint.to(Paint::Solid(INDIGO), MORPH),
         ],
         wait!(1),
         all![
@@ -982,8 +972,7 @@ fn main() {
         wait!(1),
         // Morph: ocean (horizontal) -> sunset (diagonal)
         all![
-            s7.fill_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s7.fill_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s7_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -992,26 +981,24 @@ fn main() {
                 .to(Vec2::new(cx + 120.0, cy + 120.0), MORPH),
             s7_g_line.start.to(Vec2::new(-120.0, -120.0), MORPH),
             s7_g_line.end.to(Vec2::new(120.0, 120.0), MORPH),
-            s7_g_start.stroke_color.to(CORAL, MORPH),
-            s7_g_end.stroke_color.to(VIOLET, MORPH),
+            s7_g_start.stroke_paint.to(Paint::Solid(CORAL), MORPH),
+            s7_g_end.stroke_paint.to(Paint::Solid(VIOLET), MORPH),
         ],
         wait!(1),
         // Morph: sunset (diagonal) -> ocean (horizontal)
         all![
-            s7.fill_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s7.fill_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s7_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s7_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s7_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
             s7_g_line.end.to(Vec2::new(120.0, 0.0), MORPH),
-            s7_g_start.stroke_color.to(CYAN, MORPH),
-            s7_g_end.stroke_color.to(INDIGO, MORPH),
+            s7_g_start.stroke_paint.to(Paint::Solid(CYAN), MORPH),
+            s7_g_end.stroke_paint.to(Paint::Solid(INDIGO), MORPH),
         ],
         wait!(1),
         // Morph: horizontal ocean -> vertical ocean
         all![
-            s7.fill_paint
-                .to(Some(Paint::Gradient(ocean_vert.clone())), MORPH),
+            s7.fill_paint.to(Paint::Gradient(ocean_vert.clone()), MORPH),
             s7_g_start.position.to(Vec2::new(cx, cy - 120.0), MORPH),
             s7_g_end.position.to(Vec2::new(cx, cy + 120.0), MORPH),
             s7_g_line.start.to(Vec2::new(0.0, -120.0), MORPH),
@@ -1020,8 +1007,7 @@ fn main() {
         wait!(1),
         // Morph: vertical ocean -> horizontal ocean
         all![
-            s7.fill_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s7.fill_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s7_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s7_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s7_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
@@ -1048,20 +1034,18 @@ fn main() {
         wait!(1),
         // Morph: sunset (diagonal) -> ocean (horizontal)
         all![
-            s8.fill_paint
-                .to(Some(Paint::Gradient(ocean.clone())), MORPH),
+            s8.fill_paint.to(Paint::Gradient(ocean.clone()), MORPH),
             s8_g_start.position.to(Vec2::new(cx - 120.0, cy), MORPH),
             s8_g_end.position.to(Vec2::new(cx + 120.0, cy), MORPH),
             s8_g_line.start.to(Vec2::new(-120.0, 0.0), MORPH),
             s8_g_line.end.to(Vec2::new(120.0, 0.0), MORPH),
-            s8_g_start.stroke_color.to(CYAN, MORPH),
-            s8_g_end.stroke_color.to(INDIGO, MORPH),
+            s8_g_start.stroke_paint.to(Paint::Solid(CYAN), MORPH),
+            s8_g_end.stroke_paint.to(Paint::Solid(INDIGO), MORPH),
         ],
         wait!(1),
         // Morph: ocean (horizontal) -> sunset (diagonal)
         all![
-            s8.fill_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s8.fill_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s8_g_start
                 .position
                 .to(Vec2::new(cx - 120.0, cy - 120.0), MORPH),
@@ -1070,8 +1054,8 @@ fn main() {
                 .to(Vec2::new(cx + 120.0, cy + 120.0), MORPH),
             s8_g_line.start.to(Vec2::new(-120.0, -120.0), MORPH),
             s8_g_line.end.to(Vec2::new(120.0, 120.0), MORPH),
-            s8_g_start.stroke_color.to(CORAL, MORPH),
-            s8_g_end.stroke_color.to(VIOLET, MORPH),
+            s8_g_start.stroke_paint.to(Paint::Solid(CORAL), MORPH),
+            s8_g_end.stroke_paint.to(Paint::Solid(VIOLET), MORPH),
         ],
         wait!(1),
         all![
@@ -1091,8 +1075,7 @@ fn main() {
         wait!(1),
         // Morph: solid white -> sunset (diagonal gradient) + fade in guides
         all![
-            s9.fill_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s9.fill_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s9_g_start.opacity.to(1.0, MORPH),
             s9_g_end.opacity.to(1.0, MORPH),
             s9_g_line.opacity.to(1.0, MORPH),
@@ -1100,7 +1083,7 @@ fn main() {
         wait!(1),
         // Morph: sunset -> solid white + fade out guides
         all![
-            s9.fill_paint.to(Some(Paint::Solid(Color::WHITE)), MORPH),
+            s9.fill_paint.to(Paint::Solid(Color::WHITE), MORPH),
             s9_g_start.opacity.to(0.0, MORPH),
             s9_g_end.opacity.to(0.0, MORPH),
             s9_g_line.opacity.to(0.0, MORPH),
@@ -1122,8 +1105,7 @@ fn main() {
         wait!(1),
         // Morph Radial (glow) to Linear (sunset) + cross-fade the visual guides
         all![
-            s10.fill_paint
-                .to(Some(Paint::Gradient(sunset.clone())), MORPH),
+            s10.fill_paint.to(Paint::Gradient(sunset.clone()), MORPH),
             s10_g_rad_center.opacity.to(0.0, MORPH),
             s10_g_rad_radius.opacity.to(0.0, MORPH),
             s10_g_lin_start.opacity.to(1.0, MORPH),
@@ -1133,8 +1115,7 @@ fn main() {
         wait!(1),
         // Morph back from Linear (sunset) to Radial (glow)
         all![
-            s10.fill_paint
-                .to(Some(Paint::Gradient(glow.clone())), MORPH),
+            s10.fill_paint.to(Paint::Gradient(glow.clone()), MORPH),
             s10_g_rad_center.opacity.to(1.0, MORPH),
             s10_g_rad_radius.opacity.to(1.0, MORPH),
             s10_g_lin_start.opacity.to(0.0, MORPH),

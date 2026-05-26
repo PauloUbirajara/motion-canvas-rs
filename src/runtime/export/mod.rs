@@ -33,7 +33,7 @@ pub struct CacheManifest {
 /// Headless renderer used for exporting scenes to raw image data.
 ///
 /// `Exporter` handles the low-level wgpu buffer mapping and texture copies required
-/// to extract high-quality frames from the GPU.
+/// to extract frames from the GPU.
 pub struct Exporter {
     width: u32,
     height: u32,
@@ -48,6 +48,7 @@ pub struct Exporter {
     bytes_per_row: u32,
     unaligned_bytes_per_row: u32,
     background_color: vello::peniko::Color,
+    offscreen_renderer: std::rc::Rc<crate::core::scene::GpuOffscreenRenderer>,
 }
 
 impl Exporter {
@@ -119,6 +120,14 @@ impl Exporter {
         };
         let output_buffer = device.create_buffer(&output_buffer_desc);
 
+        let offscreen_renderer = std::rc::Rc::new(crate::core::scene::GpuOffscreenRenderer::new(
+            &device_handle.device,
+            &device_handle.queue,
+            width,
+            height,
+            use_gpu,
+        ));
+
         Self {
             width,
             height,
@@ -132,6 +141,7 @@ impl Exporter {
             bytes_per_row,
             unaligned_bytes_per_row,
             background_color,
+            offscreen_renderer,
         }
     }
 
@@ -141,9 +151,20 @@ impl Exporter {
         let device = &device_handle.device;
         let queue = &device_handle.queue;
 
+        // Bind offscreen renderer in the thread-local
+        crate::core::scene::ACTIVE_OFFSCREEN_RENDERER.with(|cell| {
+            *cell.borrow_mut() = Some(self.offscreen_renderer.clone()
+                as std::rc::Rc<dyn crate::core::scene::OffscreenRenderer>);
+        });
+
         // 1. Render the scene
         self.scene.reset();
         scene_2d.render(&mut self.scene);
+
+        // Clean up offscreen renderer binding
+        crate::core::scene::ACTIVE_OFFSCREEN_RENDERER.with(|cell| {
+            *cell.borrow_mut() = None;
+        });
 
         self.renderer
             .render_to_texture(
@@ -218,7 +239,7 @@ impl Exporter {
 /// rendering them at full resolution. It supports:
 /// - **Caching**: Skips re-rendering if the frame's `state_hash` hasn't changed.
 /// - **Background Saving**: Saves PNGs in parallel using a background thread to avoid blocking the GPU.
-/// - **FFmpeg Integration**: Streams raw frames directly to FFmpeg for high-speed video encoding.
+/// - **FFmpeg Integration**: Streams raw frames directly to FFmpeg for video encoding.
 #[cfg(feature = "export")]
 pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     println!("Exporting project: {}", project.title);
@@ -299,9 +320,9 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
         ProgressStyle::default_bar()
             .template(
                 "[{elapsed_precise}] {bar:40.cyan/blue}\n\
+                 Time: {msg}\n\
                  Frames: {pos}/{len}\n\
-                 Skipped: {msg:40.green}\n\
-                 Time To Render: {eta_precise}",
+                 Render ETA: {eta_precise}",
             )
             .unwrap()
             .progress_chars("=>-"),
@@ -364,10 +385,15 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
             rendered_count += 1;
         }
 
-        // Progress Bar (now reflects saved count)
+        // Progress Bar (now reflects saved count and current animation time)
         let current_saved = saved_count.load(Ordering::SeqCst);
         pb.set_position(current_saved as u64);
-        pb.set_message(format!("{}", skipped_count));
+        let current_seconds = frame_count as f32 / project.fps as f32;
+        let total_seconds = total_frames as f32 / project.fps as f32;
+        pb.set_message(format!(
+            "{:.2}s / {:.2}s (Skipped: {})",
+            current_seconds, total_seconds, skipped_count
+        ));
 
         // Periodically save the cache to disk to prevent losing progress if interrupted
         if project.use_cache && frame_count > 0 && frame_count % project.cache_write_interval == 0 {

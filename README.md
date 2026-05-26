@@ -16,7 +16,7 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 
 Add the library to your `Cargo.toml`. To enable all features (math, code blocks, images, export), use the `full` flag:
 
-```bash
+```sh
 # Enable everything
 cargo add motion-canvas-rs --features full
 
@@ -37,15 +37,6 @@ cargo add motion-canvas-rs --features math,svg,audio
 | `svg` | Vector graphics support via Vello SVG. | `SvgNode` |
 | `full` | Meta-feature that enables all of the above. | Everything |
 
-### Key Capabilities
-- **Arc-length Sampling**: Accurate path animations and offsets.
-- **Audio Support**: Synchronized MP3 playback and independent audio timelines.
-- **Clean API**: Streamlined prelude for high-speed prototyping.
-- **Easing Library**: 30+ standardized easing functions.
-- **FFmpeg Integration**: Direct streaming of animation frames or merging with audio.
-- **High-performance**: GPU-accelerated vector rendering via Vello.
-- **Node Primitives**: Built-in support for Circles, Rects, Polygons, Lines, and Groups.
-
 ## Supported Nodes
 
 | Node | Description | Transform Properties |
@@ -57,6 +48,7 @@ cargo add motion-canvas-rs --features math,svg,audio
 | `GroupNode` | Hierarchical grouping of any nodes. | `position`, `rotation`, `scale`, `children`, `anchor` |
 | `ImageNode` | Bitmap image display (WebP, PNG, JPG). | `position`, `rotation`, `scale`, `size`, `anchor` |
 | `Line` | Simple line between two points. | `position`, `rotation`, `scale`, `start`, `end`, `anchor` |
+| `MaskNode` | Dynamic vector stenciling and Boolean operations (Intersect, Subtract, Exclude, Union) container. | `position`, `rotation`, `scale`, `opacity`, `mode`, `anchor` |
 | `MathNode` | Typst-powered mathematical formulas. | `position`, `rotation`, `scale`, `equation`, `anchor` |
 | `PathNode` | Complex path sampling and animation. | `position`, `rotation`, `scale`, `arc-length`, `anchor` |
 | `PhysicsNode` | Container orchestrating a 2D physics simulation world. | `opacity`, `gravity`, `is_moving_container` |
@@ -118,7 +110,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 24 examples that can be found in the [examples directory](./examples).
+The project includes 26 examples that can be found in the [examples directory](./examples).
 
 <details>
     <summary> [ <a href="./examples/advanced_flow.rs">code</a> ] <b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -159,6 +151,20 @@ cargo run --example audio_demo --features audio
 | - |
 | ![Audio Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/audio_demo.webp) |
 | [Audio Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/audio_demo.mp4) |
+
+</details>
+
+<details>
+<summary> [ <a href="./examples/blur_demo.rs">code</a> ] <b>Blur Demo</b> - Box blur filter applied universally across node subtrees.</summary>
+
+```sh
+cargo run --example blur_demo
+```
+
+| Preview |
+| - |
+| ![Blur Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/blur_demo.webp) |
+| [Blur Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/blur_demo.mp4) |
 
 </details>
 
@@ -331,6 +337,20 @@ cargo run --example images --features image,svg
 </details>
 
 <details>
+<summary> [ <a href="./examples/mask_demo.rs">code</a> ] <b>Mask Demo</b> - Vector masking and composition using Porter-Duff blend layers (Intersect, Subtract, Exclude, Union).</summary>
+
+```sh
+cargo run --example mask_demo
+```
+
+| Preview |
+| - |
+| ![Mask Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/mask_demo.webp) |
+| [Mask Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/mask_demo.mp4) |
+
+</details>
+
+<details>
 <summary> [ <a href="./examples/math_animation.rs">code</a> ] <b>Math Animation</b> - Advanced mathematical transitions.</summary>
 
 ```sh
@@ -471,7 +491,7 @@ This project is heavily inspired by the original [Motion Canvas](https://github.
 
 Special thanks to:
 - [easings.net](https://easings.net/) for the standardized easing function library.
-- [rapier.rs](https://rapier.rs/) for the incredible 2D physics engine powering our physics simulation in the `physics_demo` example (`rapier2d`).
+- [rapier.rs](https://rapier.rs/) for the 2D physics engine powering our physics simulation in the `physics_demo` example (`rapier2d`).
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
 - [vemaps.com](https://vemaps.com/world/wrld-21) for the world map SVG used in the `world_map` example.
-- **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.
+- **Alex Xu** for the system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.

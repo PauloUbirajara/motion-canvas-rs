@@ -99,3 +99,192 @@ impl Scene2D for BaseScene {
             .reduce(|| 0u64, |a, b| a.wrapping_add(b))
     }
 }
+
+#[cfg(feature = "runtime")]
+pub trait OffscreenRenderer {
+    fn width(&self) -> u32;
+    fn height(&self) -> u32;
+    fn render_to_rgba(&self, scene: &vello::Scene) -> Vec<u8>;
+}
+
+#[cfg(feature = "runtime")]
+use std::cell::RefCell;
+#[cfg(feature = "runtime")]
+use std::rc::Rc;
+
+#[cfg(feature = "runtime")]
+thread_local! {
+    pub static ACTIVE_OFFSCREEN_RENDERER: RefCell<Option<Rc<dyn OffscreenRenderer>>> = const { RefCell::new(None) };
+}
+
+#[cfg(feature = "runtime")]
+#[cfg(feature = "runtime")]
+pub struct GpuOffscreenRenderer {
+    device_ptr: *const vello::wgpu::Device,
+    queue_ptr: *const vello::wgpu::Queue,
+    width: u32,
+    height: u32,
+    renderer: std::cell::RefCell<vello::Renderer>,
+    texture: vello::wgpu::Texture,
+    texture_view: vello::wgpu::TextureView,
+    output_buffer: vello::wgpu::Buffer,
+    bytes_per_row: u32,
+    unaligned_bytes_per_row: u32,
+}
+
+#[cfg(feature = "runtime")]
+unsafe impl Send for GpuOffscreenRenderer {}
+#[cfg(feature = "runtime")]
+unsafe impl Sync for GpuOffscreenRenderer {}
+
+#[cfg(feature = "runtime")]
+impl GpuOffscreenRenderer {
+    pub fn new(
+        device: &vello::wgpu::Device,
+        queue: &vello::wgpu::Queue,
+        width: u32,
+        height: u32,
+        use_gpu: bool,
+    ) -> Self {
+        let renderer = vello::Renderer::new(
+            device,
+            vello::RendererOptions {
+                surface_format: None,
+                use_cpu: !use_gpu,
+                antialiasing_support: vello::AaSupport::all(),
+                num_init_threads: std::num::NonZeroUsize::new(1),
+            },
+        )
+        .unwrap();
+
+        // Allocate offscreen texture and output buffer
+        let texture_desc = vello::wgpu::TextureDescriptor {
+            label: Some("Offscreen Pass Texture"),
+            size: vello::wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: vello::wgpu::TextureDimension::D2,
+            format: vello::wgpu::TextureFormat::Rgba8Unorm,
+            usage: vello::wgpu::TextureUsages::STORAGE_BINDING
+                | vello::wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        };
+        let texture = device.create_texture(&texture_desc);
+        let texture_view = texture.create_view(&Default::default());
+
+        let u32_size = std::mem::size_of::<u32>() as u32;
+        let unaligned_bytes_per_row = width * u32_size;
+        let align = vello::wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let padding = (align - unaligned_bytes_per_row % align) % align;
+        let bytes_per_row = unaligned_bytes_per_row + padding;
+
+        let output_buffer_desc = vello::wgpu::BufferDescriptor {
+            size: (bytes_per_row * height) as vello::wgpu::BufferAddress,
+            usage: vello::wgpu::BufferUsages::COPY_DST | vello::wgpu::BufferUsages::MAP_READ,
+            label: Some("Offscreen Pass Buffer"),
+            mapped_at_creation: false,
+        };
+        let output_buffer = device.create_buffer(&output_buffer_desc);
+
+        Self {
+            device_ptr: device as *const _,
+            queue_ptr: queue as *const _,
+            width,
+            height,
+            renderer: std::cell::RefCell::new(renderer),
+            texture,
+            texture_view,
+            output_buffer,
+            bytes_per_row,
+            unaligned_bytes_per_row,
+        }
+    }
+}
+
+#[cfg(feature = "runtime")]
+impl OffscreenRenderer for GpuOffscreenRenderer {
+    fn width(&self) -> u32 {
+        self.width
+    }
+    fn height(&self) -> u32 {
+        self.height
+    }
+    fn render_to_rgba(&self, scene: &vello::Scene) -> Vec<u8> {
+        let mut renderer = self.renderer.borrow_mut();
+        let device = unsafe { &*self.device_ptr };
+        let queue = unsafe { &*self.queue_ptr };
+
+        // 1. Render the sub-scene to the offscreen texture
+        renderer
+            .render_to_texture(
+                device,
+                queue,
+                scene,
+                &self.texture_view,
+                &vello::RenderParams {
+                    base_color: vello::peniko::Color::TRANSPARENT,
+                    width: self.width,
+                    height: self.height,
+                    antialiasing_method: vello::AaConfig::Msaa16,
+                },
+            )
+            .unwrap();
+
+        // 2. Copy texture to buffer
+        let mut encoder = device.create_command_encoder(&Default::default());
+        encoder.copy_texture_to_buffer(
+            vello::wgpu::ImageCopyTexture {
+                aspect: vello::wgpu::TextureAspect::All,
+                texture: &self.texture,
+                mip_level: 0,
+                origin: vello::wgpu::Origin3d::ZERO,
+            },
+            vello::wgpu::ImageCopyBuffer {
+                buffer: &self.output_buffer,
+                layout: vello::wgpu::ImageDataLayout {
+                    offset: 0,
+                    bytes_per_row: Some(self.bytes_per_row),
+                    rows_per_image: Some(self.height),
+                },
+            },
+            vello::wgpu::Extent3d {
+                width: self.width,
+                height: self.height,
+                depth_or_array_layers: 1,
+            },
+        );
+        queue.submit(Some(encoder.finish()));
+
+        // 3. Map buffer and extract pixels
+        let buffer_slice = self.output_buffer.slice(..);
+        let (tx, rx) = std::sync::mpsc::channel();
+        buffer_slice.map_async(vello::wgpu::MapMode::Read, move |res| tx.send(res).unwrap());
+        device.poll(vello::wgpu::Maintain::Wait);
+        rx.recv().unwrap().unwrap();
+
+        let data = buffer_slice.get_mapped_range();
+
+        let mut pixels = Vec::with_capacity((self.width * self.height * 4) as usize);
+        if self.bytes_per_row == self.unaligned_bytes_per_row {
+            pixels.extend_from_slice(&data[..(self.width * self.height * 4) as usize]);
+            drop(data);
+            self.output_buffer.unmap();
+            return pixels;
+        }
+
+        for row in 0..self.height {
+            let start = (row * self.bytes_per_row) as usize;
+            let end = start + self.unaligned_bytes_per_row as usize;
+            pixels.extend_from_slice(&data[start..end]);
+        }
+
+        drop(data);
+        self.output_buffer.unmap();
+
+        pixels
+    }
+}

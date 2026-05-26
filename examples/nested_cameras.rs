@@ -3,7 +3,7 @@ use std::time::Duration;
 
 fn main() {
     let mut project = Project::default()
-        .with_title("Nested Cameras Demo")
+        .with_title("Nested Cameras")
         .with_background(Color::rgb8(0x1a, 0x1a, 0x1a))
         .close_on_finish();
 

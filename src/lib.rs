@@ -49,6 +49,7 @@ pub mod prelude {
     pub use crate::core::animation::base::Node;
     pub use crate::core::animation::tween::Signal;
     pub use crate::core::animation::tween::Tweenable;
+    pub use crate::core::filters::{Blur, DEFAULT_BLUR};
     pub use crate::core::{AnyAnimation, AnyNode};
 
     // Export the modules themselves for namespaced access
@@ -63,7 +64,9 @@ pub mod prelude {
     pub use crate::core::animation::flow::*;
     pub use crate::core::easings::*;
 
+    pub use crate::core::masks::MaskMode;
     pub use crate::elements::container::*;
+    pub use crate::elements::masks::{MaskNode, MaskNode as Mask};
     pub use crate::elements::media::*;
     pub use crate::elements::shapes::*;
 
@@ -72,7 +75,10 @@ pub mod prelude {
         PhysicsMode, PhysicsNode, PhysicsShape, RigidBodyNode, StaticBodyNode,
     };
 
-    pub use crate::{all, any, chain, delay, loop_anim, sequence, wait, with_easing};
+    pub use crate::{
+        all, any, chain, delay, linear_gradient, loop_anim, radial_gradient, sequence, wait,
+        with_easing,
+    };
     #[cfg(feature = "audio")]
     pub use crate::{audio_wait, play};
 

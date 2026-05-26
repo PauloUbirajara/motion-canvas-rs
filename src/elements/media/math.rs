@@ -62,7 +62,7 @@ pub struct MathNode {
     #[deprecated(since = "0.2.3", note = "use fill_paint instead")]
     pub fill_color: Signal<Color>,
     /// The paint (color or gradient) used to fill the math glyphs.
-    pub fill_paint: Signal<Option<Paint>>,
+    pub fill_paint: Signal<Paint>,
     /// The overall opacity (0.0 to 1.0).
     pub opacity: Signal<f32>,
     /// Internal transition progress signal (0.0 to 1.0).
@@ -73,6 +73,8 @@ pub struct MathNode {
     /// NOTE: During transitions, MathNode uses a union of the previous and current
     /// bounding boxes to ensure the anchor point remains stable.
     pub anchor: Signal<Vec2>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
     prev_cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
 }
@@ -86,10 +88,11 @@ impl Default for MathNode {
             equation: Signal::new("".to_string()),
             font_size: Signal::new(DEFAULT_FONT_SIZE),
             fill_color: Signal::new(DEFAULT_COLOR),
-            fill_paint: Signal::new(None),
+            fill_paint: Signal::new(Paint::None),
             opacity: Signal::new(DEFAULT_OPACITY),
             transition_progress: Signal::new(1.0),
             anchor: Signal::new(Vec2::ZERO),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
             cache: Arc::new(Mutex::new(None)),
             prev_cache: Arc::new(Mutex::new(None)),
         }
@@ -109,9 +112,17 @@ impl Clone for MathNode {
             opacity: self.opacity.clone(),
             transition_progress: self.transition_progress.clone(),
             anchor: self.anchor.clone(),
+            blur: self.blur.clone(),
             cache: self.cache.clone(),
             prev_cache: self.prev_cache.clone(),
         }
+    }
+}
+
+impl crate::core::filters::Blur for MathNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
     }
 }
 
@@ -187,7 +198,7 @@ impl MathNode {
         if let Paint::Solid(color) = p {
             self.fill_color = Signal::new(color);
         }
-        self.fill_paint = Signal::new(Some(p));
+        self.fill_paint = Signal::new(p);
         self
     }
 
@@ -301,124 +312,137 @@ impl crate::core::animation::Animation for MathTransition {
 impl Node for MathNode {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let color = self.fill_color.get();
+        let blur_radius = self.blur.get().max(0.0);
+        let opacity = self.opacity.get();
+        let combined_opacity = parent_opacity * opacity;
 
-        self.rebuild_if_needed();
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let color = self.fill_color.get();
 
-        let cache_guard = self.cache.lock().unwrap();
-        let progress = self.transition_progress.get();
-        let base_opacity = self.opacity.get();
+                self.rebuild_if_needed();
 
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let sc = self.scale.get();
-        let anchor = self.anchor.get();
+                let cache_guard = self.cache.lock().unwrap();
+                let progress = self.transition_progress.get();
 
-        let mut min_x = f64::MAX;
-        let mut min_y = f64::MAX;
-        let mut max_x = f64::MIN;
-        let mut max_y = f64::MIN;
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let sc = self.scale.get();
+                let anchor = self.anchor.get();
 
-        if let Some(c) = cache_guard.as_ref() {
-            for (glyph_transform, pb) in c.as_ref() {
-                let bounds = pb.bounding_box();
-                let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
-                let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
-                min_x = min_x.min(p0.x).min(p1.x);
-                min_y = min_y.min(p0.y).min(p1.y);
-                max_x = max_x.max(p0.x).max(p1.x);
-                max_y = max_y.max(p0.y).max(p1.y);
-            }
-        }
+                let mut min_x = f64::MAX;
+                let mut min_y = f64::MAX;
+                let mut max_x = f64::MIN;
+                let mut max_y = f64::MIN;
 
-        // Use the union of current and previous bounding boxes during transition for absolute stability
-        if progress < 1.0 {
-            let prev_cache = self.prev_cache.lock().unwrap();
-            if let Some(prev) = prev_cache.as_ref() {
-                for (glyph_transform, pb) in prev.as_ref() {
-                    let bounds = pb.bounding_box();
-                    let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
-                    let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
-                    min_x = min_x.min(p0.x).min(p1.x);
-                    min_y = min_y.min(p0.y).min(p1.y);
-                    max_x = max_x.max(p0.x).max(p1.x);
-                    max_y = max_y.max(p0.y).max(p1.y);
-                }
-            }
-        }
-
-        let size_vec = if min_x == f64::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
-        };
-        let center_offset = if min_x == f64::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
-        };
-
-        let anchor_offset = anchor * size_vec * 0.5;
-
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
-            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
-            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
-
-        let root_transform = parent_transform * local_transform;
-
-        // 1. Draw previous equation if transitioning
-        if progress < 1.0 {
-            let prev_cache = self.prev_cache.lock().unwrap();
-            if let Some(prev) = prev_cache.as_ref() {
-                let prev_opacity = base_opacity * (1.0 - progress) * parent_opacity;
-                let brush = match self.fill_paint.get() {
-                    Some(paint) => paint.to_brush_with_opacity(prev_opacity),
-                    None => {
-                        let mut prev_color = color;
-                        prev_color.a = (color.a as f32 * prev_opacity).clamp(0.0, 255.0) as u8;
-                        Brush::Solid(prev_color)
+                if let Some(c) = cache_guard.as_ref() {
+                    for (glyph_transform, pb) in c.as_ref() {
+                        let bounds = pb.bounding_box();
+                        let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+                        let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+                        min_x = min_x.min(p0.x).min(p1.x);
+                        min_y = min_y.min(p0.y).min(p1.y);
+                        max_x = max_x.max(p0.x).max(p1.x);
+                        max_y = max_y.max(p0.y).max(p1.y);
                     }
+                }
+
+                // Use the union of current and previous bounding boxes during transition for absolute stability
+                if progress < 1.0 {
+                    let prev_cache = self.prev_cache.lock().unwrap();
+                    if let Some(prev) = prev_cache.as_ref() {
+                        for (glyph_transform, pb) in prev.as_ref() {
+                            let bounds = pb.bounding_box();
+                            let p0 =
+                                *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+                            let p1 =
+                                *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+                            min_x = min_x.min(p0.x).min(p1.x);
+                            min_y = min_y.min(p0.y).min(p1.y);
+                            max_x = max_x.max(p0.x).max(p1.x);
+                            max_y = max_y.max(p0.y).max(p1.y);
+                        }
+                    }
+                }
+
+                let size_vec = if min_x == f64::MAX {
+                    Vec2::ZERO
+                } else {
+                    Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
                 };
-                for (local_transform, pb) in prev.as_ref() {
-                    scene.fill(
-                        Fill::NonZero,
-                        root_transform * *local_transform,
-                        &brush,
-                        None,
-                        pb,
-                    );
-                }
-            }
-        }
+                let center_offset = if min_x == f64::MAX {
+                    Vec2::ZERO
+                } else {
+                    Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
+                };
 
-        if let Some(c) = cache_guard.as_ref() {
-            let current_alpha = if progress < 1.0 {
-                base_opacity * progress
-            } else {
-                base_opacity
-            };
-            let current_opacity = current_alpha * parent_opacity;
-            let brush = match self.fill_paint.get() {
-                Some(paint) => paint.to_brush_with_opacity(current_opacity),
-                None => {
-                    let mut current_color = color;
-                    current_color.a = (color.a as f32 * current_opacity).clamp(0.0, 255.0) as u8;
-                    Brush::Solid(current_color)
-                }
-            };
+                let anchor_offset = anchor * size_vec * 0.5;
 
-            for (local_transform, pb) in c.as_ref() {
-                scene.fill(
-                    Fill::NonZero,
-                    root_transform * *local_transform,
-                    &brush,
-                    None,
-                    pb,
-                );
-            }
-        }
+                let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+                    * Affine::rotate(rot as f64)
+                    * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+                    * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+                    * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
+
+                let root_transform = parent_transform * local_transform;
+
+                // 1. Draw previous equation if transitioning
+                if progress < 1.0 {
+                    let prev_cache = self.prev_cache.lock().unwrap();
+                    if let Some(prev) = prev_cache.as_ref() {
+                        let prev_opacity = target_opacity * (1.0 - progress);
+                        let brush = match self.fill_paint.get() {
+                            Paint::None => {
+                                let mut prev_color = color;
+                                prev_color.a =
+                                    (color.a as f32 * prev_opacity).clamp(0.0, 255.0) as u8;
+                                Brush::Solid(prev_color)
+                            }
+                            paint => paint.to_brush_with_opacity(prev_opacity),
+                        };
+                        for (local_transform, pb) in prev.as_ref() {
+                            scene.fill(
+                                Fill::NonZero,
+                                root_transform * *local_transform,
+                                &brush,
+                                None,
+                                pb,
+                            );
+                        }
+                    }
+                }
+
+                if let Some(c) = cache_guard.as_ref() {
+                    let current_opacity = if progress < 1.0 {
+                        target_opacity * progress
+                    } else {
+                        target_opacity
+                    };
+                    let brush = match self.fill_paint.get() {
+                        Paint::None => {
+                            let mut current_color = color;
+                            current_color.a =
+                                (color.a as f32 * current_opacity).clamp(0.0, 255.0) as u8;
+                            Brush::Solid(current_color)
+                        }
+                        paint => paint.to_brush_with_opacity(current_opacity),
+                    };
+
+                    for (local_transform, pb) in c.as_ref() {
+                        scene.fill(
+                            Fill::NonZero,
+                            root_transform * *local_transform,
+                            &brush,
+                            None,
+                            pb,
+                        );
+                    }
+                }
+            },
+        );
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
@@ -434,6 +458,7 @@ impl Node for MathNode {
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.transition_progress.state_hash());
         h.update_u64(self.anchor.state_hash());
+        h.update_u64(self.blur.state_hash());
         h.finish()
     }
 
@@ -452,6 +477,7 @@ impl Node for MathNode {
         self.opacity.reset();
         self.transition_progress.reset();
         self.anchor.reset();
+        self.blur.reset();
         *self.cache.lock().unwrap() = None;
         *self.prev_cache.lock().unwrap() = None;
     }

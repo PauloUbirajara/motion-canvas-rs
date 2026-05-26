@@ -102,7 +102,7 @@ impl Animation for All {
 /// # let dur = Duration::from_secs(1);
 /// all![
 ///     node.position.to(Vec2::new(100.0, 100.0), dur),
-///     node.fill_color.to(Color::BLUE, dur),
+///     node.fill_paint.to(Paint::Solid(Color::BLUE), dur),
 /// ];
 /// ```
 pub fn all(animations: Vec<AnyAnimation>) -> AnyAnimation {

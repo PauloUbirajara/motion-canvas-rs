@@ -1,6 +1,8 @@
 /target
 output/
-.motion_canvas_cache
-output/
+.motion_canvas_cache*
 *.mp4
 *.mkv
+*.webp
+!assets/examples/*.mp4
+!assets/examples/*.webp
