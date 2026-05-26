@@ -13,7 +13,7 @@ use crate::assets::svg_manager::SvgManager;
 /// A visual node that renders an SVG vector image from a file path.
 ///
 /// `SvgNode` uses `vello_svg` to render SVGs directly as vector graphics,
-/// maintaining perfect sharpness at any scale.
+/// maintaining sharpness at any scale.
 #[derive(Clone)]
 pub struct SvgNode {
     /// The absolute position of the SVG's center (before anchor adjustment).

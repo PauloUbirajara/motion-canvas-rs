@@ -15,7 +15,7 @@ use vello::Scene;
 /// A node that renders syntax-highlighted code with support for "magic move" transitions.
 ///
 /// `CodeNode` uses `syntect` for syntax highlighting and implements a diffing algorithm
-/// that allows code tokens to smoothly animate between different states (edits, line selections).
+/// that allows code tokens to animate between different states (edits, line selections).
 ///
 /// ### Example
 /// ```rust

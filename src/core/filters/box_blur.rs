@@ -88,9 +88,10 @@ fn transpose(src: &[u8], dst: &mut [u8], w: usize, h: usize) {
         });
 }
 
-/// A wrapper to apply a box blur filter to any element drawing code.
+/// Applies a box blur filter to an element's drawing function.
 ///
-/// Encapsulates the offscreen capture, separable CPU-side blur, and main canvas blending back into the scene.
+/// Captures the drawing on an offscreen texture, applies CPU-side box blur,
+/// and draws the result back to the main scene.
 #[cfg(feature = "runtime")]
 pub fn apply_blur_filter<F>(
     scene: &mut vello::Scene,
@@ -117,13 +118,13 @@ pub fn apply_blur_filter<F>(
     let height = offscreen.height();
 
     let mut sub_scene = vello::Scene::new();
-    // Render contents onto offscreen canvas with full opacity
+    // Render contents offscreen.
     render_func(&mut sub_scene, 1.0);
 
-    // Fetch GPU-rendered texture back to raw CPU pixels
+    // Retrieve pixels from GPU.
     let mut pixels = offscreen.render_to_rgba(&sub_scene);
 
-    // Apply fast box blur
+    // Apply box blur.
     box_blur_rgba(&mut pixels, width, height, blur_radius.round() as u32);
 
     let peniko_img = peniko::Image {
@@ -135,7 +136,7 @@ pub fn apply_blur_filter<F>(
         extend: peniko::Extend::Pad,
     };
 
-    // Draw blurred texture back to main canvas with element's target combined opacity
+    // Draw blurred texture to main canvas.
     if combined_opacity < 1.0 {
         scene.push_layer(
             peniko::Mix::Normal,
@@ -145,7 +146,7 @@ pub fn apply_blur_filter<F>(
         );
         scene.draw_image(&peniko_img, kurbo::Affine::IDENTITY);
         scene.pop_layer();
-    } else {
-        scene.draw_image(&peniko_img, kurbo::Affine::IDENTITY);
+        return;
     }
+    scene.draw_image(&peniko_img, kurbo::Affine::IDENTITY);
 }

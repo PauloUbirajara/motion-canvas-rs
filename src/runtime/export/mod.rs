@@ -33,7 +33,7 @@ pub struct CacheManifest {
 /// Headless renderer used for exporting scenes to raw image data.
 ///
 /// `Exporter` handles the low-level wgpu buffer mapping and texture copies required
-/// to extract high-quality frames from the GPU.
+/// to extract frames from the GPU.
 pub struct Exporter {
     width: u32,
     height: u32,
@@ -239,7 +239,7 @@ impl Exporter {
 /// rendering them at full resolution. It supports:
 /// - **Caching**: Skips re-rendering if the frame's `state_hash` hasn't changed.
 /// - **Background Saving**: Saves PNGs in parallel using a background thread to avoid blocking the GPU.
-/// - **FFmpeg Integration**: Streams raw frames directly to FFmpeg for high-speed video encoding.
+/// - **FFmpeg Integration**: Streams raw frames directly to FFmpeg for video encoding.
 #[cfg(feature = "export")]
 pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
     println!("Exporting project: {}", project.title);

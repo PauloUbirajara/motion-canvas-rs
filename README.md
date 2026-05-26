@@ -16,7 +16,7 @@ A high-performance vector animation engine inspired by Motion Canvas, built on V
 
 Add the library to your `Cargo.toml`. To enable all features (math, code blocks, images, export), use the `full` flag:
 
-```bash
+```sh
 # Enable everything
 cargo add motion-canvas-rs --features full
 
@@ -36,15 +36,6 @@ cargo add motion-canvas-rs --features math,svg,audio
 | `physics` | Simplified 2D physics engine integration via Rapier. | `PhysicsNode`, `RigidBodyNode`, `StaticBodyNode` |
 | `svg` | Vector graphics support via Vello SVG. | `SvgNode` |
 | `full` | Meta-feature that enables all of the above. | Everything |
-
-### Key Capabilities
-- **Arc-length Sampling**: Accurate path animations and offsets.
-- **Audio Support**: Synchronized MP3 playback and independent audio timelines.
-- **Clean API**: Streamlined prelude for high-speed prototyping.
-- **Easing Library**: 30+ standardized easing functions.
-- **FFmpeg Integration**: Direct streaming of animation frames or merging with audio.
-- **High-performance**: GPU-accelerated vector rendering via Vello.
-- **Node Primitives**: Built-in support for Circles, Rects, Polygons, Lines, and Groups.
 
 ## Supported Nodes
 
@@ -471,7 +462,7 @@ This project is heavily inspired by the original [Motion Canvas](https://github.
 
 Special thanks to:
 - [easings.net](https://easings.net/) for the standardized easing function library.
-- [rapier.rs](https://rapier.rs/) for the incredible 2D physics engine powering our physics simulation in the `physics_demo` example (`rapier2d`).
+- [rapier.rs](https://rapier.rs/) for the 2D physics engine powering our physics simulation in the `physics_demo` example (`rapier2d`).
 - [shiki-magic-move](https://github.com/shikijs/shiki-magic-move) for the inspiration behind the token-based code transition logic.
 - [vemaps.com](https://vemaps.com/world/wrld-21) for the world map SVG used in the `world_map` example.
-- **Alex Xu** for the excellent system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.
+- **Alex Xu** for the system design diagrams in *"System Design Interview: An Insider's Guide"*, represented in the `news_feed` example.

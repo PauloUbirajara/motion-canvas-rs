@@ -511,7 +511,7 @@ fn main() {
                     .ease(smooth)
             ]
         ],
-        // Return from DB to Fanout smoothly
+        // Return from DB to Fanout
         all![
             packet
                 .fill_paint

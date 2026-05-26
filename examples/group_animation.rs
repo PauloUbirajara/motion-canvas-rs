@@ -45,7 +45,7 @@ fn main() {
         group
             .rotation
             .to(std::f32::consts::PI, Duration::from_secs(2)),
-        // 3. Complex transform (move + scale)
+        // 3. Combined transform (move + scale)
         all![
             group
                 .position

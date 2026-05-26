@@ -28,10 +28,10 @@ fn test_math_animation_export() {
         tex.tex("y = a x^2", Duration::from_millis(200)),
     ]);
 
-    // Export to PNGs (headless)
+    // Export to PNGs
     project.export().expect("Failed to export");
 
-    // Verify that at least some frames were generated
+    // Verify output
     let output_path = std::path::Path::new("output");
     assert!(output_path.exists());
     assert!(output_path.is_dir());

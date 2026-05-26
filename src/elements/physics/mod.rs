@@ -3,7 +3,7 @@
 //!
 //! This module integrates the 2D physics engine (powered by Rapier2D) into the reactive
 //! signal-based scene graph of `motion-canvas-rs`. It enables physics-driven simulations
-//! (gravity, collisions, friction, restitution) to seamlessly co-exist and transition with
+//! (gravity, collisions, friction, restitution) to co-exist and transition with
 //! traditional signal-driven animations.
 
 pub mod dynamic_body;
@@ -123,7 +123,7 @@ pub struct PhysicsNode {
     initial_states: Vec<(RigidBodyHandle, Vector<f32>, f32, Vector<f32>, f32)>,
     /// Constant step integration time (e.g. 1/60s). Simulators require fixed updates for deterministic results.
     pub timestep: f32,
-    /// Frame time accumulator buffer used to guarantee perfect deterministic reproduction.
+    /// Frame time accumulator buffer used to guarantee deterministic reproduction.
     accumulator: f32,
 }
 

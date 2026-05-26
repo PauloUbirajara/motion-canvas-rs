@@ -271,12 +271,15 @@ impl OffscreenRenderer for GpuOffscreenRenderer {
         let mut pixels = Vec::with_capacity((self.width * self.height * 4) as usize);
         if self.bytes_per_row == self.unaligned_bytes_per_row {
             pixels.extend_from_slice(&data[..(self.width * self.height * 4) as usize]);
-        } else {
-            for row in 0..self.height {
-                let start = (row * self.bytes_per_row) as usize;
-                let end = start + self.unaligned_bytes_per_row as usize;
-                pixels.extend_from_slice(&data[start..end]);
-            }
+            drop(data);
+            self.output_buffer.unmap();
+            return pixels;
+        }
+
+        for row in 0..self.height {
+            let start = (row * self.bytes_per_row) as usize;
+            let end = start + self.unaligned_bytes_per_row as usize;
+            pixels.extend_from_slice(&data[start..end]);
         }
 
         drop(data);
