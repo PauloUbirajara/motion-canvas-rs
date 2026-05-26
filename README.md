@@ -48,6 +48,7 @@ cargo add motion-canvas-rs --features math,svg,audio
 | `GroupNode` | Hierarchical grouping of any nodes. | `position`, `rotation`, `scale`, `children`, `anchor` |
 | `ImageNode` | Bitmap image display (WebP, PNG, JPG). | `position`, `rotation`, `scale`, `size`, `anchor` |
 | `Line` | Simple line between two points. | `position`, `rotation`, `scale`, `start`, `end`, `anchor` |
+| `MaskNode` | Dynamic vector stenciling and Boolean operations (Intersect, Subtract, Exclude, Union) container. | `position`, `rotation`, `scale`, `opacity`, `mode`, `anchor` |
 | `MathNode` | Typst-powered mathematical formulas. | `position`, `rotation`, `scale`, `equation`, `anchor` |
 | `PathNode` | Complex path sampling and animation. | `position`, `rotation`, `scale`, `arc-length`, `anchor` |
 | `PhysicsNode` | Container orchestrating a 2D physics simulation world. | `opacity`, `gravity`, `is_moving_container` |
@@ -109,7 +110,7 @@ fn main() {
 
 ## Running Examples
 
-The project includes 24 examples that can be found in the [examples directory](./examples).
+The project includes 26 examples that can be found in the [examples directory](./examples).
 
 <details>
     <summary> [ <a href="./examples/advanced_flow.rs">code</a> ] <b>Advanced Flow</b> - Complex staggered and sequential animations.</summary>
@@ -150,6 +151,20 @@ cargo run --example audio_demo --features audio
 | - |
 | ![Audio Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/audio_demo.webp) |
 | [Audio Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/audio_demo.mp4) |
+
+</details>
+
+<details>
+<summary> [ <a href="./examples/blur_demo.rs">code</a> ] <b>Blur Demo</b> - Box blur filter applied universally across node subtrees.</summary>
+
+```sh
+cargo run --example blur_demo
+```
+
+| Preview |
+| - |
+| ![Blur Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/blur_demo.webp) |
+| [Blur Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/blur_demo.mp4) |
 
 </details>
 
@@ -318,6 +333,20 @@ cargo run --example images --features image,svg
 | - |
 | ![Images](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/images.webp) |
 | [Images Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/images.mp4) |
+
+</details>
+
+<details>
+<summary> [ <a href="./examples/mask_demo.rs">code</a> ] <b>Mask Demo</b> - Vector masking and composition using Porter-Duff blend layers (Intersect, Subtract, Exclude, Union).</summary>
+
+```sh
+cargo run --example mask_demo
+```
+
+| Preview |
+| - |
+| ![Mask Demo](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/mask_demo.webp) |
+| [Mask Demo Video](https://media.githubusercontent.com/media/PauloUbirajara/motion-canvas-rs/master/assets/examples/mask_demo.mp4) |
 
 </details>
 
