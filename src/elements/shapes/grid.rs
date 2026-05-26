@@ -46,6 +46,8 @@ pub struct GridNode {
     pub stroke_width: Signal<f32>,
     /// Opacity from 0.0 (transparent) to 1.0 (opaque).
     pub opacity: Signal<f32>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
 }
 
 impl Default for GridNode {
@@ -59,6 +61,7 @@ impl Default for GridNode {
             stroke_paint: Signal::new(Paint::None),
             stroke_width: Signal::new(1.0),
             opacity: Signal::new(1.0),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 }
@@ -126,59 +129,73 @@ impl GridNode {
     }
 }
 
+impl crate::core::filters::Blur for GridNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
+    }
+}
+
 impl Node for GridNode {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let opacity = self.opacity.get() * parent_opacity;
-        if opacity <= 0.0 {
-            return;
-        }
+        let blur_radius = self.blur.get().max(0.0);
+        let opacity = self.opacity.get();
+        let combined_opacity = parent_opacity * opacity;
 
-        let pos = self.position.get();
-        let cols = self.columns.get().max(0.0);
-        let rows = self.rows.get().max(0.0);
-        let spacing = self.spacing.get();
-        let stroke_width = self.stroke_width.get();
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let pos = self.position.get();
+                let cols = self.columns.get().max(0.0);
+                let rows = self.rows.get().max(0.0);
+                let spacing = self.spacing.get();
+                let stroke_width = self.stroke_width.get();
 
-        let transform = parent_transform * Affine::translate((pos.x as f64, pos.y as f64));
-        let brush = match self.stroke_paint.get() {
-            Paint::None => {
-                let mut stroke_color = self.stroke_color.get();
-                stroke_color.a = (stroke_color.a as f32 * opacity).clamp(0.0, 255.0) as u8;
-                Brush::Solid(stroke_color)
-            }
-            paint => paint.to_brush_with_opacity(opacity),
-        };
-        let stroke = Stroke::new(stroke_width as f64);
+                let transform = parent_transform * Affine::translate((pos.x as f64, pos.y as f64));
+                let brush = match self.stroke_paint.get() {
+                    Paint::None => {
+                        let mut stroke_color = self.stroke_color.get();
+                        stroke_color.a =
+                            (stroke_color.a as f32 * target_opacity).clamp(0.0, 255.0) as u8;
+                        Brush::Solid(stroke_color)
+                    }
+                    paint => paint.to_brush_with_opacity(target_opacity),
+                };
+                let stroke = Stroke::new(stroke_width as f64);
 
-        let width = cols * spacing.x;
-        let height = rows * spacing.y;
-        let start_x = -width / 2.0;
-        let start_y = -height / 2.0;
+                let width = cols * spacing.x;
+                let height = rows * spacing.y;
+                let start_x = -width / 2.0;
+                let start_y = -height / 2.0;
 
-        // Vertical lines
-        for i in 0..=(cols.ceil() as i32) {
-            let x = start_x + i as f32 * spacing.x;
-            if x > width / 2.0 {
-                break;
-            }
-            let mut path = BezPath::new();
-            path.move_to((x as f64, start_y as f64));
-            path.line_to((x as f64, (start_y + height) as f64));
-            scene.stroke(&stroke, transform, &brush, None, &path);
-        }
+                // Vertical lines
+                for i in 0..=(cols.ceil() as i32) {
+                    let x = start_x + i as f32 * spacing.x;
+                    if x > width / 2.0 {
+                        break;
+                    }
+                    let mut path = BezPath::new();
+                    path.move_to((x as f64, start_y as f64));
+                    path.line_to((x as f64, (start_y + height) as f64));
+                    scene.stroke(&stroke, transform, &brush, None, &path);
+                }
 
-        // Horizontal lines
-        for i in 0..=(rows.ceil() as i32) {
-            let y = start_y + i as f32 * spacing.y;
-            if y > height / 2.0 {
-                break;
-            }
-            let mut path = BezPath::new();
-            path.move_to((start_x as f64, y as f64));
-            path.line_to(((start_x + width) as f64, y as f64));
-            scene.stroke(&stroke, transform, &brush, None, &path);
-        }
+                // Horizontal lines
+                for i in 0..=(rows.ceil() as i32) {
+                    let y = start_y + i as f32 * spacing.y;
+                    if y > height / 2.0 {
+                        break;
+                    }
+                    let mut path = BezPath::new();
+                    path.move_to((start_x as f64, y as f64));
+                    path.line_to(((start_x + width) as f64, y as f64));
+                    scene.stroke(&stroke, transform, &brush, None, &path);
+                }
+            },
+        );
     }
 
     fn update(&mut self, _dt: Duration) {}
@@ -193,6 +210,7 @@ impl Node for GridNode {
         h.update_u64(self.stroke_paint.state_hash());
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
+        h.update_u64(self.blur.state_hash());
         h.finish()
     }
 
@@ -209,5 +227,6 @@ impl Node for GridNode {
         self.stroke_paint.reset();
         self.stroke_width.reset();
         self.opacity.reset();
+        self.blur.reset();
     }
 }

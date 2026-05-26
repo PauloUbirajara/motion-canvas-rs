@@ -49,6 +49,7 @@ pub mod prelude {
     pub use crate::core::animation::base::Node;
     pub use crate::core::animation::tween::Signal;
     pub use crate::core::animation::tween::Tweenable;
+    pub use crate::core::filters::{Blur, DEFAULT_BLUR};
     pub use crate::core::{AnyAnimation, AnyNode};
 
     // Export the modules themselves for namespaced access

@@ -35,6 +35,8 @@ pub struct CameraNode {
     pub size: Signal<Vec2>,
     /// If true, the world origin (0,0) is shifted to the center of the viewport.
     pub centered: Signal<bool>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
 }
 
 impl Default for CameraNode {
@@ -48,6 +50,7 @@ impl Default for CameraNode {
             opacity: Signal::new(1.0),
             size: Signal::new(Vec2::new(800.0, 600.0)),
             centered: Signal::new(true),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 }
@@ -129,46 +132,58 @@ impl Clone for CameraNode {
             opacity: self.opacity.clone(),
             size: self.size.clone(),
             centered: self.centered.clone(),
+            blur: self.blur.clone(),
         }
+    }
+}
+
+impl crate::core::filters::Blur for CameraNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
     }
 }
 
 impl Node for CameraNode {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
+        let blur_radius = self.blur.get().max(0.0);
         let opacity = self.opacity.get();
         let combined_opacity = parent_opacity * opacity;
 
-        if combined_opacity <= 0.0 {
-            return;
-        }
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let zoom = self.zoom.get();
+                let anchor = self.anchor.get();
+                let size = self.size.get();
+                let centered = self.centered.get();
 
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let zoom = self.zoom.get();
-        let anchor = self.anchor.get();
-        let size = self.size.get();
-        let centered = self.centered.get();
+                // The camera transform represents where the camera is in the world.
+                // To render from the camera's perspective, we apply the INVERSE of its transform.
 
-        // The camera transform represents where the camera is in the world.
-        // To render from the camera's perspective, we apply the INVERSE of its transform.
+                // Offset for alignment (centering the camera)
+                let viewport_center = if centered { size * 0.5 } else { Vec2::ZERO };
+                let anchor_offset = anchor * size * 0.5;
 
-        // Offset for alignment (centering the camera)
-        let viewport_center = if centered { size * 0.5 } else { Vec2::ZERO };
-        let anchor_offset = anchor * size * 0.5;
+                let view_transform =
+                    Affine::translate((viewport_center.x as f64, viewport_center.y as f64))
+                        * Affine::scale(zoom as f64)
+                        * Affine::rotate(-rot as f64)
+                        * Affine::translate((-pos.x as f64, -pos.y as f64))
+                        * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
 
-        let view_transform =
-            Affine::translate((viewport_center.x as f64, viewport_center.y as f64))
-                * Affine::scale(zoom as f64)
-                * Affine::rotate(-rot as f64)
-                * Affine::translate((-pos.x as f64, -pos.y as f64))
-                * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
+                let combined_transform = parent_transform * view_transform;
 
-        let combined_transform = parent_transform * view_transform;
-
-        for node in &self.nodes {
-            node.render(scene, combined_transform, combined_opacity);
-        }
+                for node in &self.nodes {
+                    node.render(scene, combined_transform, target_opacity);
+                }
+            },
+        );
     }
 
     fn update(&mut self, dt: Duration) {
@@ -187,6 +202,7 @@ impl Node for CameraNode {
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.size.state_hash());
         h.update_u64(self.centered.state_hash());
+        h.update_u64(self.blur.state_hash());
 
         for node in &self.nodes {
             h.update_u64(node.state_hash());
@@ -207,6 +223,7 @@ impl Node for CameraNode {
         self.opacity.reset();
         self.size.reset();
         self.centered.reset();
+        self.blur.reset();
         for node in &mut self.nodes {
             node.reset();
         }

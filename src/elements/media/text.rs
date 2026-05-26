@@ -104,6 +104,8 @@ pub struct TextNode {
     /// The preferred font family name.
     pub font_family: String,
     cache: Arc<Mutex<Option<Arc<Vec<(Affine, BezPath)>>>>>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
 }
 
 impl Default for TextNode {
@@ -121,6 +123,7 @@ impl Default for TextNode {
             text_align: Signal::new(TextAlign::Center),
             font_family: DEFAULT_FONT_FAMILY.to_string(),
             cache: Arc::new(Mutex::new(None)),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 }
@@ -222,6 +225,7 @@ impl Clone for TextNode {
             text_align: self.text_align.clone(),
             font_family: self.font_family.clone(),
             cache: self.cache.clone(),
+            blur: self.blur.clone(),
         }
     }
 }
@@ -251,168 +255,184 @@ impl<'a> skrifa::outline::OutlinePen for PathSink<'a> {
     }
 }
 
+impl crate::core::filters::Blur for TextNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
+    }
+}
+
 impl Node for TextNode {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
-        let text = self.text.get();
-        let size = self.font_size.get();
-        let color = self.fill_color.get();
+        let blur_radius = self.blur.get().max(0.0);
         let opacity = self.opacity.get();
+        let combined_opacity = parent_opacity * opacity;
 
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let sc = self.scale.get();
-        let anchor = self.anchor.get();
-        let text_align = self.text_align.get();
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let text = self.text.get();
+                let size = self.font_size.get();
+                let color = self.fill_color.get();
 
-        let key = TextCacheKey {
-            text: text.clone(),
-            font_size_bits: size.to_bits(),
-            font_family: self.font_family.clone(),
-            text_align,
-        };
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let sc = self.scale.get();
+                let anchor = self.anchor.get();
+                let text_align = self.text_align.get();
 
-        // 1. Check global cache
-        let mut global = GLOBAL_TEXT_CACHE.lock().unwrap();
-        if let Some(paths) = global.get(&key) {
-            let mut local = self.cache.lock().unwrap();
-            *local = Some(paths.clone());
-        } else {
-            // 3. Rebuild
-            let mut paths = Vec::new();
-            let mut fallback_list = vec![self.font_family.as_str(), DEFAULT_FONT_FAMILY];
-            fallback_list.extend_from_slice(FONT_FALLBACKS);
+                let key = TextCacheKey {
+                    text: text.clone(),
+                    font_size_bits: size.to_bits(),
+                    font_family: self.font_family.clone(),
+                    text_align,
+                };
 
-            if let Some(font_data) = FontManager::get_font_with_fallback(&fallback_list) {
-                let font_ref = FontManager::get_font_ref(&font_data);
-                let charmap = font_ref.charmap();
-                let outlines = font_ref.outline_glyphs();
+                // 1. Check global cache
+                let mut global = GLOBAL_TEXT_CACHE.lock().unwrap();
+                if let Some(paths) = global.get(&key) {
+                    let mut local = self.cache.lock().unwrap();
+                    *local = Some(paths.clone());
+                } else {
+                    // 3. Rebuild
+                    let mut paths = Vec::new();
+                    let mut fallback_list = vec![self.font_family.as_str(), DEFAULT_FONT_FAMILY];
+                    fallback_list.extend_from_slice(FONT_FALLBACKS);
 
-                let lines: Vec<&str> = text.split('\n').collect();
-                let line_height = size * 1.2;
+                    if let Some(font_data) = FontManager::get_font_with_fallback(&fallback_list) {
+                        let font_ref = FontManager::get_font_ref(&font_data);
+                        let charmap = font_ref.charmap();
+                        let outlines = font_ref.outline_glyphs();
 
-                // Measure line widths
-                let mut line_widths = Vec::with_capacity(lines.len());
-                for line in &lines {
-                    let mut width = 0.0;
-                    for c in line.chars() {
-                        let glyph_id = charmap.map(c).unwrap_or_default();
-                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
-                        if let Some(metrics) = font_ref
-                            .glyph_metrics(Size::new(size), LocationRef::default())
-                            .advance_width(glyph_id)
-                        {
-                            advance = metrics as f64;
-                        }
-                        width += advance;
-                    }
-                    line_widths.push(width);
-                }
+                        let lines: Vec<&str> = text.split('\n').collect();
+                        let line_height = size * 1.2;
 
-                let max_width = line_widths.iter().copied().fold(0.0f64, f64::max);
-                let mut y_offset = 0.0;
-
-                for (i, line) in lines.iter().enumerate() {
-                    let line_width = line_widths[i];
-                    let mut x_offset = match text_align {
-                        TextAlign::Left => 0.0,
-                        TextAlign::Center => (max_width - line_width) / 2.0,
-                        TextAlign::Right => max_width - line_width,
-                    };
-
-                    for c in line.chars() {
-                        let glyph_id = charmap.map(c).unwrap_or_default();
-                        let mut pb = BezPath::new();
-                        let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
-
-                        if let Some(glyph) = outlines.get(glyph_id) {
-                            let mut sink = PathSink(&mut pb);
-                            let font_size = Size::new(size);
-                            let _ = glyph.draw(font_size, &mut sink);
-
-                            if let Some(metrics) = font_ref
-                                .glyph_metrics(font_size, LocationRef::default())
-                                .advance_width(glyph_id)
-                            {
-                                advance = metrics as f64;
+                        // Measure line widths
+                        let mut line_widths = Vec::with_capacity(lines.len());
+                        for line in &lines {
+                            let mut width = 0.0;
+                            for c in line.chars() {
+                                let glyph_id = charmap.map(c).unwrap_or_default();
+                                let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
+                                if let Some(metrics) = font_ref
+                                    .glyph_metrics(Size::new(size), LocationRef::default())
+                                    .advance_width(glyph_id)
+                                {
+                                    advance = metrics as f64;
+                                }
+                                width += advance;
                             }
+                            line_widths.push(width);
                         }
 
-                        let base_transform =
-                            Affine::translate((x_offset, size as f64 + y_offset as f64))
-                                * Affine::scale_non_uniform(1.0, -1.0);
-                        paths.push((base_transform, pb));
-                        x_offset += advance;
+                        let max_width = line_widths.iter().copied().fold(0.0f64, f64::max);
+                        let mut y_offset = 0.0;
+
+                        for (i, line) in lines.iter().enumerate() {
+                            let line_width = line_widths[i];
+                            let mut x_offset = match text_align {
+                                TextAlign::Left => 0.0,
+                                TextAlign::Center => (max_width - line_width) / 2.0,
+                                TextAlign::Right => max_width - line_width,
+                            };
+
+                            for c in line.chars() {
+                                let glyph_id = charmap.map(c).unwrap_or_default();
+                                let mut pb = BezPath::new();
+                                let mut advance = (size * ADVANCE_FALLBACK_FACTOR) as f64;
+
+                                if let Some(glyph) = outlines.get(glyph_id) {
+                                    let mut sink = PathSink(&mut pb);
+                                    let font_size = Size::new(size);
+                                    let _ = glyph.draw(font_size, &mut sink);
+
+                                    if let Some(metrics) = font_ref
+                                        .glyph_metrics(font_size, LocationRef::default())
+                                        .advance_width(glyph_id)
+                                    {
+                                        advance = metrics as f64;
+                                    }
+                                }
+
+                                let base_transform =
+                                    Affine::translate((x_offset, size as f64 + y_offset as f64))
+                                        * Affine::scale_non_uniform(1.0, -1.0);
+                                paths.push((base_transform, pb));
+                                x_offset += advance;
+                            }
+                            y_offset += line_height;
+                        }
                     }
-                    y_offset += line_height;
+                    let arc_paths = Arc::new(paths);
+                    global.insert(key, arc_paths.clone());
+                    let mut local = self.cache.lock().unwrap();
+                    *local = Some(arc_paths);
                 }
-            }
-            let arc_paths = Arc::new(paths);
-            global.insert(key, arc_paths.clone());
-            let mut local = self.cache.lock().unwrap();
-            *local = Some(arc_paths);
-        }
 
-        let cache_guard = self.cache.lock().unwrap();
-        let Some(c) = cache_guard.as_ref() else {
-            return;
-        };
+                let cache_guard = self.cache.lock().unwrap();
+                let Some(c) = cache_guard.as_ref() else {
+                    return;
+                };
 
-        // Calculate bounding box for centering and anchor
-        let mut min_x = f64::MAX;
-        let mut min_y = f64::MAX;
-        let mut max_x = f64::MIN;
-        let mut max_y = f64::MIN;
+                // Calculate bounding box for centering and anchor
+                let mut min_x = f64::MAX;
+                let mut min_y = f64::MAX;
+                let mut max_x = f64::MIN;
+                let mut max_y = f64::MIN;
 
-        for (glyph_transform, pb) in c.as_ref() {
-            let bounds = pb.bounding_box();
-            let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
-            let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
-            min_x = min_x.min(p0.x).min(p1.x);
-            min_y = min_y.min(p0.y).min(p1.y);
-            max_x = max_x.max(p0.x).max(p1.x);
-            max_y = max_y.max(p0.y).max(p1.y);
-        }
+                for (glyph_transform, pb) in c.as_ref() {
+                    let bounds = pb.bounding_box();
+                    let p0 = *glyph_transform * vello::kurbo::Point::new(bounds.x0, bounds.y0);
+                    let p1 = *glyph_transform * vello::kurbo::Point::new(bounds.x1, bounds.y1);
+                    min_x = min_x.min(p0.x).min(p1.x);
+                    min_y = min_y.min(p0.y).min(p1.y);
+                    max_x = max_x.max(p0.x).max(p1.x);
+                    max_y = max_y.max(p0.y).max(p1.y);
+                }
 
-        let size_vec = if min_x == f64::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
-        };
+                let size_vec = if min_x == f64::MAX {
+                    Vec2::ZERO
+                } else {
+                    Vec2::new((max_x - min_x) as f32, (max_y - min_y) as f32)
+                };
 
-        let center_offset = if min_x == f64::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
-        };
+                let center_offset = if min_x == f64::MAX {
+                    Vec2::ZERO
+                } else {
+                    Vec2::new((min_x + max_x) as f32 * 0.5, (min_y + max_y) as f32 * 0.5)
+                };
 
-        let anchor_offset = anchor * size_vec * 0.5;
+                let anchor_offset = anchor * size_vec * 0.5;
 
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
-            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
-            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
+                let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+                    * Affine::rotate(rot as f64)
+                    * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+                    * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+                    * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
 
-        let root_transform = parent_transform * local_transform;
-        let combined_opacity = opacity * parent_opacity;
-        let brush = match self.fill_paint.get() {
-            Paint::None => {
-                let mut render_color = color;
-                render_color.a = (color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-                Brush::Solid(render_color)
-            }
-            paint => paint.to_brush_with_opacity(combined_opacity),
-        };
-        for (glyph_transform, pb) in c.as_ref() {
-            scene.fill(
-                Fill::NonZero,
-                root_transform * *glyph_transform,
-                &brush,
-                None,
-                pb,
-            );
-        }
+                let root_transform = parent_transform * local_transform;
+                let brush = match self.fill_paint.get() {
+                    Paint::None => {
+                        let mut render_color = color;
+                        render_color.a = (color.a as f32 * target_opacity).clamp(0.0, 255.0) as u8;
+                        Brush::Solid(render_color)
+                    }
+                    paint => paint.to_brush_with_opacity(target_opacity),
+                };
+                for (glyph_transform, pb) in c.as_ref() {
+                    scene.fill(
+                        Fill::NonZero,
+                        root_transform * *glyph_transform,
+                        &brush,
+                        None,
+                        pb,
+                    );
+                }
+            },
+        );
     }
     fn update(&mut self, _dt: Duration) {}
     fn state_hash(&self) -> u64 {
@@ -429,6 +449,7 @@ impl Node for TextNode {
         h.update_u64(self.anchor.state_hash());
         h.update_u64(self.text_align.state_hash());
         h.update_bytes(self.font_family.as_bytes());
+        h.update_u64(self.blur.state_hash());
         h.finish()
     }
 
@@ -447,5 +468,6 @@ impl Node for TextNode {
         self.opacity.reset();
         self.anchor.reset();
         self.text_align.reset();
+        self.blur.reset();
     }
 }

@@ -32,6 +32,8 @@ pub struct GroupNode {
     pub size: Signal<Vec2>,
     /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
 }
 
 impl Default for GroupNode {
@@ -44,6 +46,7 @@ impl Default for GroupNode {
             opacity: Signal::new(1.0),
             size: Signal::new(Vec2::ZERO),
             anchor: Signal::new(Vec2::ZERO),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 }
@@ -114,38 +117,50 @@ impl Clone for GroupNode {
             opacity: self.opacity.clone(),
             size: self.size.clone(),
             anchor: self.anchor.clone(),
+            blur: self.blur.clone(),
         }
+    }
+}
+
+impl crate::core::filters::Blur for GroupNode {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
     }
 }
 
 impl Node for GroupNode {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
+        let blur_radius = self.blur.get().max(0.0);
         let opacity = self.opacity.get();
-
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let sc = self.scale.get();
-        let anchor = self.anchor.get();
-        let size = self.size.get();
-
-        let anchor_offset = anchor * size * 0.5;
-
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
-            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
-
-        let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        if combined_opacity <= 0.0 {
-            return;
-        }
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let sc = self.scale.get();
+                let anchor = self.anchor.get();
+                let size = self.size.get();
 
-        for node in &self.nodes {
-            node.render(scene, combined_transform, combined_opacity);
-        }
+                let anchor_offset = anchor * size * 0.5;
+
+                let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+                    * Affine::rotate(rot as f64)
+                    * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+                    * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64));
+
+                let combined_transform = parent_transform * local_transform;
+
+                for node in &self.nodes {
+                    node.render(scene, combined_transform, target_opacity);
+                }
+            },
+        );
     }
 
     fn update(&mut self, dt: Duration) {
@@ -163,6 +178,7 @@ impl Node for GroupNode {
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.size.state_hash());
         h.update_u64(self.anchor.state_hash());
+        h.update_u64(self.blur.state_hash());
 
         for node in &self.nodes {
             h.update_u64(node.state_hash());
@@ -182,6 +198,7 @@ impl Node for GroupNode {
         self.opacity.reset();
         self.size.reset();
         self.anchor.reset();
+        self.blur.reset();
         for node in &mut self.nodes {
             node.reset();
         }

@@ -57,6 +57,8 @@ pub struct Polygon {
     pub opacity: Signal<f32>,
     /// The relative transformation origin. (-1,-1) is top-left, (0,0) is center, (1,1) is bottom-right.
     pub anchor: Signal<Vec2>,
+    /// Blur radius signal.
+    pub blur: Signal<f32>,
 }
 
 impl Default for Polygon {
@@ -73,6 +75,7 @@ impl Default for Polygon {
             stroke_width: Signal::new(DEFAULT_STROKE_WIDTH),
             opacity: Signal::new(DEFAULT_OPACITY),
             anchor: Signal::new(Vec2::ZERO),
+            blur: Signal::new(crate::core::filters::DEFAULT_BLUR),
         }
     }
 }
@@ -162,6 +165,13 @@ impl Polygon {
     }
 }
 
+impl crate::core::filters::Blur for Polygon {
+    fn with_blur(mut self, radius: f32) -> Self {
+        self.blur = Signal::new(radius);
+        self
+    }
+}
+
 impl Node for Polygon {
     #[cfg(feature = "runtime")]
     fn render(&self, scene: &mut Scene, parent_transform: Affine, parent_opacity: f32) {
@@ -170,85 +180,95 @@ impl Node for Polygon {
             return;
         }
 
-        let fill_color = self.fill_color.get();
-        let stroke_color = self.stroke_color.get();
-        let stroke_width = self.stroke_width.get();
+        let blur_radius = self.blur.get().max(0.0);
         let opacity = self.opacity.get();
-
-        let pos = self.position.get();
-        let rot = self.rotation.get();
-        let sc = self.scale.get();
-        let anchor = self.anchor.get();
-
-        // Calculate bounding box for centering and anchor
-        let mut min_x = f32::MAX;
-        let mut min_y = f32::MAX;
-        let mut max_x = f32::MIN;
-        let mut max_y = f32::MIN;
-
-        for p in &points {
-            min_x = min_x.min(p.x);
-            min_y = min_y.min(p.y);
-            max_x = max_x.max(p.x);
-            max_y = max_y.max(p.y);
-        }
-
-        let size_vec = if min_x == f32::MAX {
-            Vec2::ZERO
-        } else {
-            Vec2::new(max_x - min_x, max_y - min_y)
-        };
-
-        let center_offset = Vec2::new((min_x + max_x) * 0.5, (min_y + max_y) * 0.5);
-        let anchor_offset = anchor * size_vec * 0.5;
-
-        let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
-            * Affine::rotate(rot as f64)
-            * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
-            * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
-            * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
-
-        let combined_transform = parent_transform * local_transform;
         let combined_opacity = parent_opacity * opacity;
 
-        // Construct path
-        let mut path = BezPath::new();
-        path.move_to((points[0].x as f64, points[0].y as f64));
-        for p in points.iter().skip(1) {
-            path.line_to((p.x as f64, p.y as f64));
-        }
-        path.close_path();
+        crate::core::filters::apply_blur_filter(
+            scene,
+            blur_radius,
+            combined_opacity,
+            |scene, target_opacity| {
+                let fill_color = self.fill_color.get();
+                let stroke_color = self.stroke_color.get();
+                let stroke_width = self.stroke_width.get();
 
-        // Fill
-        let fill_brush = match self.fill_paint.get() {
-            Paint::None => {
-                let mut final_fill = fill_color;
-                final_fill.a = (fill_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-                Brush::Solid(final_fill)
-            }
-            paint => paint.to_brush_with_opacity(combined_opacity),
-        };
-        scene.fill(Fill::NonZero, combined_transform, &fill_brush, None, &path);
+                let pos = self.position.get();
+                let rot = self.rotation.get();
+                let sc = self.scale.get();
+                let anchor = self.anchor.get();
 
-        // Stroke
-        if stroke_width > 0.001 {
-            let stroke_brush = match self.stroke_paint.get() {
-                Paint::None => {
-                    let mut final_stroke = stroke_color;
-                    final_stroke.a =
-                        (stroke_color.a as f32 * combined_opacity).clamp(0.0, 255.0) as u8;
-                    Brush::Solid(final_stroke)
+                // Calculate bounding box for centering and anchor
+                let mut min_x = f32::MAX;
+                let mut min_y = f32::MAX;
+                let mut max_x = f32::MIN;
+                let mut max_y = f32::MIN;
+
+                for p in &points {
+                    min_x = min_x.min(p.x);
+                    min_y = min_y.min(p.y);
+                    max_x = max_x.max(p.x);
+                    max_y = max_y.max(p.y);
                 }
-                paint => paint.to_brush_with_opacity(combined_opacity),
-            };
-            scene.stroke(
-                &Stroke::new(stroke_width as f64),
-                combined_transform,
-                &stroke_brush,
-                None,
-                &path,
-            );
-        }
+
+                let size_vec = if min_x == f32::MAX {
+                    Vec2::ZERO
+                } else {
+                    Vec2::new(max_x - min_x, max_y - min_y)
+                };
+
+                let center_offset = Vec2::new((min_x + max_x) * 0.5, (min_y + max_y) * 0.5);
+                let anchor_offset = anchor * size_vec * 0.5;
+
+                let local_transform = Affine::translate((pos.x as f64, pos.y as f64))
+                    * Affine::rotate(rot as f64)
+                    * Affine::scale_non_uniform(sc.x as f64, sc.y as f64)
+                    * Affine::translate((-anchor_offset.x as f64, -anchor_offset.y as f64))
+                    * Affine::translate((-center_offset.x as f64, -center_offset.y as f64));
+
+                let combined_transform = parent_transform * local_transform;
+
+                // Construct path
+                let mut path = BezPath::new();
+                path.move_to((points[0].x as f64, points[0].y as f64));
+                for p in points.iter().skip(1) {
+                    path.line_to((p.x as f64, p.y as f64));
+                }
+                path.close_path();
+
+                // Fill
+                let fill_brush = match self.fill_paint.get() {
+                    Paint::None => {
+                        let mut final_fill = fill_color;
+                        final_fill.a =
+                            (fill_color.a as f32 * target_opacity).clamp(0.0, 255.0) as u8;
+                        Brush::Solid(final_fill)
+                    }
+                    paint => paint.to_brush_with_opacity(target_opacity),
+                };
+                scene.fill(Fill::NonZero, combined_transform, &fill_brush, None, &path);
+
+                // Stroke
+                if stroke_width > 0.001 {
+                    let stroke_brush = match self.stroke_paint.get() {
+                        Paint::None => {
+                            let mut final_stroke = stroke_color;
+                            final_stroke.a =
+                                (stroke_color.a as f32 * target_opacity).clamp(0.0, 255.0) as u8;
+                            Brush::Solid(final_stroke)
+                        }
+                        paint => paint.to_brush_with_opacity(target_opacity),
+                    };
+                    scene.stroke(
+                        &Stroke::new(stroke_width as f64),
+                        combined_transform,
+                        &stroke_brush,
+                        None,
+                        &path,
+                    );
+                }
+            },
+        );
     }
 
     fn update(&mut self, _dt: Duration) {}
@@ -267,6 +287,7 @@ impl Node for Polygon {
         h.update_u64(self.stroke_width.state_hash());
         h.update_u64(self.opacity.state_hash());
         h.update_u64(self.anchor.state_hash());
+        h.update_u64(self.blur.state_hash());
         h.finish()
     }
 
@@ -286,5 +307,6 @@ impl Node for Polygon {
         self.stroke_width.reset();
         self.opacity.reset();
         self.anchor.reset();
+        self.blur.reset();
     }
 }

@@ -48,6 +48,7 @@ pub struct Exporter {
     bytes_per_row: u32,
     unaligned_bytes_per_row: u32,
     background_color: vello::peniko::Color,
+    offscreen_renderer: std::rc::Rc<crate::core::scene::GpuOffscreenRenderer>,
 }
 
 impl Exporter {
@@ -119,6 +120,14 @@ impl Exporter {
         };
         let output_buffer = device.create_buffer(&output_buffer_desc);
 
+        let offscreen_renderer = std::rc::Rc::new(crate::core::scene::GpuOffscreenRenderer::new(
+            &device_handle.device,
+            &device_handle.queue,
+            width,
+            height,
+            use_gpu,
+        ));
+
         Self {
             width,
             height,
@@ -132,6 +141,7 @@ impl Exporter {
             bytes_per_row,
             unaligned_bytes_per_row,
             background_color,
+            offscreen_renderer,
         }
     }
 
@@ -141,9 +151,20 @@ impl Exporter {
         let device = &device_handle.device;
         let queue = &device_handle.queue;
 
+        // Bind offscreen renderer in the thread-local
+        crate::core::scene::ACTIVE_OFFSCREEN_RENDERER.with(|cell| {
+            *cell.borrow_mut() = Some(self.offscreen_renderer.clone()
+                as std::rc::Rc<dyn crate::core::scene::OffscreenRenderer>);
+        });
+
         // 1. Render the scene
         self.scene.reset();
         scene_2d.render(&mut self.scene);
+
+        // Clean up offscreen renderer binding
+        crate::core::scene::ACTIVE_OFFSCREEN_RENDERER.with(|cell| {
+            *cell.borrow_mut() = None;
+        });
 
         self.renderer
             .render_to_texture(
