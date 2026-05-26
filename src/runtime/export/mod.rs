@@ -320,9 +320,9 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
         ProgressStyle::default_bar()
             .template(
                 "[{elapsed_precise}] {bar:40.cyan/blue}\n\
+                 Time: {msg}\n\
                  Frames: {pos}/{len}\n\
-                 Skipped: {msg:40.green}\n\
-                 Time To Render: {eta_precise}",
+                 Render ETA: {eta_precise}",
             )
             .unwrap()
             .progress_chars("=>-"),
@@ -385,10 +385,15 @@ pub fn run_export_session(project: &mut Project) -> crate::Result<()> {
             rendered_count += 1;
         }
 
-        // Progress Bar (now reflects saved count)
+        // Progress Bar (now reflects saved count and current animation time)
         let current_saved = saved_count.load(Ordering::SeqCst);
         pb.set_position(current_saved as u64);
-        pb.set_message(format!("{}", skipped_count));
+        let current_seconds = frame_count as f32 / project.fps as f32;
+        let total_seconds = total_frames as f32 / project.fps as f32;
+        pb.set_message(format!(
+            "{:.2}s / {:.2}s (Skipped: {})",
+            current_seconds, total_seconds, skipped_count
+        ));
 
         // Periodically save the cache to disk to prevent losing progress if interrupted
         if project.use_cache && frame_count > 0 && frame_count % project.cache_write_interval == 0 {
